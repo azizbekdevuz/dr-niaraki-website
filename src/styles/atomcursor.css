@@ -1,0 +1,107 @@
+body {
+  cursor: none !important;
+}
+
+.atom-cursor {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  transition: all 0.2s ease;
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.nucleus {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--cursor-nucleus, #fff); /* Adjust based on theme */
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.8);
+}
+
+.orbit {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 50%;
+  border: 1px solid var(--orbit-color, rgba(0, 255, 255, 0.3)); /* Adjust based on theme */
+  animation: rotate 6s linear infinite;
+}
+
+.orbit-1 {
+  animation-duration: 4s;
+}
+
+.orbit-2 {
+  animation-duration: 6s;
+  animation-direction: reverse;
+}
+
+.orbit-3 {
+  animation-duration: 8s;
+}
+
+.glow {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  bottom: -5px;
+  left: -5px;
+  background: radial-gradient(circle, var(--glow-color, rgba(0, 255, 255, 0.4)), transparent 70%);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes rotate {
+  0% { transform: rotateZ(0deg) rotateY(60deg); }
+  100% { transform: rotateZ(360deg) rotateY(60deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.atom-cursor.pointing {
+  transform: scale(1.2);
+}
+
+.atom-cursor.pointing .nucleus {
+  background: var(--cursor-nucleus-hover, #ffff00); /* Adjust for hover based on theme */
+  box-shadow: 0 0 12px 3px rgba(255, 255, 0, 0.8);
+}
+
+.atom-cursor.pointing .orbit {
+  border-color: var(--orbit-hover-color, rgba(255, 255, 0, 0.5)); /* Adjust for hover based on theme */
+}
+
+.atom-cursor.clicking {
+  transform: scale(0.9);
+}
+
+.atom-cursor.clicking .nucleus {
+  background: var(--cursor-nucleus-click, #ff00ff); /* Adjust for click based on theme */
+  box-shadow: 0 0 12px 3px rgba(255, 0, 255, 0.8);
+}
+
+/* Hide default cursor on all elements */
+* {
+  cursor: none !important;
+}
+
+/* Prevent text selection cursor */
+::selection {
+  background: transparent;
+}
+
+/* For Firefox */
+::-moz-selection {
+  background: transparent;
+}

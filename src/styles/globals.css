@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Define theme variables */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --cursor-nucleus: #fff;
+  --cursor-nucleus-hover: #ffff00;
+  --cursor-nucleus-click: #ff00ff;
+  --orbit-color: rgba(0, 255, 255, 0.3);
+  --orbit-hover-color: rgba(255, 255, 0, 0.5);
+  --glow-color: rgba(0, 255, 255, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --cursor-nucleus: #ffffff;
+    --cursor-nucleus-hover: #ffff00;
+    --cursor-nucleus-click: #ff00ff;
+    --orbit-color: rgba(255, 255, 0, 0.3);
+    --orbit-hover-color: rgba(255, 255, 0, 0.5);
+    --glow-color: rgba(255, 255, 0, 0.4);
+  }
+}
+
+/* Apply global theme styles */
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Arial', sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+  cursor: url('/assets/images/cursor.png') 16 16, auto;
+}
+
+/* Custom Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Utility Classes */
+.fade-in {
+  animation: fadeIn 2s ease-in-out;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #6366F1;
+  border-radius: 10px;
+}

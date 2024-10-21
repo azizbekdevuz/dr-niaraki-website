@@ -1,0 +1,33 @@
+{
+  "name": "dr-niaraki-website",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@react-spring/three": "^9.7.5",
+    "@react-three/drei": "^9.114.6",
+    "@react-three/fiber": "^8.17.10",
+    "framer-motion": "^11.11.9",
+    "lucide-react": "^0.453.0",
+    "next": "^14.2.15",
+    "next-themes": "^0.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.13.0",
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.7.7",
+    "@types/react": "^18.3.11",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.15",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.5.3"
+  }
+}
