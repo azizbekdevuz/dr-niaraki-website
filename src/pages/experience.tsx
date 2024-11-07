@@ -1,12 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Briefcase, ChevronRight, Calendar, MapPin } from 'lucide-react';
+import { Briefcase, ChevronRight, Calendar } from 'lucide-react';
 import { HeroExperience } from '../components/HeroExperience';
+import { Dispatch, SetStateAction } from 'react';
 
 const RotatingAtomCursor = dynamic(() => import('../components/RotatingAtomCursor'), { ssr: false });
 
-const experienceData = [
+interface ExperienceData {
+  title?: string;
+  role?: string;
+  institution?: string;
+  organization?: string;
+  period: string;
+  additionalInformation?: string;
+  details?: string;
+  highlights: string[];
+  progressPercentage?: number;
+  location?: string;
+}
+
+const experienceData: ExperienceData[] = [
     {
       period: "March 2017 - Present",
       role: "Associate Professor",
@@ -191,35 +205,42 @@ const consultingData = [
     }
   ];
 
-const SectionNavigation = ({ activeSection, setActiveSection }) => {
-    return (
+interface SectionNavigationProps {
+    activeSection: number;
+    setActiveSection: React.Dispatch<React.SetStateAction<number>>;
+}
+
+const SectionNavigation: React.FC<SectionNavigationProps> = ({ activeSection, setActiveSection }) => {
+  return (
       <div className="flex justify-center gap-4 mb-16">
-        {['Professional Journey', 'Industry Experience', 'Consulting & Collaboration'].map((section, idx) => (
-          <motion.button
-            key={idx}
-            onClick={() => setActiveSection(idx)}
-            className={`px-6 py-3 rounded-xl backdrop-blur-lg ${
-              activeSection === idx
-                ? 'bg-gray-800/80 border-blue-500/50 text-blue-400 border shadow-lg shadow-blue-500/20'
-                : 'bg-gray-800/30 border-gray-700/50 text-gray-400 border hover:bg-gray-800/50'
-            }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            {section}
-          </motion.button>
-        ))}
+          {['Professional Journey', 'Industry Experience', 'Consulting & Collaboration'].map((section, idx) => (
+              <motion.button
+                  key={idx}
+                  onClick={() => setActiveSection(idx)}
+                  className={`${
+                      activeSection === idx ? 'text-blue-500 font-semibold' : 'text-gray-500'
+                  } transition-colors duration-300`}
+              >
+                  {section}
+              </motion.button>
+          ))}
       </div>
-    );
-  };
+  );
+};
+
+interface IndustrySectionProps {
+  activeIndustryIndex: number;
+  setActiveIndustryIndex: React.Dispatch<React.SetStateAction<number>>;
+}
   
-const IndustrySection = ({ activeIndustryIndex, setActiveIndustryIndex }) => {
-    useEffect(() => {
+const IndustrySection: React.FC<IndustrySectionProps> = ({ activeIndustryIndex, setActiveIndustryIndex }) => {
+  useEffect(() => {
       const interval = setInterval(() => {
-        setActiveIndustryIndex((prev) => (prev + 1) % industryExperienceData.length);
-      }, 5000);
+          setActiveIndustryIndex((prev) => (prev + 1) % industryExperienceData.length);
+      }, 3000);
+
       return () => clearInterval(interval);
-    }, []);
+  }, [setActiveIndustryIndex]);
   
     return (
       <motion.div
@@ -247,7 +268,12 @@ const IndustrySection = ({ activeIndustryIndex, setActiveIndustryIndex }) => {
     );
   };
   
-const ConsultingSection = ({ activeConsultingIndex, setActiveConsultingIndex }) => {
+interface ConsultingSectionProps {
+    activeConsultingIndex: number;
+    setActiveConsultingIndex: React.Dispatch<React.SetStateAction<number>>;
+}
+
+const ConsultingSection: React.FC<ConsultingSectionProps> = ({ activeConsultingIndex, setActiveConsultingIndex }) => {
     useEffect(() => {
       const interval = setInterval(() => {
         setActiveConsultingIndex((prev) => (prev + 1) % consultingData.length);
@@ -281,7 +307,24 @@ const ConsultingSection = ({ activeConsultingIndex, setActiveConsultingIndex }) 
     );
   };
 
-const AdvancedTimeline = ({ activeIndex, setActiveIndex, data }) => {
+interface AdvancedTimelineProps {
+    activeIndex: number;
+    setActiveIndex: Dispatch<SetStateAction<number>>;
+    data: ({
+      title?: string;
+      role?: string;
+      institution?: string;
+      location?: string;
+      organization?: string;
+      period: string;
+      details?: string;
+      additionalInformation?: string;
+      highlights: string[];
+      progressPercentage: number;
+    })[];
+}
+  
+const AdvancedTimeline: React.FC<AdvancedTimelineProps> = ({ activeIndex, setActiveIndex, data }) => {
     return (
       <div className="relative w-full py-16">
         {/* Timeline Bar */}
@@ -421,7 +464,7 @@ const AdvancedTimeline = ({ activeIndex, setActiveIndex, data }) => {
     );
 };
   
-const ProgressBar = ({ progress }) => (
+const ProgressBar = ({ progress }: { progress: number }) => (
     <div className="relative w-full h-2 bg-gray-800 rounded-full overflow-hidden">
       <motion.div
         className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-500"
@@ -432,8 +475,22 @@ const ProgressBar = ({ progress }) => (
       />
     </div>
 );
+
+interface ExperienceCardProps {
+  data: ExperienceData;
+  index: number;
+  isActive: boolean;
+  onClick: () => void;
+}
+
+interface ExperienceCardProps {
+  data: ExperienceData;
+  index: number;
+  isActive: boolean;
+  onClick: () => void;
+}
   
-const ExperienceCard = ({ data, index, isActive, onClick }) => (
+const ExperienceCard: React.FC<ExperienceCardProps> = ({ data, index, isActive, onClick }) => (
     <motion.div
       className={`relative ${isActive ? 'z-10' : 'z-0'}`}
       initial={{ opacity: 0, y: 50 }}
@@ -480,7 +537,7 @@ const ExperienceCard = ({ data, index, isActive, onClick }) => (
             {data.additionalInformation || data.details}
           </div>
   
-          <ProgressBar progress={data.progressPercentage} />
+          <ProgressBar progress={data.progressPercentage ?? 0} />
   
           <AnimatePresence>
             {isActive && (
@@ -555,7 +612,9 @@ const ExperienceCard = ({ data, index, isActive, onClick }) => (
                     <AdvancedTimeline 
                       activeIndex={activeIndex} 
                       setActiveIndex={setActiveIndex}
-                      data={experienceData} 
+                      data={experienceData.map(exp => ({
+                        ...exp,
+                      progressPercentage: exp.progressPercentage ?? 0,}))} 
                     />
                   <div className="space-y-6">
                     {experienceData.map((exp, idx) => (

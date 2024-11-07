@@ -18,55 +18,60 @@ const NoiseFilter = () => (
 );
 
 // Particle Effect Component
-const ParticleEffect = () => {
-  const canvasRef = useRef(null);
+const ParticleEffect: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [particleCount, setParticleCount] = useState(100);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    return () => window.removeEventListener('resize', resizeCanvas);
-  }, []);  
+    if (canvas) {
+      const resizeCanvas = () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      };
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+      return () => window.removeEventListener('resize', resizeCanvas);
+    }
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const particles = [];
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      const particles: { x: number; y: number; size: number; dx: number; dy: number }[] = [];
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
 
-    // Initialize particles
-    for (let i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        size: Math.random() * 4 + 1,
-        dx: (Math.random() - 0.5) * 0.5,
-        dy: (Math.random() - 0.5) * 0.5,
-      });
+      for (let i = 0; i < particleCount; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 4 + 1,
+          dx: (Math.random() - 0.5) * 0.5,
+          dy: (Math.random() - 0.5) * 0.5,
+        });
+      }
+
+      const animateParticles = () => {
+        if (ctx) {  // Null check for ctx
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          particles.forEach((p) => {
+            p.x += p.dx;
+            p.y += p.dy;
+            if (p.x > canvas.width || p.x < 0) p.dx *= -1;
+            if (p.y > canvas.height || p.y < 0) p.dy *= -1;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(200, 255, 255, 0.3)';
+            ctx.fill();
+          });
+          requestAnimationFrame(animateParticles);
+        }
+      };
+      animateParticles();
     }
-
-    const animateParticles = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((p) => {
-        p.x += p.dx;
-        p.y += p.dy;
-        if (p.x > canvas.width || p.x < 0) p.dx *= -1;
-        if (p.y > canvas.height || p.y < 0) p.dy *= -1;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(200, 255, 255, 0.3)';
-        ctx.fill();
-      });
-      requestAnimationFrame(animateParticles);
-    };
-    animateParticles();
   }, [particleCount]);
 
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />;
@@ -98,7 +103,13 @@ const ScrollProgress = () => {
 };
 
 // Stat Card Component
-const StatCard = ({ title, value }) => {
+interface StatCardProps {
+  title: string;
+  value: string;
+}
+
+// Stat Card Component
+const StatCard: React.FC<StatCardProps> = ({ title, value }) => {
   const [count, setCount] = useState(0);
   const { ref, inView } = useInView();
 
@@ -134,7 +145,15 @@ const StatCard = ({ title, value }) => {
 };
 
 // Floating Image Component
-const FloatingImage = ({ src, position, delay, showStats }) => {
+interface FloatingImageProps {
+  src: string;
+  position: string;
+  delay: number;
+  showStats: string;
+}
+
+// Floating Image Component
+const FloatingImage: React.FC<FloatingImageProps> = ({ src, position, delay, showStats }) => {
   const [isHovered, setIsHovered] = useState(false);
   
   return (
@@ -196,16 +215,12 @@ export const HeroExperience: React.FC = () => {
   }, [controls, inView]);
 
   return (
-    <div ref={ref} className="relative w-full mb-16" >
-            {/* Particle Effect with proper z-index */}
-            <div className="absolute inset-0 z-0">
+    <div ref={ref} className="relative w-full mb-16">
+      {/* Particle Effect with proper z-index */}
+      <div className="absolute inset-0 z-0">
         {!prefersReducedMotion && <ParticleEffect />}
       </div>
       <NoiseFilter />
-      <ScrollProgress />
-
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.1),transparent_50%)] pointer-events-none" />
 
       {/* Wave Divider */}
       <div className="absolute bottom-0 left-0 w-full overflow-hidden">
