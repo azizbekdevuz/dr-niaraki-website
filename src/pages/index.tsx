@@ -64,7 +64,7 @@ const MenuOverlay: React.FC<{ isOpen: boolean; onClose: () => void; darkMode: bo
           </button>
         </div>
         <nav className="flex flex-col items-center justify-center h-full space-y-6 md:space-y-8">
-          {['Research', 'Publications', 'Contact'].map((item) => (
+        {['Experience'].map((item) => (
             <motion.div
               key={item}
               whileHover={{ scale: 1.1 }}
@@ -152,7 +152,7 @@ const MobileMenu: React.FC<{ isOpen: boolean; onClose: () => void; darkMode: boo
         className={`fixed inset-x-0 top-16 z-50 ${darkMode ? 'bg-gray-900' : 'bg-white'} shadow-lg`}
       >
         <nav className="flex flex-col p-4">
-          {['Research', 'Publications', 'Contact'].map((item) => (
+        {['Experience'].map((item) => (
             <Link key={item} href={`/${item.toLowerCase()}`}>
               <span className={`block py-2 text-lg font-semibold ${darkMode ? 'text-white hover:text-blue-400' : 'text-gray-800 hover:text-blue-600'}`}>
                 {item}
@@ -189,7 +189,7 @@ const MainContent: React.FC<MainContentProps> = ({ isLoaded, darkMode, setDarkMo
 
   const sections = [
     { id: 'hero', content: 'Welcome' },
-    { id: 'research', content: 'Research Areas' },
+    { id: 'experience', content: 'Experience' },
     { id: 'timeline', content: 'Timeline' }
   ];
 
