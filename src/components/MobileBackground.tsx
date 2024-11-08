@@ -1,15 +1,19 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 
-type Theme = 'dark' | 'light';
+type Theme = "dark" | "light";
 
-export default function MobileBackground({ theme = 'dark' }: { theme?: Theme }) {
+export default function MobileBackground({
+  theme = "dark",
+}: {
+  theme?: Theme;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext("2d");
     if (!context) return;
 
     const dpr = window.devicePixelRatio || 1;
@@ -22,8 +26,8 @@ export default function MobileBackground({ theme = 'dark' }: { theme?: Theme }) 
       canvas.style.height = `${document.documentElement.scrollHeight}px`;
 
       const themeColors: Record<Theme, string> = {
-        dark: '#000428',
-        light: '#f0f8ff',
+        dark: "#000428",
+        light: "#f0f8ff",
       };
       canvas.style.backgroundColor = themeColors[theme as Theme];
     };
@@ -42,8 +46,8 @@ export default function MobileBackground({ theme = 'dark' }: { theme?: Theme }) 
       vy: number;
 
       constructor(canvasWidth: number, canvasHeight: number) {
-        this.x = Math.random() * canvasWidth / dpr;
-        this.y = Math.random() * canvasHeight / dpr;
+        this.x = (Math.random() * canvasWidth) / dpr;
+        this.y = (Math.random() * canvasHeight) / dpr;
         this.vx = (Math.random() - 0.5) * 0.7;
         this.vy = (Math.random() - 0.5) * 0.7;
       }
@@ -69,7 +73,7 @@ export default function MobileBackground({ theme = 'dark' }: { theme?: Theme }) 
     }
 
     function animate() {
-      if (!context || !canvas) return;  // Add this null check
+      if (!context || !canvas) return; // Add this null check
 
       hueShift += 0.3;
       context.clearRect(0, 0, canvas.width, canvas.height);
@@ -79,7 +83,9 @@ export default function MobileBackground({ theme = 'dark' }: { theme?: Theme }) 
         node.draw(context);
 
         for (let j = index + 1; j < nodeCount; j++) {
-          const distance = Math.sqrt((node.x - nodes[j].x) ** 2 + (node.y - nodes[j].y) ** 2);
+          const distance = Math.sqrt(
+            (node.x - nodes[j].x) ** 2 + (node.y - nodes[j].y) ** 2,
+          );
           if (distance < maxDistance) {
             context.beginPath();
             context.moveTo(node.x, node.y);
@@ -95,14 +101,19 @@ export default function MobileBackground({ theme = 'dark' }: { theme?: Theme }) 
 
     animate();
 
-    window.addEventListener('resize', updateCanvasSize);
-    window.addEventListener('scroll', updateCanvasSize);
+    window.addEventListener("resize", updateCanvasSize);
+    window.addEventListener("scroll", updateCanvasSize);
 
     return () => {
-      window.removeEventListener('resize', updateCanvasSize);
-      window.removeEventListener('scroll', updateCanvasSize);
+      window.removeEventListener("resize", updateCanvasSize);
+      window.removeEventListener("scroll", updateCanvasSize);
     };
   }, [theme]);
 
-  return <canvas ref={canvasRef} className="absolute top-0 left-0 w-full pointer-events-none" />;
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute top-0 left-0 w-full pointer-events-none"
+    />
+  );
 }

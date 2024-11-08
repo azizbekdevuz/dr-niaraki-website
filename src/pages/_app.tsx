@@ -1,17 +1,17 @@
-import { useEffect } from 'react';
-import type { AppProps } from 'next/app';
-import '../styles/globals.css';
-import '../styles/atomcursor.css';
-import { ThemeProvider } from 'next-themes';
-import { AnimatePresence } from 'framer-motion';
+import { useEffect } from "react";
+import type { AppProps } from "next/app";
+import "../styles/globals.css";
+import "../styles/atomcursor.css";
+import { ThemeProvider } from "next-themes";
+import { AnimatePresence } from "framer-motion";
 
 function MyApp({ Component, pageProps, router }: AppProps) {
   useEffect(() => {
     // Scroll to top on route change
     const handleRouteChange = () => window.scrollTo(0, 0);
-    router.events.on('routeChangeComplete', handleRouteChange);
+    router.events.on("routeChangeComplete", handleRouteChange);
     return () => {
-      router.events.off('routeChangeComplete', handleRouteChange);
+      router.events.off("routeChangeComplete", handleRouteChange);
     };
   }, [router]);
 

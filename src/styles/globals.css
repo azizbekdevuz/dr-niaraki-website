@@ -31,9 +31,13 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Arial', sans-serif;
-  transition: background-color 0.3s, color 0.3s;
-  cursor: url('/assets/images/cursor.png') 16 16, auto;
+  font-family: "Arial", sans-serif;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
+  cursor:
+    url("/assets/images/cursor.png") 16 16,
+    auto;
 }
 
 /* Custom Animations */
@@ -56,6 +60,6 @@ body {
   width: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: #6366F1;
+  background-color: #6366f1;
   border-radius: 10px;
 }
