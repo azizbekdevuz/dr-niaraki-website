@@ -3,6 +3,54 @@ import Image from 'next/image';
 import { motion, useAnimation, useReducedMotion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 
+interface DeviceInfo {
+  isMobile: boolean;
+  isTablet: boolean;
+  isDesktop: boolean;
+  deviceType: 'mobile' | 'tablet' | 'desktop';
+}
+
+const useDeviceDetect = (): DeviceInfo => {
+  const [deviceInfo, setDeviceInfo] = useState<DeviceInfo>({
+    isMobile: false,
+    isTablet: false,
+    isDesktop: true,
+    deviceType: 'desktop'
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      
+      const getDeviceType = (width: number): 'mobile' | 'tablet' | 'desktop' => {
+        if (width < 768) return 'mobile';
+        if (width < 1024) return 'tablet';
+        return 'desktop';
+      };
+      
+      const newDeviceInfo: DeviceInfo = {
+        isMobile: width < 768,
+        isTablet: width >= 768 && width < 1024,
+        isDesktop: width >= 1024,
+        deviceType: getDeviceType(width)
+      };
+      
+      setDeviceInfo(newDeviceInfo);
+    };
+
+    // Initial check
+    handleResize();
+
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return deviceInfo;
+};
+
 // Noise Filter Component
 const NoiseFilter = () => (
   <svg className="hidden">
@@ -77,31 +125,6 @@ const ParticleEffect: React.FC = () => {
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />;
 };
 
-// Scroll Progress Component
-const ScrollProgress = () => {
-  const [scrollProgress, setScrollProgress] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
-      const currentProgress = (window.pageYOffset / totalScroll) * 100;
-      setScrollProgress(currentProgress);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  return (
-    <div className="fixed top-0 left-0 w-full h-1 bg-gray-800 z-50">
-      <motion.div
-        className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
-        style={{ width: `${scrollProgress}%` }}
-      />
-    </div>
-  );
-};
-
 // Stat Card Component
 interface StatCardProps {
   title: string;
@@ -149,42 +172,42 @@ interface FloatingImageProps {
   src: string;
   position: string;
   delay: number;
-  showStats: string;
+  showStats?: string;
 }
 
 // Floating Image Component
 const FloatingImage: React.FC<FloatingImageProps> = ({ src, position, delay, showStats }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const device = useDeviceDetect();
   
   return (
     <motion.div
-      className={`absolute ${position} rounded-full overflow-hidden border border-purple-500/30 shadow-lg shadow-purple-500/10 cursor-pointer`}
+      className={`absolute ${position} rounded-full overflow-hidden border border-purple-500/30 shadow-lg shadow-purple-500/10 ${device.isMobile ? '' : 'cursor-pointer'}`}
       animate={{ 
-        y: [0, position.includes("top") ? -10 : 10, 0],
-        rotate: [0, position.includes("right") ? 5 : -5, 0],
-        scale: [1, 1.02, 1]
+        y: [0, position.includes("top") ? -5 : 5, 0],
+        rotate: [0, position.includes("right") ? 3 : -3, 0],
+        scale: [1, 1.01, 1]
       }}
       transition={{ 
-        duration: 4,
+        duration: device.isMobile ? 3 : 4,
         repeat: Infinity,
         ease: "easeInOut",
         delay
       }}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
+      onHoverStart={() => !device.isMobile && setIsHovered(true)}
+      onHoverEnd={() => !device.isMobile && setIsHovered(false)}
     >
       <Image 
         src={src}
         alt="Professor Gesture"
-        layout="responsive"
-        width={100}
-        height={100}
-        className="object-cover"
+        layout="fill"
+        objectFit="cover"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-gray-900/50 to-transparent" />
       
+      {/* Only show hover stats on tablet and desktop */}
       <AnimatePresence>
-        {isHovered && (
+        {isHovered && showStats && !device.isMobile && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -198,11 +221,11 @@ const FloatingImage: React.FC<FloatingImageProps> = ({ src, position, delay, sho
     </motion.div>
   );
 };
-
 // Hero Section Component
 export const HeroExperience: React.FC = () => {
   const prefersReducedMotion = useReducedMotion();
   const controls = useAnimation();
+  const device = useDeviceDetect();
   const [ref, inView] = useInView({
     threshold: 0.1,
     triggerOnce: true
@@ -214,12 +237,42 @@ export const HeroExperience: React.FC = () => {
     }
   }, [controls, inView]);
 
+  // Device-specific image positioning and sizing
+  const getImageStyles = () => {
+    if (device.isMobile) {
+      return {
+        mainImage: 'w-64 h-80',
+        secondary1Position: '-right-3 top-1/4 w-16 h-16',
+        secondary2Position: '-left-3 bottom-1/4 w-16 h-16',
+        containerStyles: 'mb-8 mx-auto px-4',
+      };
+    } else if (device.isTablet) {
+      return {
+        mainImage: 'w-68 h-88',
+        secondary1Position: '-right-5 top-1/4 w-20 h-20',
+        secondary2Position: '-left-5 bottom-1/4 w-20 h-20',
+        containerStyles: '',
+      };
+    } else {
+      return {
+        mainImage: 'w-72 h-96',
+        secondary1Position: '-right-8 top-1/4 w-24 h-24',
+        secondary2Position: '-left-8 bottom-1/4 w-20 h-20',
+        containerStyles: '',
+      };
+    }
+  };
+
+  const imageStyles = getImageStyles();
+
   return (
     <div ref={ref} className="relative w-full mb-16">
-      {/* Particle Effect with proper z-index */}
-      <div className="absolute inset-0 z-0">
-        {!prefersReducedMotion && <ParticleEffect />}
-      </div>
+      {/* Particle Effect only for desktop */}
+      {!prefersReducedMotion && device.isDesktop && (
+        <div className="absolute inset-0 z-0">
+          <ParticleEffect />
+        </div>
+      )}
       <NoiseFilter />
 
       {/* Wave Divider */}
@@ -231,29 +284,33 @@ export const HeroExperience: React.FC = () => {
           />
         </svg>
       </div>
-      <div className="relative z-10 flex items-center justify-between max-w-7xl mx-auto">
+
+      {/* Main Content */}
+      <div className={`relative z-10 flex ${device.isMobile ? 'flex-col' : 'items-center justify-between'} max-w-7xl mx-auto`}>
         {/* Left side - Professor Image */}
         <motion.div
-          initial={{ opacity: 0, x: -50 }}
+          initial={{ opacity: 0, x: device.isMobile ? 0 : -50, y: device.isMobile ? -50 : 0 }}
           animate={controls}
           variants={{
-            visible: { opacity: 1, x: 0 }
+            visible: { opacity: 1, x: 0, y: 0 }
           }}
-          className="relative group cursor-pointer"
+          className={`relative group cursor-pointer ${imageStyles.containerStyles}`}
         >
-          <div className="relative w-72 h-96">
+          <div className={`relative ${imageStyles.mainImage}`}>
+            {/* Gradient border effect */}
             <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+            
+            {/* Main image container */}
             <motion.div
               className="absolute inset-0 rounded-2xl overflow-hidden border-2 border-blue-500/30 backdrop-blur-sm bg-gray-900/40"
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: device.isDesktop ? 1.02 : 1 }}
             >
               <Image 
                 src="/assets/images/profimage.webp"
                 alt="Professor"
-                layout="responsive"
-                width={285}
-                height={381}
-                className="object-cover transition-opacity duration-300"
+                layout="fill"
+                objectFit="cover"
+                className="transition-opacity duration-300"
                 loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/20 to-transparent" />
@@ -266,37 +323,39 @@ export const HeroExperience: React.FC = () => {
               />
             </motion.div>
             
+            {/* Secondary Images - Now shown on all devices */}
             <FloatingImage 
               src="/assets/images/secondary1.webp"
-              position="-right-8 top-1/4 w-24 h-24"
+              position={imageStyles.secondary1Position}
               delay={0}
-              showStats="Research Focus: XR Technologies & Spatial Computing"
+              showStats={device.isMobile ? undefined : "Research Focus: XR Technologies & Spatial Computing"}
             />
             
             <FloatingImage 
               src="/assets/images/secondary2.webp"
-              position="-left-8 bottom-1/4 w-20 h-20"
+              position={imageStyles.secondary2Position}
               delay={0.5}
-              showStats="Teaching: Advanced Computer Science & VR/AR Development"
+              showStats={device.isMobile ? undefined : "Teaching: Advanced Computer Science & VR/AR Development"}
             />
           </div>
         </motion.div>
         
+        {/* Right side content */}
         <motion.div 
-          className="flex-1 ml-16 space-y-6"
-          initial={{ opacity: 0, x: 50 }}
+          className={`flex-1 ${device.isMobile ? 'text-center px-4' : 'ml-16'} space-y-6`}
+          initial={{ opacity: 0, x: device.isMobile ? 0 : 50, y: device.isMobile ? 50 : 0 }}
           animate={controls}
           variants={{
-            visible: { opacity: 1, x: 0 }
+            visible: { opacity: 1, x: 0, y: 0 }
           }}
         >
-          <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-blue-300 to-purple-500">
+          <h2 className={`${device.isMobile ? 'text-3xl' : 'text-4xl'} font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-blue-300 to-purple-500`}>
             Welcome to My Journey
           </h2>
-          <p className="text-xl text-gray-300/90 leading-relaxed font-light">
+          <p className={`${device.isMobile ? 'text-lg' : 'text-xl'} text-gray-300/90 leading-relaxed font-light`}>
             Exploring the intersection of technology and education through years of dedicated research, teaching, and industry collaboration.
           </p>
-          <div className="flex space-x-4">
+          <div className={`flex ${device.isMobile ? 'justify-center' : ''} space-x-4`}>
             <StatCard title="Years Experience" value="20" />
             <StatCard title="Publications" value="100" />
           </div>

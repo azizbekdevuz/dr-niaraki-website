@@ -7,6 +7,54 @@ import { Dispatch, SetStateAction } from 'react';
 
 const RotatingAtomCursor = dynamic(() => import('../components/RotatingAtomCursor'), { ssr: false });
 
+interface DeviceInfo {
+  isMobile: boolean;
+  isTablet: boolean;
+  isDesktop: boolean;
+  deviceType: 'mobile' | 'tablet' | 'desktop';
+}
+
+const useDeviceDetect = (): DeviceInfo => {
+  const [deviceInfo, setDeviceInfo] = useState<DeviceInfo>({
+    isMobile: false,
+    isTablet: false,
+    isDesktop: true,
+    deviceType: 'desktop'
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      
+      const getDeviceType = (width: number): 'mobile' | 'tablet' | 'desktop' => {
+        if (width < 768) return 'mobile';
+        if (width < 1024) return 'tablet';
+        return 'desktop';
+      };
+      
+      const newDeviceInfo: DeviceInfo = {
+        isMobile: width < 768,
+        isTablet: width >= 768 && width < 1024,
+        isDesktop: width >= 1024,
+        deviceType: getDeviceType(width)
+      };
+      
+      setDeviceInfo(newDeviceInfo);
+    };
+
+    // Initial check
+    handleResize();
+
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return deviceInfo;
+};
+
 interface ExperienceData {
   title?: string;
   role?: string;
@@ -325,6 +373,101 @@ interface AdvancedTimelineProps {
 }
   
 const AdvancedTimeline: React.FC<AdvancedTimelineProps> = ({ activeIndex, setActiveIndex, data }) => {
+  const device = useDeviceDetect();
+
+  if (device.isMobile || device.isTablet) {
+    return (
+      <div className="relative w-full py-8 md:py-12">
+        {/* Mobile/Tablet Timeline Bar */}
+        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-700">
+          <motion.div
+            className="absolute top-0 w-full bg-gradient-to-b from-blue-500 to-purple-500"
+            style={{
+              height: `${(activeIndex / (data.length - 1)) * 100}%`
+            }}
+            transition={{ duration: 0.5 }}
+          />
+        </div>
+
+        {/* Vertical Timeline Points */}
+        <div className="relative pl-8 space-y-8 md:space-y-12">
+          {data.map((exp, idx) => (
+            <motion.div
+              key={idx}
+              className="relative"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: idx * 0.1 }}
+            >
+              {/* Connection Line */}
+              <motion.div
+                className="absolute left-0 top-1/2 w-8 h-px bg-gradient-to-r from-blue-500/50 to-blue-500"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: idx * 0.1 + 0.2 }}
+              />
+
+              {/* Timeline Point with Year */}
+              <motion.button
+                className="relative group flex items-center"
+                onClick={() => setActiveIndex(idx)}
+                whileHover={{ x: 4 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                {/* Point Circle */}
+                <motion.div
+                  className={`w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center 
+                    ${idx === activeIndex
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500'
+                      : 'bg-gray-700 hover:bg-gray-600'
+                    }`}
+                  animate={{
+                    scale: idx === activeIndex ? [1, 1.2, 1] : 1
+                  }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+
+                {/* Year Label - Now Beside Point */}
+                <motion.div
+                  className={`ml-4 text-sm md:text-base font-medium
+                    ${idx === activeIndex ? 'text-blue-400' : 'text-gray-500'}`}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.1 + 0.3 }}
+                >
+                  {exp.period}
+                </motion.div>
+
+                {/* Mobile Info Preview */}
+                {idx === activeIndex && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="ml-4 text-sm text-blue-400 hidden md:block"
+                  >
+                    {exp.role}
+                  </motion.div>
+                )}
+              </motion.button>
+
+              {/* Progress Indicator - Simplified for Mobile */}
+              {idx === activeIndex && (
+                <motion.div
+                  className="absolute left-[-4px] top-1/2 transform -translate-y-1/2"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                >
+                  <div className="w-3 h-3 rounded-full bg-blue-500" />
+                </motion.div>
+              )}
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
     return (
       <div className="relative w-full py-16">
         {/* Timeline Bar */}
@@ -482,15 +625,82 @@ interface ExperienceCardProps {
   isActive: boolean;
   onClick: () => void;
 }
-
-interface ExperienceCardProps {
-  data: ExperienceData;
-  index: number;
-  isActive: boolean;
-  onClick: () => void;
-}
   
-const ExperienceCard: React.FC<ExperienceCardProps> = ({ data, index, isActive, onClick }) => (
+const ExperienceCard: React.FC<ExperienceCardProps> = ({ data, index, isActive, onClick }) => {
+  const device = useDeviceDetect();
+
+  const mobileCard = (
+    <motion.div
+      className={`relative ${isActive ? 'z-10' : 'z-0'}`}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.2 }}
+    >
+      <motion.div
+        className={`p-4 md:p-5 rounded-lg border transition-all duration-300 ${
+          isActive
+            ? 'bg-gray-800/95 border-blue-500/50 shadow-lg shadow-blue-500/20'
+            : 'bg-gray-800/90 border-gray-700/30'
+        }`}
+        whileHover={{ scale: 1.01 }}
+        onClick={onClick}
+      >
+        <div className="flex flex-col space-y-3">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-3">
+              <motion.div
+                className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center ${
+                  isActive ? 'bg-gradient-to-r from-blue-500 to-purple-500' : 'bg-gray-700'
+                }`}
+              >
+                <Briefcase className="w-5 h-5 md:w-6 md:h-6 text-white" />
+              </motion.div>
+              <div>
+                <h3 className="text-lg md:text-xl font-bold text-white">{data.title || data.role}</h3>
+                <p className="text-sm text-blue-400">{data.institution}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Period - Moved below header */}
+          <div className="flex items-center space-x-2 text-gray-400 text-sm">
+            <Calendar className="w-4 h-4" />
+            <span>{data.period}</span>
+          </div>
+
+          {/* Progress Bar */}
+          <ProgressBar progress={data.progressPercentage ?? 0} />
+
+          {/* Expandable Content */}
+          <AnimatePresence>
+            {isActive && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="space-y-2 pt-3"
+              >
+                {data.highlights?.map((highlight, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ x: -10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className="flex items-start space-x-2"
+                  >
+                    <ChevronRight className="w-4 h-4 text-blue-400 mt-1 flex-shrink-0" />
+                    <span className="text-sm text-gray-300">{highlight}</span>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+  return device.isDesktop ? (
     <motion.div
       className={`relative ${isActive ? 'z-10' : 'z-0'}`}
       initial={{ opacity: 0, y: 50 }}
@@ -565,13 +775,15 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({ data, index, isActive, 
         </div>
       </motion.div>
     </motion.div>
-  );
+  ) : mobileCard;
+};
   
   export default function Experience() {
     const [activeIndex, setActiveIndex] = useState(0);
     const [activeIndustryIndex, setActiveIndustryIndex] = useState(0);
     const [activeConsultingIndex, setActiveConsultingIndex] = useState(0);
     const [activeSection, setActiveSection] = useState(0);
+    const device = useDeviceDetect();
   
     useEffect(() => {
       const interval = setInterval(() => {
@@ -665,7 +877,7 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({ data, index, isActive, 
               )}
             </AnimatePresence>
           </div>
-          {<RotatingAtomCursor />}
+          {device.isDesktop && <RotatingAtomCursor />}
         </div>
       );
     }
