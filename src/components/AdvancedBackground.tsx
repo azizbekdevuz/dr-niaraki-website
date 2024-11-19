@@ -25,8 +25,8 @@ class Node {
   reset(canvas: HTMLCanvasElement) {
     this.x = Math.random() * canvas.width;
     this.y = Math.random() * canvas.height;
-    this.vx = (Math.random() - 0.5) * 1.1;
-    this.vy = (Math.random() - 0.5) * 1.1;
+    this.vx = (Math.random() - 0.5) * 0.5;
+    this.vy = (Math.random() - 0.5) * 0.5;
     this.targetX = this.x;
     this.targetY = this.y;
     this.fixed = false;
@@ -46,7 +46,7 @@ class Node {
       0,
       this.x,
       this.y,
-      6,
+      3,
     );
     gradient.addColorStop(0, nodeColor(hueShift));
     gradient.addColorStop(1, "transparent");
@@ -151,7 +151,10 @@ export default function AdvancedBackground({
 
       context.scale(devicePixelRatio, devicePixelRatio);
 
-      const newNodeCount = Math.floor((canvas.width * canvas.height) / 10000);
+      const newNodeCount = Math.min(
+        50, // Maximum nodes
+        Math.floor((canvas.width * canvas.height) / 10000)
+      );
       setNodeCount(newNodeCount);
 
       const gradient = context.createLinearGradient(
@@ -486,6 +489,7 @@ export default function AdvancedBackground({
     <canvas
       ref={canvasRef}
       className="absolute top-0 left-0 w-full h-full pointer-events-none"
+      style={{ height: "100vh", position: "fixed" }}
     />
   );
 }

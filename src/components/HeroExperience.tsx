@@ -4,7 +4,6 @@ import {
   motion,
   useAnimation,
   useReducedMotion,
-  AnimatePresence,
 } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 
@@ -188,65 +187,6 @@ const StatCard: React.FC<StatCardProps> = ({ title, value }) => {
   );
 };
 
-// Floating Image Component
-interface FloatingImageProps {
-  src: string;
-  position: string;
-  delay: number;
-  showStats?: string;
-}
-
-// Floating Image Component
-const FloatingImage: React.FC<FloatingImageProps> = ({
-  src,
-  position,
-  delay,
-  showStats,
-}) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const device = useDeviceDetect();
-
-  return (
-    <motion.div
-      className={`absolute ${position} rounded-full overflow-hidden border border-purple-500/30 shadow-lg shadow-purple-500/10 ${device.isMobile ? "" : "cursor-pointer"}`}
-      animate={{
-        y: [0, position.includes("top") ? -5 : 5, 0],
-        rotate: [0, position.includes("right") ? 3 : -3, 0],
-        scale: [1, 1.01, 1],
-      }}
-      transition={{
-        duration: device.isMobile ? 3 : 4,
-        repeat: Infinity,
-        ease: "easeInOut",
-        delay,
-      }}
-      onHoverStart={() => !device.isMobile && setIsHovered(true)}
-      onHoverEnd={() => !device.isMobile && setIsHovered(false)}
-    >
-      <Image
-        src={src}
-        alt="Professor Gesture"
-        layout="fill"
-        objectFit="cover"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/50 to-transparent" />
-
-      {/* Only show hover stats on tablet and desktop */}
-      <AnimatePresence>
-        {isHovered && showStats && !device.isMobile && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="absolute -top-20 left-1/2 -translate-x-1/2 bg-gray-900/90 backdrop-blur-sm p-3 rounded-lg shadow-xl w-48"
-          >
-            <p className="text-sm text-white text-center">{showStats}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-};
 // Hero Section Component
 export const HeroExperience: React.FC = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -358,29 +298,6 @@ export const HeroExperience: React.FC = () => {
                 }}
               />
             </motion.div>
-
-            {/* Secondary Images - Now shown on all devices */}
-            <FloatingImage
-              src="/assets/images/secondary1.webp"
-              position={imageStyles.secondary1Position}
-              delay={0}
-              showStats={
-                device.isMobile
-                  ? undefined
-                  : "Research Focus: XR Technologies & Spatial Computing"
-              }
-            />
-
-            <FloatingImage
-              src="/assets/images/secondary2.webp"
-              position={imageStyles.secondary2Position}
-              delay={0.5}
-              showStats={
-                device.isMobile
-                  ? undefined
-                  : "Teaching: Advanced Computer Science & VR/AR Development"
-              }
-            />
           </div>
         </motion.div>
 

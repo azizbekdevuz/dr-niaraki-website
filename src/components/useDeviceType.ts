@@ -5,13 +5,13 @@ export function useDeviceType() {
 
   useEffect(() => {
     const checkDevice = () => {
-      setIsMobile(window.innerWidth <= 768); // Mobile width threshold
+      setIsMobile(window.innerWidth <= 768);
     };
 
     window.addEventListener("resize", checkDevice);
-    checkDevice(); // Initial check on mount
+    checkDevice();
 
-    return () => window.removeEventListener("resize", checkDevice); // Cleanup
+    return () => window.removeEventListener("resize", checkDevice);
   }, []);
 
   return isMobile;
