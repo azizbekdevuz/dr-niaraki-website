@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import { HeroExperience } from "../components/HeroExperience";
-import { experienceData } from '../components//datasets/experienceData';
+import { experienceData } from "../components//datasets/experienceData";
 import SectionNavigation from "../components/SectionNavigation";
 import useDeviceDetect from "../components/useDeviceDetect";
 import AdvancedTimeline from "../components/AdvancedTimeline";

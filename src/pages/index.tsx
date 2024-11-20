@@ -62,7 +62,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div 
+    <div
       className={`relative min-h-screen overflow-x-hidden transition-colors duration-300 ${
         darkMode ? "text-white" : "text-gray-800"
       }`}
@@ -75,38 +75,41 @@ export default function Home() {
         <AdvancedBackground theme={darkMode ? "dark" : "light"} />
       )}
 
-<SmoothScrollWrapper 
-  darkMode={darkMode} 
-  sectionTitles={[
-    "Main Content",
-    "About",
-    "Research",
-    "Publications",
-    "Teaching Experience",
-    "Editorial & Peer Review",
-    "Statistics & Testimonials",
-    "Contact"
-  ]}
->
-  <div><MainContent           
-  isLoaded={isContentLoaded}
-              darkMode={darkMode}
-              textSystem={textSystem}
-              setDarkMode={setDarkMode}
-              imageHovered={imageHovered}
-              setImageHovered={setImageHovered}
-              menuOpen={menuOpen}
-              setMenuOpen={setMenuOpen}
-              activeSection={activeSection}
-              setActiveSection={setActiveSection} /></div>
-  <About darkMode={darkMode} />
-  <Research darkMode={darkMode} />
-  <Publications darkMode={darkMode} />
-  <TeachingExperience darkMode={darkMode} />
-  <EditorialPeerReview darkMode={darkMode} />
-  <StatisticsTestimonials darkMode={darkMode} />
-  <Contact darkMode={darkMode} />
-</SmoothScrollWrapper>
+      <SmoothScrollWrapper
+        darkMode={darkMode}
+        sectionTitles={[
+          "Main Content",
+          "About",
+          "Research",
+          "Publications",
+          "Teaching Experience",
+          "Editorial & Peer Review",
+          "Statistics & Testimonials",
+          "Contact",
+        ]}
+      >
+        <div>
+          <MainContent
+            isLoaded={isContentLoaded}
+            darkMode={darkMode}
+            textSystem={textSystem}
+            setDarkMode={setDarkMode}
+            imageHovered={imageHovered}
+            setImageHovered={setImageHovered}
+            menuOpen={menuOpen}
+            setMenuOpen={setMenuOpen}
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
+          />
+        </div>
+        <About darkMode={darkMode} />
+        <Research darkMode={darkMode} />
+        <Publications darkMode={darkMode} />
+        <TeachingExperience darkMode={darkMode} />
+        <EditorialPeerReview darkMode={darkMode} />
+        <StatisticsTestimonials darkMode={darkMode} />
+        <Contact darkMode={darkMode} />
+      </SmoothScrollWrapper>
 
       {!isMobile && <RotatingAtomCursor />}
     </div>

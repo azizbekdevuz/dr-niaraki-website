@@ -153,7 +153,7 @@ export default function AdvancedBackground({
 
       const newNodeCount = Math.min(
         50, // Maximum nodes
-        Math.floor((canvas.width * canvas.height) / 10000)
+        Math.floor((canvas.width * canvas.height) / 10000),
       );
       setNodeCount(newNodeCount);
 

@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import {
-  motion,
-  useAnimation,
-  useReducedMotion,
-} from "framer-motion";
+import { motion, useAnimation, useReducedMotion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 
 interface DeviceInfo {
