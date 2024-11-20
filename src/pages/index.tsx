@@ -34,7 +34,7 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState(0);
   const isMobile = useDeviceType();
-  const { isCPULoaded, isContentLoaded } = useLoadingStates(isMobile);
+  const { isContentLoaded } = useLoadingStates(isMobile);
 
   useEffect(() => {
     const handleMouseEnter = () => {
@@ -75,11 +75,21 @@ export default function Home() {
         <AdvancedBackground theme={darkMode ? "dark" : "light"} />
       )}
 
-      {isCPULoaded && (
-        <SmoothScrollWrapper darkMode={darkMode}>
-          <div>
-            <MainContent
-              isLoaded={isContentLoaded}
+<SmoothScrollWrapper 
+  darkMode={darkMode} 
+  sectionTitles={[
+    "Main Content",
+    "About",
+    "Research",
+    "Publications",
+    "Teaching Experience",
+    "Editorial & Peer Review",
+    "Statistics & Testimonials",
+    "Contact"
+  ]}
+>
+  <div><MainContent           
+  isLoaded={isContentLoaded}
               darkMode={darkMode}
               textSystem={textSystem}
               setDarkMode={setDarkMode}
@@ -88,18 +98,15 @@ export default function Home() {
               menuOpen={menuOpen}
               setMenuOpen={setMenuOpen}
               activeSection={activeSection}
-              setActiveSection={setActiveSection}
-            />
-          </div>
-          <About darkMode={darkMode} />
-          <Research darkMode={darkMode} />
-          <Publications darkMode={darkMode} />
-          <TeachingExperience darkMode={darkMode} />
-          <EditorialPeerReview darkMode={darkMode} />
-          <StatisticsTestimonials darkMode={darkMode} />
-          <Contact darkMode={darkMode} />
-        </SmoothScrollWrapper>
-      )}
+              setActiveSection={setActiveSection} /></div>
+  <About darkMode={darkMode} />
+  <Research darkMode={darkMode} />
+  <Publications darkMode={darkMode} />
+  <TeachingExperience darkMode={darkMode} />
+  <EditorialPeerReview darkMode={darkMode} />
+  <StatisticsTestimonials darkMode={darkMode} />
+  <Contact darkMode={darkMode} />
+</SmoothScrollWrapper>
 
       {!isMobile && <RotatingAtomCursor />}
     </div>
