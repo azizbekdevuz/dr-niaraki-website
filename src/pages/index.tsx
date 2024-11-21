@@ -102,13 +102,27 @@ export default function Home() {
             setActiveSection={setActiveSection}
           />
         </div>
-        <About darkMode={darkMode} />
-        <Research darkMode={darkMode} />
-        <Publications darkMode={darkMode} />
-        <TeachingExperience darkMode={darkMode} />
-        <EditorialPeerReview darkMode={darkMode} />
-        <StatisticsTestimonials darkMode={darkMode} />
-        <Contact darkMode={darkMode} />
+        <div id="about">
+          <About darkMode={darkMode} />
+        </div>
+        <div id="research">
+          <Research darkMode={darkMode} />
+        </div>
+        <div id="publications">
+          <Publications darkMode={darkMode} />
+        </div>
+        <div id="teaching-experience">
+          <TeachingExperience darkMode={darkMode} />
+        </div>
+        <div id="editorial-peer-review">
+          <EditorialPeerReview darkMode={darkMode} />
+        </div>
+        <div id="statistics-testimonials">
+          <StatisticsTestimonials darkMode={darkMode} />
+        </div>
+        <div id="contact">
+          <Contact darkMode={darkMode} />
+        </div>
       </SmoothScrollWrapper>
 
       {!isMobile && <RotatingAtomCursor />}

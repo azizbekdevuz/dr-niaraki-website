@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { ScrollContext } from "../components/ScrollContext";
 
 // Custom hook for handling scroll logic
 const useScrollHandler = (
@@ -90,6 +91,31 @@ const SmoothScrollWrapper: React.FC<SmoothScrollWrapperProps> = ({
 
   const TRANSITION_DURATION = 800;
 
+  const handleSectionChange = (newSection: number) => {
+    if (isTransitioning) return;
+    
+    setIsTransitioning(true);
+    setDirection(newSection > currentSection ? 1 : -1);
+    setCurrentSection(newSection);
+    
+    setTimeout(() => {
+      setIsTransitioning(false);
+      if (sectionRefs.current[newSection]) {
+        sectionRefs.current[newSection]?.scrollTo({
+          top: 0,
+          behavior: "smooth"
+        });
+      }
+    }, TRANSITION_DURATION);
+  };
+
+  const contextValue = {
+    currentSection,
+    setCurrentSection: handleSectionChange,
+    isTransitioning,
+    direction
+  };
+
   const variants = {
     enter: (direction: number) => ({
       y: direction > 0 ? "100%" : "-100%",
@@ -166,12 +192,13 @@ const SmoothScrollWrapper: React.FC<SmoothScrollWrapperProps> = ({
   }, [handleScroll]);
 
   return (
-    <div
-      ref={containerRef}
-      className="fixed inset-0"
-      role="region"
-      aria-label="Scrollable content sections"
-    >
+    <ScrollContext.Provider value={contextValue}>
+      <div
+        ref={containerRef}
+        className="fixed inset-0"
+        role="region"
+        aria-label="Scrollable content sections"
+      >
       {/* Navigation Controls */}
       <div className="fixed right-8 top-1/2 transform -translate-y-1/2 z-50 flex flex-col items-center gap-4">
         <button
@@ -264,6 +291,7 @@ const SmoothScrollWrapper: React.FC<SmoothScrollWrapperProps> = ({
           </div>
         </motion.div>
       </AnimatePresence>
+      
 
       {/* Progress Indicator */}
       <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
@@ -272,6 +300,7 @@ const SmoothScrollWrapper: React.FC<SmoothScrollWrapperProps> = ({
         </p>
       </div>
     </div>
+    </ScrollContext.Provider>
   );
 };
 

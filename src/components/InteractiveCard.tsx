@@ -3,13 +3,23 @@ import { motion } from "framer-motion";
 import textSystem from "./textSystem";
 import { ArrowRight } from "lucide-react";
 
-const InteractiveCard: React.FC<{
+interface InteractiveCardProps {
   icon: React.ElementType;
   title: string;
   description: string;
   delay: number;
   darkMode: boolean;
-}> = ({ icon: Icon, title, description, delay, darkMode }) => (
+  children?: React.ReactNode; // Allow custom rendering
+}
+
+const InteractiveCard: React.FC<InteractiveCardProps> = ({
+  icon: Icon,
+  title,
+  description,
+  delay,
+  darkMode,
+  children,
+}) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -44,6 +54,7 @@ const InteractiveCard: React.FC<{
     >
       {description}
     </p>
+    {children && <div className="mt-4">{children}</div>}
     <motion.div
       className={`mt-3 md:mt-4 flex items-center ${
         darkMode

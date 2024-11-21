@@ -6,14 +6,17 @@ import MenuOverlay from "./MenuOverlay";
 import MobileMenu from "./MobileMenu";
 import textSystem from "./textSystem";
 import { useDeviceType } from "./useDeviceType";
+import { useScroll } from "../components/ScrollContext";
 import InteractiveCard from "./InteractiveCard";
 import {
   Menu,
   Search,
   Sun,
   Moon,
-  Twitter,
+  Handshake,
+  GraduationCap,
   Linkedin,
+  BriefcaseBusiness,
   Github,
   ArrowDown,
 } from "lucide-react";
@@ -41,8 +44,48 @@ const MainContent: React.FC<
   menuOpen,
   setMenuOpen,
 }) => {
+  const { setCurrentSection } = useScroll();
   const isMobile = useDeviceType();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const Cards = [
+    {
+      icon: Github,
+      title: "Research Projects",
+      description: "Explore ongoing and completed research initiatives.",
+      sectionIndex: 2,
+    },
+    {
+      icon: Linkedin,
+      title: "Publications",
+      description: "Access scholarly articles and academic publications.",
+      sectionIndex: 3,
+    },
+    {
+      icon: Handshake,
+      title: "Collaborations",
+      description: "Discover opportunities for academic partnerships.",
+      sectionIndex: 7,
+    },
+  ];
+
+  const socialLinks = [
+    {
+      Icon: GraduationCap,
+      url: "https://scholar.google.com/citations?user=-V8_A5YAAAAJ&hl=en",
+      ariaLabel: "Google Scholar >"
+    },
+    {
+      Icon: Linkedin,
+      url: "https://kr.linkedin.com/in/abolghasem-sadeghi-niaraki-62669b14",
+      ariaLabel: "LinkedIn >"
+    },
+    {
+      Icon: BriefcaseBusiness,
+      url: "https://sejong.elsevierpure.com/en/persons/sadeghi-niaraki-abolghasem",
+      ariaLabel: "Current School >"
+    }
+  ];
 
   const toggleMenu = () => {
     if (isMobile) {
@@ -202,11 +245,14 @@ const MainContent: React.FC<
                 and human-computer interaction through innovative technologies.
               </p>
               <motion.button
-                className={`bg-gradient-to-r ${
+                onClick={() => {
+                  setCurrentSection(2);
+                }}
+                className={`animate-bounce bg-gradient-to-r ${
                   darkMode
                     ? "from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400"
                     : "from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                } text-white font-bold py-3 px-6 rounded-full text-lg transition-all duration-300`}
+                } text-white font-bold py-3 px-6 rounded-full text-lg transition-all duration-300`} 
                 whileHover={{
                   scale: 1.05,
                   boxShadow: darkMode
@@ -215,7 +261,7 @@ const MainContent: React.FC<
                 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Explore Research
+                <span>Explore Research </span>
               </motion.button>
             </motion.div>
 
@@ -225,10 +271,13 @@ const MainContent: React.FC<
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9 }}
             >
-              {[Twitter, Linkedin, Github].map((Icon, index) => (
+              {socialLinks.map(({ Icon, url, ariaLabel }, index) => (
                 <motion.a
                   key={index}
-                  href="#"
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={ariaLabel}
                   className={`${
                     darkMode
                       ? "text-gray-400 hover:text-blue-300"
@@ -246,42 +295,29 @@ const MainContent: React.FC<
 
         {/* Research Highlights Section */}
         <section className="py-12 md:py-20">
-          <h2
-            className={`text-3xl md:text-4xl font-bold mb-8 text-center ${
-              darkMode ? textSystem.dark.primary : textSystem.light.primary
-            }`}
-          >
+          <h2 className={`text-3xl md:text-4xl font-bold mb-8 text-center ${
+            darkMode ? textSystem.dark.primary : textSystem.light.primary
+          }`}>
             Research Highlights
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: Github,
-                title: "Research Projects",
-                description:
-                  "Explore ongoing and completed research initiatives.",
-              },
-              {
-                icon: Linkedin,
-                title: "Publications",
-                description:
-                  "Access scholarly articles and academic publications.",
-              },
-              {
-                icon: Twitter,
-                title: "Collaborations",
-                description:
-                  "Discover opportunities for academic partnerships.",
-              },
-            ].map((card, index) => (
-              <InteractiveCard
+            {Cards.map((card, index) => (
+              <div
                 key={index}
-                icon={card.icon}
-                title={card.title}
-                description={card.description}
-                delay={0.2 * (index + 1)}
-                darkMode={darkMode}
-              />
+                onClick={() => {
+                  console.log('Clicking section:', card.sectionIndex);
+                  setCurrentSection(card.sectionIndex);
+                }}
+                className="cursor-pointer"
+              >
+                <InteractiveCard
+                  icon={card.icon}
+                  title={card.title}
+                  description={card.description}
+                  delay={0.2 * (index + 1)}
+                  darkMode={darkMode}
+                />
+              </div>
             ))}
           </div>
         </section>
