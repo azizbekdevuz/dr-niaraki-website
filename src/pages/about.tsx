@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import {
-   Building, Calendar,
+  Building, Calendar, GraduationCap,
+  Award, Star,
   Book, Globe, Brain,  FileText,
   ExternalLink, Medal,
   Mail, Phone, MapPin, BarChart, ChevronRight
@@ -473,55 +474,66 @@ return (
         </div>
       </section>
   
-      {/* Career Timeline Section */}
-      <section className="py-24 bg-gradient-to-b from-transparent via-gray-900/5 to-transparent">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`text-3xl md:text-4xl font-bold text-center mb-16 bg-clip-text text-transparent bg-gradient-to-r ${
-              darkMode ? textSystem.dark.gradient : textSystem.light.gradient
+      <section className="relative space-y-8">
+        {/* Timeline line */}
+        <div className={`absolute left-8 top-0 bottom-0 w-0.5 ${
+          darkMode ? "bg-blue-500/20" : "bg-blue-200"
+        }`} />
+
+        {careerTimeline.map((item, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1 }}
+            whileHover={{ scale: 1.02 }}
+            className={`relative ml-16 p-6 rounded-xl backdrop-blur-sm ${
+              darkMode ? "bg-gray-800/40" : "bg-white/40"
             }`}
           >
-            Academic Journey
-          </motion.h2>
-  
-          <div className="space-y-8">
-            {careerTimeline.map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className={`p-6 rounded-xl backdrop-blur-sm ${
-                  darkMode ? "bg-gray-800/40" : "bg-white/40"
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className={`text-xl font-bold ${
-                      darkMode ? textSystem.dark.primary : textSystem.light.primary
-                    }`}>{item.role}</h3>
-                    <p className={`text-lg ${
-                      darkMode ? textSystem.dark.secondary : textSystem.light.secondary
-                    }`}>{item.institution}</p>
-                    <p className={`text-sm mt-2 ${
-                      darkMode ? "text-blue-400" : "text-blue-600"
-                    }`}>{item.period}</p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-sm ${
-                    darkMode 
-                      ? "bg-green-500/20 text-green-300" 
-                      : "bg-green-100 text-green-800"
-                  }`}>
-                    {item.period.includes("Present") ? "Current" : "Past"}
-                  </span>
+            {/* Timeline dot */}
+            <motion.div 
+              className={`absolute left-0 w-4 h-4 rounded-full -translate-x-[2.75rem] top-8 ${
+                item.period.includes("Present") 
+                  ? "bg-green-400"
+                  : darkMode ? "bg-blue-400" : "bg-blue-600"
+              }`}
+              whileHover={{ scale: 1.5 }}
+            />
+
+            {/* Content */}
+            <div className="relative">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className={`text-xl font-bold ${
+                    darkMode ? textSystem.dark.primary : textSystem.light.primary
+                  }`}>{item.role}</h3>
+                  <p className={`text-lg ${
+                    darkMode ? textSystem.dark.secondary : textSystem.light.secondary
+                  }`}>{item.institution}</p>
+                  <p className={`text-sm mt-2 ${
+                    darkMode ? "text-blue-400" : "text-blue-600"
+                  }`}>{item.period}</p>
                 </div>
-                <p className="mt-4">{item.details}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
+                <motion.span 
+                  whileHover={{ scale: 1.1 }}
+                  className={`px-3 py-1 rounded-full text-sm ${
+                    item.period.includes("Present")
+                      ? darkMode 
+                        ? "bg-green-500/20 text-green-300" 
+                        : "bg-green-100 text-green-800"
+                      : darkMode
+                        ? "bg-gray-700/50 text-gray-300"
+                        : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {item.period.includes("Present") ? "Current" : "Past"}
+                </motion.span>
+              </div>
+              <p className="mt-4">{item.details}</p>
+            </div>
+          </motion.div>
+        ))}
       </section>
 
       {/* Teaching & Editorial Section */}
@@ -538,55 +550,66 @@ return (
             </motion.h2>
 
             <div className="grid md:grid-cols-2 gap-8">
-            <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`p-6 rounded-xl backdrop-blur-sm ${
-                        darkMode ? "bg-gray-800/40" : "bg-white/40"
-                    }`}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`p-6 rounded-xl backdrop-blur-sm ${
+                  darkMode ? "bg-gray-800/40" : "bg-white/40"
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className={`p-2 rounded-lg ${
+                    darkMode ? "bg-blue-500/20" : "bg-blue-100"
+                  }`}>
+                    <GraduationCap className={darkMode ? "text-blue-300" : "text-blue-600"} />
+                  </div>
+                  <h3 className={`text-xl font-bold ${
+                    darkMode ? textSystem.dark.primary : textSystem.light.primary
+                  }`}>Teaching Areas</h3>
+                </div>
+
+                <div className="space-y-8">
+                  {Object.entries(teachingAreas).map(([level, courses], idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.1 }}
                     >
-                    <h3 className={`text-xl font-bold mb-6 ${
-                        darkMode ? textSystem.dark.primary : textSystem.light.primary
-                    }`}>Teaching Areas</h3>
-        
-                    <div className="space-y-6">
-                        <div>
-                        <h4 className="text-lg font-semibold mb-3">Graduate Level</h4>
-                        <div className="grid gap-2">
-                            {teachingAreas.graduate.map((course, idx) => (
-                            <div
-                                key={idx}
-                                className={`px-3 py-2 rounded-lg text-sm ${
-                                darkMode 
-                                    ? "bg-blue-500/10 text-blue-300" 
-                                    : "bg-blue-50 text-blue-800"
-                                }`}
-                            >
-                                {course}
-                            </div>
-                            ))}
-                        </div>
-                        </div>
-        
-                        <div>
-                        <h4 className="text-lg font-semibold mb-3">Undergraduate Level</h4>
-                        <div className="grid gap-2">
-                            {teachingAreas.undergraduate.map((course, idx) => (
-                            <div
-                                key={idx}
-                                className={`px-3 py-2 rounded-lg text-sm ${
-                                darkMode 
-                                    ? "bg-purple-500/10 text-purple-300" 
-                                    : "bg-purple-50 text-purple-800"
-                                }`}
-                            >
-                                {course}
-                            </div>
-                            ))}
-                        </div>
-                        </div>
-                    </div>
+                      <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg ${
+                          darkMode 
+                            ? level === "graduate" ? "bg-blue-500/20" : "bg-purple-500/20"
+                            : level === "graduate" ? "bg-blue-100" : "bg-purple-100"
+                        }`}>
+                          {level === "graduate" ? "G" : "U"}
+                        </span>
+                        {level === "graduate" ? "Graduate Level" : "Undergraduate Level"}
+                      </h4>
+                      <div className="grid gap-2">
+                        {courses.map((course, courseIdx) => (
+                          <motion.div
+                            key={courseIdx}
+                            whileHover={{ x: 10 }}
+                            className={`px-4 py-3 rounded-lg flex items-center gap-2 group ${
+                              level === "graduate"
+                                ? darkMode 
+                                  ? "bg-blue-500/10 text-blue-300" 
+                                  : "bg-blue-50 text-blue-800"
+                                : darkMode
+                                  ? "bg-purple-500/10 text-purple-300"
+                                  : "bg-purple-50 text-purple-800"
+                            }`}
+                          >
+                            <ChevronRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <span>{course}</span>
+                          </motion.div>
+                        ))}
+                      </div>
                     </motion.div>
+                  ))}
+                </div>
+              </motion.div>
 
             {/* Editorial Positions */}
             <motion.div
@@ -629,30 +652,79 @@ return (
             </div>
 
             {/* Recognition & Awards - Move outside the grid */}
-            <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`mt-12 p-6 rounded-xl backdrop-blur-sm ${
-                darkMode ? "bg-gray-800/40" : "bg-white/40"
-            }`}
-            >
-            <h3 className={`text-xl font-bold mb-6 ${
-                darkMode ? textSystem.dark.primary : textSystem.light.primary
-            }`}>Recognition & Service</h3>
-                            <div className="space-y-4">
-                        <div className={`p-4 rounded-lg ${
-                        darkMode ? "bg-gray-700/50" : "bg-gray-50"
-                        }`}>
-                        <p>Senior Member, International Engineering and Technology Institute (IETI), Hong Kong</p>
-                        <p className="text-sm text-blue-400 mt-1">Since 2015</p>
-                        </div>
-                        <div className={`p-4 rounded-lg ${
-                        darkMode ? "bg-gray-700/50" : "bg-gray-50"
-                        }`}>
-                        <p>Scientific Committee Member, SMPR Conference Series</p>
-                        </div>
-                    </div>
-            </motion.div>
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  className="mt-12"
+>
+  <div className="flex items-center gap-3 mb-8">
+    <div className={`p-2 rounded-lg ${
+      darkMode ? "bg-yellow-500/20" : "bg-yellow-100"
+    }`}>
+      <Award className={darkMode ? "text-yellow-300" : "text-yellow-600"} />
+    </div>
+    <h3 className={`text-xl font-bold ${
+      darkMode ? textSystem.dark.primary : textSystem.light.primary
+    }`}>Recognition & Service</h3>
+  </div>
+
+  <div className="grid gap-6">
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      className={`relative p-6 rounded-xl overflow-hidden ${
+        darkMode ? "bg-gray-800/40" : "bg-white/40"
+      }`}
+    >
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-orange-500/10 to-yellow-500/10"
+        animate={{
+          x: ["0%", "100%", "0%"],
+        }}
+        transition={{
+          duration: 15,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+      />
+      <div className="relative z-10">
+        <h4 className="text-lg font-semibold flex items-center gap-2">
+          <Star className={darkMode ? "text-yellow-400" : "text-yellow-600"} size={20} />
+          Senior Member
+        </h4>
+        <p className="mt-2">International Engineering and Technology Institute (IETI), Hong Kong</p>
+        <p className={`text-sm mt-2 ${
+          darkMode ? "text-blue-400" : "text-blue-600"
+        }`}>Since 2015</p>
+      </div>
+    </motion.div>
+
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      className={`relative p-6 rounded-xl overflow-hidden ${
+        darkMode ? "bg-gray-800/40" : "bg-white/40"
+      }`}
+    >
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10"
+        animate={{
+          x: ["0%", "100%", "0%"],
+        }}
+        transition={{
+          duration: 15,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+      />
+      <div className="relative z-10">
+        <h4 className="text-lg font-semibold flex items-center gap-2">
+          <Medal className={darkMode ? "text-blue-400" : "text-blue-600"} size={20} />
+          Scientific Committee Member
+        </h4>
+        <p className="mt-2">SMPR Conference Series</p>
+      </div>
+    </motion.div>
+  </div>
+</motion.div>
         </div>
         </section>
   </motion.div>

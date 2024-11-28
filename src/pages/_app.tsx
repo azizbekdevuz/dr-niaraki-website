@@ -4,6 +4,7 @@ import "../styles/globals.css";
 import "../styles/atomcursor.css";
 import { ThemeProvider } from "next-themes";
 import { AnimatePresence } from "framer-motion";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 function MyApp({ Component, pageProps, router }: AppProps) {
   useEffect(() => {
@@ -20,6 +21,7 @@ function MyApp({ Component, pageProps, router }: AppProps) {
       <AnimatePresence mode="wait">
         <Component {...pageProps} key={router.route} />
       </AnimatePresence>
+      <SpeedInsights/>
     </ThemeProvider>
   );
 }
