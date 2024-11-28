@@ -13,6 +13,7 @@
     "type-fix": "tsc --noEmit && npm run lint:fix"
   },
   "dependencies": {
+    "@vercel/analytics": "^1.4.1",
     "@vercel/speed-insights": "^1.1.0",
     "framer-motion": "^11.11.17",
     "gsap": "^3.12.5",
