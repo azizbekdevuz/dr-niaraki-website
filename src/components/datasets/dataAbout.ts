@@ -1,4 +1,4 @@
-import { FileText, Medal, Calendar, BarChart, Brain, ChevronRight } from "lucide-react"; // Add other icons as needed
+import { FileText, Medal, Calendar, BarChart } from "lucide-react"; // Add other icons as needed
 
 // Contact Information
 export interface ContactInfo {
@@ -17,7 +17,8 @@ export const contactInfo: ContactInfo = {
   department: "Dept. of Computer Science & Engineering",
   center: "eXtended Reality (XR) Center",
   university: "Sejong University",
-  address: "209- Gwangjin-gu, Gunja-dong, Neungdong-ro, Seoul, Republic of Korea",
+  address:
+    "209- Gwangjin-gu, Gunja-dong, Neungdong-ro, Seoul, Republic of Korea",
   tel: "+82 2-3408-2981",
   fax: "+82 2-3408-4321",
   email: "a.sadeghi@sejong.ac.kr",
@@ -103,13 +104,23 @@ export interface ResearchArea {
 export const researchAreas: ResearchArea[] = [
   {
     title: "AI & Large Models",
-    description: "Advanced research in artificial intelligence and large language models",
-    projects: ["AI-Enhanced GIS Systems", "Machine Learning Applications", "Neural Networks"],
+    description:
+      "Advanced research in artificial intelligence and large language models",
+    projects: [
+      "AI-Enhanced GIS Systems",
+      "Machine Learning Applications",
+      "Neural Networks",
+    ],
   },
   {
     title: "XR & Metaverse",
-    description: "Pioneering work in Extended Reality and Metaverse technologies",
-    projects: ["Super-Realistic XR Technology", "Mobile Virtual Reality", "Mixed Reality Applications"],
+    description:
+      "Pioneering work in Extended Reality and Metaverse technologies",
+    projects: [
+      "Super-Realistic XR Technology",
+      "Mobile Virtual Reality",
+      "Mixed Reality Applications",
+    ],
   },
   {
     title: "GeoAI & Smart Cities",
@@ -119,7 +130,11 @@ export const researchAreas: ResearchArea[] = [
   {
     title: "Healthcare Tech",
     description: "Technology applications in healthcare and medical systems",
-    projects: ["Telemedicine Solutions", "Health Monitoring Systems", "Medical Imaging AI"],
+    projects: [
+      "Telemedicine Solutions",
+      "Health Monitoring Systems",
+      "Medical Imaging AI",
+    ],
   },
 ];
 
@@ -167,14 +182,16 @@ export interface Patent {
 
 export const patents: Patent[] = [
   {
-    title: "SUPER-REALISTIC XR TECHNOLOGY FOR REAL-VIRTUAL INTERCONNECTED METAVERSE",
+    title:
+      "SUPER-REALISTIC XR TECHNOLOGY FOR REAL-VIRTUAL INTERCONNECTED METAVERSE",
     id: "US11,816,804B2",
     date: "2023",
     type: "US International Patent",
     status: "Registered",
   },
   {
-    title: "GEOSPATIAL INFORMATION SYSTEM-BASED MODELING FOR LEAKAGE MANAGEMENT",
+    title:
+      "GEOSPATIAL INFORMATION SYSTEM-BASED MODELING FOR LEAKAGE MANAGEMENT",
     id: "10-2356500",
     date: "2022",
     type: "Domestic Patent",

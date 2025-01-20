@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React from "react";
+import { motion } from "framer-motion";
 
 const FloatingElements: React.FC = () => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -22,7 +22,7 @@ const FloatingElements: React.FC = () => (
         transition={{
           duration: Math.random() * 15 + 10,
           repeat: Infinity,
-          repeatType: 'reverse',
+          repeatType: "reverse",
         }}
       />
     ))}

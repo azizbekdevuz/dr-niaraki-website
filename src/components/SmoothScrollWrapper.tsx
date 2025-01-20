@@ -93,17 +93,17 @@ const SmoothScrollWrapper: React.FC<SmoothScrollWrapperProps> = ({
 
   const handleSectionChange = (newSection: number) => {
     if (isTransitioning) return;
-    
+
     setIsTransitioning(true);
     setDirection(newSection > currentSection ? 1 : -1);
     setCurrentSection(newSection);
-    
+
     setTimeout(() => {
       setIsTransitioning(false);
       if (sectionRefs.current[newSection]) {
         sectionRefs.current[newSection]?.scrollTo({
           top: 0,
-          behavior: "smooth"
+          behavior: "smooth",
         });
       }
     }, TRANSITION_DURATION);
@@ -113,7 +113,7 @@ const SmoothScrollWrapper: React.FC<SmoothScrollWrapperProps> = ({
     currentSection,
     setCurrentSection: handleSectionChange,
     isTransitioning,
-    direction
+    direction,
   };
 
   const variants = {
@@ -199,107 +199,106 @@ const SmoothScrollWrapper: React.FC<SmoothScrollWrapperProps> = ({
         role="region"
         aria-label="Scrollable content sections"
       >
-      {/* Navigation Controls */}
-      <div className="fixed right-8 top-1/2 transform -translate-y-1/2 z-50 flex flex-col items-center gap-4">
-        <button
-          onClick={() =>
-            currentSection > 0 && setCurrentSection(currentSection - 1)
-          }
-          className={`p-2 rounded-full transition-all duration-300 ${
-            currentSection === 0
-              ? "opacity-50 cursor-not-allowed"
-              : "hover:bg-gray-200/20"
-          }`}
-          disabled={currentSection === 0}
-          aria-label="Previous section"
-        >
-          <ChevronUp className="w-6 h-6" />
-        </button>
+        {/* Navigation Controls */}
+        <div className="fixed right-8 top-1/2 transform -translate-y-1/2 z-50 flex flex-col items-center gap-4">
+          <button
+            onClick={() =>
+              currentSection > 0 && setCurrentSection(currentSection - 1)
+            }
+            className={`p-2 rounded-full transition-all duration-300 ${
+              currentSection === 0
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-gray-200/20"
+            }`}
+            disabled={currentSection === 0}
+            aria-label="Previous section"
+          >
+            <ChevronUp className="w-6 h-6" />
+          </button>
 
-        {/* Navigation Dots */}
-        <div
-          className="flex flex-col gap-4"
-          role="navigation"
-          aria-label="Section navigation"
-        >
-          {children.map((_, index) => (
-            <motion.button
-              key={index}
-              onClick={() => {
-                if (!isTransitioning && index !== currentSection) {
-                  setIsTransitioning(true);
-                  setDirection(index > currentSection ? 1 : -1);
-                  setCurrentSection(index);
-                }
-              }}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                currentSection === index
-                  ? darkMode
-                    ? "bg-blue-400 scale-150"
-                    : "bg-blue-600 scale-150"
-                  : darkMode
-                    ? "bg-gray-600"
-                    : "bg-gray-400"
-              }`}
-              whileHover={{ scale: 1.5 }}
-              whileTap={{ scale: 0.9 }}
-              aria-label={sectionTitles[index] || `Section ${index + 1}`}
-              aria-current={currentSection === index ? "true" : "false"}
-            />
-          ))}
+          {/* Navigation Dots */}
+          <div
+            className="flex flex-col gap-4"
+            role="navigation"
+            aria-label="Section navigation"
+          >
+            {children.map((_, index) => (
+              <motion.button
+                key={index}
+                onClick={() => {
+                  if (!isTransitioning && index !== currentSection) {
+                    setIsTransitioning(true);
+                    setDirection(index > currentSection ? 1 : -1);
+                    setCurrentSection(index);
+                  }
+                }}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                  currentSection === index
+                    ? darkMode
+                      ? "bg-blue-400 scale-150"
+                      : "bg-blue-600 scale-150"
+                    : darkMode
+                      ? "bg-gray-600"
+                      : "bg-gray-400"
+                }`}
+                whileHover={{ scale: 1.5 }}
+                whileTap={{ scale: 0.9 }}
+                aria-label={sectionTitles[index] || `Section ${index + 1}`}
+                aria-current={currentSection === index ? "true" : "false"}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={() =>
+              currentSection < children.length - 1 &&
+              setCurrentSection(currentSection + 1)
+            }
+            className={`p-2 rounded-full transition-all duration-300 ${
+              currentSection === children.length - 1
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-gray-200/20"
+            }`}
+            disabled={currentSection === children.length - 1}
+            aria-label="Next section"
+          >
+            <ChevronDown className="w-6 h-6" />
+          </button>
         </div>
 
-        <button
-          onClick={() =>
-            currentSection < children.length - 1 &&
-            setCurrentSection(currentSection + 1)
-          }
-          className={`p-2 rounded-full transition-all duration-300 ${
-            currentSection === children.length - 1
-              ? "opacity-50 cursor-not-allowed"
-              : "hover:bg-gray-200/20"
-          }`}
-          disabled={currentSection === children.length - 1}
-          aria-label="Next section"
-        >
-          <ChevronDown className="w-6 h-6" />
-        </button>
-      </div>
-
-      {/* Sections */}
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={currentSection}
-          custom={direction}
-          variants={variants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          className="absolute inset-0 w-full"
-        >
-          <div
-            ref={(el) => {
-              sectionRefs.current[currentSection] = el;
-            }}
-            className="h-full overflow-y-auto overflow-x-hidden scroll-smooth"
-            role="region"
-            aria-label={
-              sectionTitles[currentSection] || `Section ${currentSection + 1}`
-            }
+        {/* Sections */}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={currentSection}
+            custom={direction}
+            variants={variants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            className="absolute inset-0 w-full"
           >
-            {children[currentSection]}
-          </div>
-        </motion.div>
-      </AnimatePresence>
-      
+            <div
+              ref={(el) => {
+                sectionRefs.current[currentSection] = el;
+              }}
+              className="h-full overflow-y-auto overflow-x-hidden scroll-smooth"
+              role="region"
+              aria-label={
+                sectionTitles[currentSection] || `Section ${currentSection + 1}`
+              }
+            >
+              {children[currentSection]}
+            </div>
+          </motion.div>
+        </AnimatePresence>
 
-      {/* Progress Indicator */}
-      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
-        <p className="text-sm opacity-60">
-          {currentSection + 1} / {children.length}
-        </p>
+        {/* Progress Indicator */}
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+          <p className="text-sm opacity-60">
+            {currentSection + 1} / {children.length}
+          </p>
+        </div>
       </div>
-    </div>
     </ScrollContext.Provider>
   );
 };

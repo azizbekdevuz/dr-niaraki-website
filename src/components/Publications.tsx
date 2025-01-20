@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import textSystem from "./textSystem";
-import { Quote, Calendar, BookOpen, ExternalLink, ArrowRight } from "lucide-react";
+import {
+  Quote,
+  Calendar,
+  BookOpen,
+  ExternalLink,
+  ArrowRight,
+} from "lucide-react";
 
 const Publications: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
   const [hoveredPub, setHoveredPub] = useState<string | null>(null);
@@ -148,8 +154,8 @@ const Publications: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
               </span>
             </motion.a>
           </motion.div>
-                    {/* New eye-catching navigation button */}
-                    <motion.div
+          {/* New eye-catching navigation button */}
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}

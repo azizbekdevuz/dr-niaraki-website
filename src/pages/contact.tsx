@@ -1,12 +1,27 @@
-import dynamic from 'next/dynamic';
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useDeviceType } from '../components/useDeviceType';
+import dynamic from "next/dynamic";
+import Image from "next/image";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useDeviceType } from "../components/useDeviceType";
 import {
-  Mail, Phone, MapPin, Building, Globe, GraduationCap, Award,
-  BookOpen, Link2, Copy, CheckCircle, ExternalLink, MessageSquare,
-  Briefcase, Users, Star, ArrowRight, FileText, Zap, PartyPopper
-} from 'lucide-react';
+  Phone,
+  Building,
+  Globe,
+  GraduationCap,
+  Award,
+  BookOpen,
+  Link2,
+  Copy,
+  CheckCircle,
+  ExternalLink,
+  MessageSquare,
+  Users,
+  Star,
+  ArrowRight,
+  FileText,
+  Zap,
+  PartyPopper,
+} from "lucide-react";
 
 const AdvancedBackground = dynamic(
   () => import("../components/AdvancedBackground"),
@@ -23,26 +38,6 @@ const RotatingAtomCursor = dynamic(
 
 interface ContactPageProps {
   darkMode?: boolean;
-}
-
-interface ContactInfo {
-  position: {
-    title: string;
-    department: string;
-    center: string;
-    institution: string;
-    address: string;
-  };
-  affiliations: Array<{
-    title: string;
-    icon: React.ElementType;
-  }>;
-  contact: {
-    [key: string]: string;
-  };
-  online: {
-    [key: string]: string;
-  };
 }
 
 const ContactPage: React.FC<ContactPageProps> = () => {
@@ -63,32 +58,36 @@ const ContactPage: React.FC<ContactPageProps> = () => {
       department: "Dept. of Computer Science & Engineering",
       center: "eXtended Reality (XR) Research Center",
       institution: "Sejong University",
-      address: "209- Gwangjin-gu, Gunja-dong, Neungdong-ro, Seoul, Republic of Korea"
+      address:
+        "209- Gwangjin-gu, Gunja-dong, Neungdong-ro, Seoul, Republic of Korea",
     },
     affiliations: [
       { title: "Fellow at Harvard SDL", icon: Award },
       { title: "Member of AAG", icon: Users },
-      { title: "Top 2% Scientist, Stanford-Elsevier Dataset, 2024", icon: Star }
+      {
+        title: "Top 2% Scientist, Stanford-Elsevier Dataset, 2024",
+        icon: Star,
+      },
     ],
     contact: {
       tel: "+82 2-3408-2981",
       fax: "+82 2-3408-4321",
       cell: "+82 10 4253-5-313",
       officialEmail: "a.sadeghi@sejong.ac.kr",
-      personalEmail: "a.sadeqi313@gmail.com"
+      personalEmail: "a.sadeqi313@gmail.com",
     },
     online: {
       website: "www.abolghasemsadeghi-n.com",
       linkedin: "linkedin.com/in/abolghasemsadeghi-n",
-      googleScholar: "Abolghasem Sadeghi-Niaraki"
-    }
+      googleScholar: "Abolghasem Sadeghi-Niaraki",
+    },
   };
 
   const stats = [
     { icon: BookOpen, title: "Publications", value: "200+", color: "blue" },
     { icon: Award, title: "Patents", value: "42+", color: "purple" },
     { icon: GraduationCap, title: "Students", value: "2000+", color: "green" },
-    { icon: Star, title: "Global Ranking", value: "Top 2%", color: "pink" }
+    { icon: Star, title: "Global Ranking", value: "Top 2%", color: "pink" },
   ];
 
   const achievements = [
@@ -96,34 +95,36 @@ const ContactPage: React.FC<ContactPageProps> = () => {
       title: "Global Recognition",
       desc: "Top 2% Scientist Worldwide (Stanford-Elsevier 2024)",
       icon: Star,
-      colorClass: "text-yellow-500"
+      colorClass: "text-yellow-500",
     },
     {
       title: "Harvard Fellowship",
       desc: "Fellow at Harvard SDL, Center for Geographic Analysis",
       icon: Award,
-      colorClass: "text-red-500"
+      colorClass: "text-red-500",
     },
     {
       title: "Research Impact",
       desc: "42+ Patents in XR and Geo-AI Technologies",
       icon: FileText,
-      colorClass: "text-blue-500"
+      colorClass: "text-blue-500",
     },
     {
       title: "Academic Leadership",
       desc: "Leading $9.3M+ in Research Projects",
       icon: Zap,
-      colorClass: "text-purple-500"
-    }
+      colorClass: "text-purple-500",
+    },
   ];
 
   return (
-    <div className={`
+    <div
+      className={`
       relative min-h-screen overflow-hidden
-      ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}
+      ${darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"}
       transition-colors duration-500
-    `}>
+    `}
+    >
       {/* Background */}
       {isMobile ? (
         <MobileBackground theme={darkMode ? "dark" : "light"} />
@@ -132,56 +133,61 @@ const ContactPage: React.FC<ContactPageProps> = () => {
       )}
 
       {/* Dark Mode Toggle */}
-      <button 
+      <button
         onClick={() => setDarkMode(!darkMode)}
         className={`
           fixed top-4 right-4 p-3 rounded-full transition-all duration-300
-          ${darkMode 
-            ? 'bg-gray-800 text-white hover:bg-gray-700' 
-            : 'bg-gray-100 text-black hover:bg-gray-200'
+          ${
+            darkMode
+              ? "bg-gray-800 text-white hover:bg-gray-700"
+              : "bg-gray-100 text-black hover:bg-gray-200"
           }
         `}
       >
-        {darkMode ? '☀️' : '🌙'}
+        {darkMode ? "☀️" : "🌙"}
       </button>
 
       <div className="relative z-10 max-w-7xl mx-auto px-8 py-16">
         {/* Header Section */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-16"
         >
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="mb-8 flex justify-center"
           >
             <div className="relative group">
-              <motion.div 
-                animate={{ 
+              <motion.div
+                animate={{
                   rotate: [0, 360],
-                  scale: [1, 1.1, 1]
+                  scale: [1, 1.1, 1],
                 }}
-                transition={{ 
+                transition={{
                   rotate: { duration: 20, repeat: Infinity, ease: "linear" },
-                  scale: { duration: 2, repeat: Infinity, repeatType: "reverse" }
+                  scale: {
+                    duration: 2,
+                    repeat: Infinity,
+                    repeatType: "reverse",
+                  },
                 }}
                 className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 opacity-20 blur-md group-hover:opacity-30"
               />
               <div className="relative w-48 h-48 rounded-full overflow-hidden border-2 border-white/10 shadow-2xl flex items-center justify-center">
-                <img
+                <Image
                   src="/assets/images/contact-image.png"
                   alt="Dr. Sadeghi-Niaraki"
                   onLoad={() => setImageLoaded(true)}
                   onError={() => {
-                    console.error('Image failed to load');
+                    console.error("Image failed to load");
                     setImageLoaded(false);
                   }}
                   className={`
                     absolute inset-0 w-full h-full object-cover transform transition-transform duration-700 
                     group-hover:scale-110
-                    ${imageLoaded ? 'opacity-100' : 'opacity-0'}
+                    ${imageLoaded ? "opacity-100" : "opacity-0"}
                   `}
                 />
                 {!imageLoaded && (
@@ -196,18 +202,18 @@ const ContactPage: React.FC<ContactPageProps> = () => {
               </div>
             </div>
           </motion.div>
-          
-          <motion.h1 
+
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400"
           >
             Contact & Connect
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`text-xl ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}
+            className={`text-xl ${darkMode ? "text-gray-300" : "text-gray-600"}`}
           >
             Let's collaborate on innovative research and projects
           </motion.p>
@@ -224,7 +230,7 @@ const ContactPage: React.FC<ContactPageProps> = () => {
               whileHover={{ scale: 1.02 }}
               className={`
                 p-6 rounded-2xl
-                ${darkMode ? 'bg-gray-800' : 'bg-white'}
+                ${darkMode ? "bg-gray-800" : "bg-white"}
                 shadow-lg backdrop-blur-sm overflow-hidden group
               `}
             >
@@ -232,7 +238,9 @@ const ContactPage: React.FC<ContactPageProps> = () => {
                 <stat.icon className={`w-8 h-8 text-${stat.color}-500`} />
                 <div>
                   <div className="text-2xl font-bold">{stat.value}</div>
-                  <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <div
+                    className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
+                  >
                     {stat.title}
                   </div>
                 </div>
@@ -244,18 +252,20 @@ const ContactPage: React.FC<ContactPageProps> = () => {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Academic Profile */}
-          <div className={`
+          <div
+            className={`
             p-6 rounded-2xl
-            ${darkMode ? 'bg-gray-800' : 'bg-white'}
+            ${darkMode ? "bg-gray-800" : "bg-white"}
             shadow-lg lg:col-span-2
-          `}>
+          `}
+          >
             <div className="flex items-start gap-4">
               <Building className="w-6 h-6 text-blue-500 flex-shrink-0 mt-1" />
               <div>
                 <h2 className="text-2xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
                   Academic Profile
                 </h2>
-                <motion.div 
+                <motion.div
                   className="space-y-3"
                   initial="hidden"
                   animate="show"
@@ -263,33 +273,37 @@ const ContactPage: React.FC<ContactPageProps> = () => {
                     hidden: { opacity: 0 },
                     show: {
                       opacity: 1,
-                      transition: { staggerChildren: 0.1 }
-                    }
+                      transition: { staggerChildren: 0.1 },
+                    },
                   }}
                 >
-                  {Object.entries(contactInfo.position).map(([key, value], index) => (
-                    <motion.p
-                      key={key}
-                      variants={{
-                        hidden: { opacity: 0, x: -20 },
-                        show: { opacity: 1, x: 0 }
-                      }}
-                      className={index === 0 ? "font-semibold text-lg" : ""}
-                    >
-                      {value}
-                    </motion.p>
-                  ))}
+                  {Object.entries(contactInfo.position).map(
+                    ([key, value], index) => (
+                      <motion.p
+                        key={key}
+                        variants={{
+                          hidden: { opacity: 0, x: -20 },
+                          show: { opacity: 1, x: 0 },
+                        }}
+                        className={index === 0 ? "font-semibold text-lg" : ""}
+                      >
+                        {value}
+                      </motion.p>
+                    ),
+                  )}
                 </motion.div>
               </div>
             </div>
           </div>
 
           {/* Contact Information */}
-          <div className={`
+          <div
+            className={`
             p-6 rounded-2xl
-            ${darkMode ? 'bg-gray-800' : 'bg-white'}
+            ${darkMode ? "bg-gray-800" : "bg-white"}
             shadow-lg
-          `}>
+          `}
+          >
             <div className="flex items-start gap-4">
               <Phone className="w-6 h-6 text-purple-500 flex-shrink-0 mt-1" />
               <div className="flex-1">
@@ -306,7 +320,7 @@ const ContactPage: React.FC<ContactPageProps> = () => {
                     >
                       <div className="flex items-center justify-between">
                         <span className="capitalize text-sm">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}:
+                          {key.replace(/([A-Z])/g, " $1").trim()}:
                         </span>
                         <button
                           onClick={() => handleCopy(value, key)}
@@ -336,11 +350,13 @@ const ContactPage: React.FC<ContactPageProps> = () => {
           </div>
 
           {/* Professional Links */}
-          <div className={`
+          <div
+            className={`
             p-6 rounded-2xl 
-            ${darkMode ? 'bg-gray-800' : 'bg-white'}
+            ${darkMode ? "bg-gray-800" : "bg-white"}
             shadow-lg
-          `}>
+          `}
+          >
             <div className="flex items-start gap-4">
               <Link2 className="w-6 h-6 text-pink-500 flex-shrink-0 mt-1" />
               <div className="flex-1">
@@ -355,15 +371,17 @@ const ContactPage: React.FC<ContactPageProps> = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-between p-3 rounded-lg group"
-                      whileHover={{ 
+                      whileHover={{
                         scale: 1.02,
-                        backgroundColor: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' 
+                        backgroundColor: darkMode
+                          ? "rgba(255,255,255,0.05)"
+                          : "rgba(0,0,0,0.05)",
                       }}
                       whileTap={{ scale: 0.98 }}
                     >
                       <span className="capitalize flex items-center">
                         <Globe className="w-4 h-4 mr-2 text-blue-500" />
-                        {platform.replace(/([A-Z])/g, ' $1').trim()}
+                        {platform.replace(/([A-Z])/g, " $1").trim()}
                       </span>
                       <div className="flex items-center space-x-2">
                         <span className="text-sm opacity-60">{url}</span>
@@ -377,11 +395,13 @@ const ContactPage: React.FC<ContactPageProps> = () => {
           </div>
 
           {/* Achievements */}
-          <div className={`
+          <div
+            className={`
             p-6 rounded-2xl
-            ${darkMode ? 'bg-gray-800' : 'bg-white'}
+            ${darkMode ? "bg-gray-800" : "bg-white"}
             shadow-lg lg:col-span-2
-          `}>
+          `}
+          >
             <div className="flex items-start gap-4">
               <PartyPopper className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
               <div>
@@ -394,17 +414,24 @@ const ContactPage: React.FC<ContactPageProps> = () => {
                       key={index}
                       className={`
                         p-4 rounded-2xl transition-all duration-300
-                        ${darkMode 
-                          ? 'bg-gray-750 hover:bg-gray-700' 
-                          : 'bg-gray-50 hover:bg-gray-100'
+                        ${
+                          darkMode
+                            ? "bg-gray-750 hover:bg-gray-700"
+                            : "bg-gray-50 hover:bg-gray-100"
                         }
                       `}
                       whileHover={{ scale: 1.02 }}
                       transition={{ type: "spring", stiffness: 300 }}
                     >
-                      <achievement.icon className={`w-8 h-8 mb-2 ${achievement.colorClass}`} />
-                      <h3 className="font-semibold mb-1">{achievement.title}</h3>
-                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <achievement.icon
+                        className={`w-8 h-8 mb-2 ${achievement.colorClass}`}
+                      />
+                      <h3 className="font-semibold mb-1">
+                        {achievement.title}
+                      </h3>
+                      <p
+                        className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
+                      >
                         {achievement.desc}
                       </p>
                     </motion.div>
@@ -437,9 +464,10 @@ const ContactPage: React.FC<ContactPageProps> = () => {
               whileTap={{ scale: 0.98 }}
               className={`
                 relative px-8 py-4 rounded-full
-                ${darkMode 
-                  ? 'bg-gray-800 hover:bg-gray-700' 
-                  : 'bg-white hover:bg-gray-50'
+                ${
+                  darkMode
+                    ? "bg-gray-800 hover:bg-gray-700"
+                    : "bg-white hover:bg-gray-50"
                 } 
                 text-lg font-semibold transition-all duration-300
                 flex items-center space-x-3
@@ -459,17 +487,20 @@ const ContactPage: React.FC<ContactPageProps> = () => {
           transition={{ delay: 0.5 }}
           className={`
             mt-16 pt-8 
-            ${darkMode 
-              ? 'border-t border-gray-800' 
-              : 'border-t border-gray-200'
+            ${
+              darkMode ? "border-t border-gray-800" : "border-t border-gray-200"
             }
           `}
         >
           <div className="text-center">
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            <p
+              className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
+            >
               Located at Sejong University • Seoul, South Korea
             </p>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            <p
+              className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
+            >
               © {new Date().getFullYear()} Dr. Abolghasem Sadeghi-Niaraki
             </p>
           </div>

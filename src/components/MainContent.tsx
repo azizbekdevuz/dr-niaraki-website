@@ -9,10 +9,6 @@ import { useDeviceType } from "./useDeviceType";
 import { useScroll } from "../components/ScrollContext";
 import InteractiveCard from "./InteractiveCard";
 import {
-  Menu,
-  Search,
-  Sun,
-  Moon,
   Handshake,
   GraduationCap,
   Linkedin,
@@ -38,7 +34,6 @@ const MainContent: React.FC<
 > = ({
   isLoaded,
   darkMode,
-  setDarkMode,
   imageHovered,
   setImageHovered,
   menuOpen,
@@ -73,27 +68,19 @@ const MainContent: React.FC<
     {
       Icon: GraduationCap,
       url: "https://scholar.google.com/citations?user=-V8_A5YAAAAJ&hl=en",
-      ariaLabel: "Google Scholar >"
+      ariaLabel: "Google Scholar >",
     },
     {
       Icon: Linkedin,
       url: "https://kr.linkedin.com/in/abolghasem-sadeghi-niaraki-62669b14",
-      ariaLabel: "LinkedIn >"
+      ariaLabel: "LinkedIn >",
     },
     {
       Icon: BriefcaseBusiness,
       url: "https://sejong.elsevierpure.com/en/persons/sadeghi-niaraki-abolghasem",
-      ariaLabel: "Current School >"
-    }
+      ariaLabel: "Current School >",
+    },
   ];
-
-  const toggleMenu = () => {
-    if (isMobile) {
-      setMobileMenuOpen(!mobileMenuOpen);
-    } else {
-      setMenuOpen(!menuOpen);
-    }
-  };
 
   return (
     <motion.div
@@ -226,7 +213,7 @@ const MainContent: React.FC<
                   darkMode
                     ? "from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400"
                     : "from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                } text-white font-bold py-3 px-6 rounded-full text-lg transition-all duration-300`} 
+                } text-white font-bold py-3 px-6 rounded-full text-lg transition-all duration-300`}
                 whileHover={{
                   scale: 1.05,
                   boxShadow: darkMode
@@ -269,9 +256,11 @@ const MainContent: React.FC<
 
         {/* Research Highlights Section */}
         <section className="py-12 md:py-20">
-          <h2 className={`text-3xl md:text-4xl font-bold mb-8 text-center ${
-            darkMode ? textSystem.dark.primary : textSystem.light.primary
-          }`}>
+          <h2
+            className={`text-3xl md:text-4xl font-bold mb-8 text-center ${
+              darkMode ? textSystem.dark.primary : textSystem.light.primary
+            }`}
+          >
             Research Highlights
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -279,7 +268,7 @@ const MainContent: React.FC<
               <div
                 key={index}
                 onClick={() => {
-                  console.log('Clicking section:', card.sectionIndex);
+                  console.log("Clicking section:", card.sectionIndex);
                   setCurrentSection(card.sectionIndex);
                 }}
                 className="cursor-pointer"

@@ -13,7 +13,7 @@ import {
   Clock,
   ArrowRight,
   X,
-  ExternalLink
+  ExternalLink,
 } from "lucide-react";
 
 const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
@@ -166,8 +166,8 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
           >
             Research Highlights
           </motion.h2>
-                    {/* New Research Page Button */}
-                    <motion.div
+          {/* New Research Page Button */}
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}

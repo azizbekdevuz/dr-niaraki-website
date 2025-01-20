@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import Navbar from "../components/Navbar";
 
 const AdvancedBackground = dynamic(
   () => import("../components/AdvancedBackground"),

@@ -1,5 +1,5 @@
 // ScrollContext.tsx
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from "react";
 
 interface ScrollContextType {
   currentSection: number;
@@ -15,10 +15,12 @@ export const ScrollContext = createContext<ScrollContextType>({
   direction: 0,
 });
 
-export const ScrollProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const ScrollProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [currentSection, setCurrentSection] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [direction, setDirection] = useState(0);
+  const [isTransitioning] = useState(false);
+  const [direction] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,7 +29,8 @@ export const ScrollProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const sections = document.querySelectorAll("[data-section]");
         const scrollY = window.scrollY;
         sections.forEach((section, index) => {
-          const offsetTop = section.getBoundingClientRect().top + window.scrollY;
+          const offsetTop =
+            section.getBoundingClientRect().top + window.scrollY;
           if (scrollY >= offsetTop - window.innerHeight / 2) {
             setCurrentSection(index);
           }
@@ -51,8 +54,13 @@ export const ScrollProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 export const useScroll = () => useContext(ScrollContext);
 
 // Button Navigation and Scroll Logic
-export const scrollToSection = (sectionIndex: number, smooth: boolean = true) => {
-  const sectionElement = document.querySelector(`[data-section="section-${sectionIndex}"]`);
+export const scrollToSection = (
+  sectionIndex: number,
+  smooth: boolean = true,
+) => {
+  const sectionElement = document.querySelector(
+    `[data-section="section-${sectionIndex}"]`,
+  );
 
   if (sectionElement) {
     sectionElement.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });

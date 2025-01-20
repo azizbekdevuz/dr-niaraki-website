@@ -1,9 +1,15 @@
-import React, { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Layers, Sparkles, Newspaper, Calendar, ChevronRight } from 'lucide-react';
-import { consultingData } from '../components/datasets/consultingData';
-import { experienceData } from '../components/datasets/experienceData';
-import { industryExperienceData } from '../components/datasets/industryExperienceData';
+import React, { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Layers,
+  Sparkles,
+  Newspaper,
+  Calendar,
+  ChevronRight,
+} from "lucide-react";
+import { consultingData } from "../components/datasets/consultingData";
+import { experienceData } from "../components/datasets/experienceData";
+import { industryExperienceData } from "../components/datasets/industryExperienceData";
 
 // Import ExperienceData type or define it here
 interface ExperienceData {
@@ -22,42 +28,42 @@ interface ExperienceData {
   location?: string;
 }
 
-type DatasetType = 'experience' | 'industry' | 'consulting';
+type DatasetType = "experience" | "industry" | "consulting";
 
-const DATASET_TYPES: DatasetType[] = ['experience', 'industry', 'consulting'];
+const DATASET_TYPES: DatasetType[] = ["experience", "industry", "consulting"];
 
 // Helper function to normalize tags
 const normalizeTags = (tags: string | string[] | undefined): string[] => {
   if (!tags) return [];
-  return typeof tags === 'string' ? [tags] : tags;
+  return typeof tags === "string" ? [tags] : tags;
 };
 
 const ExperienceShowcase: React.FC = () => {
-  const [activeSet, setActiveSet] = useState<DatasetType>('experience');
+  const [activeSet, setActiveSet] = useState<DatasetType>("experience");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  
+
   const getDataset = useCallback((type: DatasetType): ExperienceData[] => {
-    switch(type) {
-      case 'experience':
+    switch (type) {
+      case "experience":
         return experienceData;
-      case 'industry':
+      case "industry":
         return industryExperienceData;
-      case 'consulting':
+      case "consulting":
         return consultingData;
       default:
         return [];
     }
   }, []);
 
-   // New function to render expanded content
-   const renderExpandedContent = (item: ExperienceData) => {
+  // New function to render expanded content
+  const renderExpandedContent = (item: ExperienceData) => {
     const normalizedTags = normalizeTags(item.tags);
-    
+
     return (
       <motion.div
         initial={{ height: 0, opacity: 0 }}
-        animate={{ height: 'auto', opacity: 1 }}
+        animate={{ height: "auto", opacity: 1 }}
         exit={{ height: 0, opacity: 0 }}
         transition={{ duration: 0.3 }}
         className="overflow-hidden space-y-4"
@@ -87,10 +93,15 @@ const ExperienceShowcase: React.FC = () => {
         {/* Highlights */}
         {item.highlights && item.highlights.length > 0 && (
           <div className="space-y-2">
-            <div className="text-sm font-semibold text-blue-300">Highlights</div>
+            <div className="text-sm font-semibold text-blue-300">
+              Highlights
+            </div>
             <ul className="space-y-1">
               {item.highlights.map((highlight, idx) => (
-                <li key={idx} className="text-sm text-gray-300 flex items-start gap-2">
+                <li
+                  key={idx}
+                  className="text-sm text-gray-300 flex items-start gap-2"
+                >
                   <ChevronRight className="w-4 h-4 mt-1 flex-shrink-0 text-blue-400" />
                   <span>{highlight}</span>
                 </li>
@@ -101,15 +112,13 @@ const ExperienceShowcase: React.FC = () => {
 
         {/* Details */}
         {item.details && (
-          <p className="text-sm text-gray-300">
-            {item.details}
-          </p>
+          <p className="text-sm text-gray-300">{item.details}</p>
         )}
 
         {/* Progress Percentage */}
         {item.progressPercentage && (
           <div className="w-full bg-blue-900/30 rounded-full h-2 overflow-hidden">
-            <div 
+            <div
               className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
               style={{ width: `${item.progressPercentage}%` }}
             />
@@ -132,14 +141,14 @@ const ExperienceShowcase: React.FC = () => {
       </motion.div>
     );
   };
-  
+
   const getIcon = (type: DatasetType) => {
-    switch(type) {
-      case 'experience':
+    switch (type) {
+      case "experience":
         return Newspaper;
-      case 'industry':
+      case "industry":
         return Layers;
-      case 'consulting':
+      case "consulting":
         return Sparkles;
       default:
         return Newspaper;
@@ -157,16 +166,18 @@ const ExperienceShowcase: React.FC = () => {
               key={type}
               onClick={() => setActiveSet(type)}
               className={`relative p-6 rounded-full ${
-                activeSet === type 
-                  ? 'bg-gradient-to-br from-blue-500 to-purple-500'
-                  : 'bg-blue-900/20'
+                activeSet === type
+                  ? "bg-gradient-to-br from-blue-500 to-purple-500"
+                  : "bg-blue-900/20"
               }`}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Icon className={`w-6 h-6 ${
-                activeSet === type ? 'text-white' : 'text-blue-400'
-              }`} />
+              <Icon
+                className={`w-6 h-6 ${
+                  activeSet === type ? "text-white" : "text-blue-400"
+                }`}
+              />
               {activeSet === type && (
                 <motion.div
                   className="absolute inset-0 rounded-full"
@@ -178,10 +189,11 @@ const ExperienceShowcase: React.FC = () => {
                   transition={{
                     duration: 2,
                     repeat: Infinity,
-                    ease: "easeInOut"
+                    ease: "easeInOut",
                   }}
                   style={{
-                    background: 'linear-gradient(45deg, rgba(59,130,246,0.5), rgba(147,51,234,0.5))',
+                    background:
+                      "linear-gradient(45deg, rgba(59,130,246,0.5), rgba(147,51,234,0.5))",
                   }}
                 />
               )}
@@ -203,24 +215,30 @@ const ExperienceShowcase: React.FC = () => {
               className="relative"
               onHoverStart={() => setHoveredId(`${activeSet}-${idx}`)}
               onHoverEnd={() => setHoveredId(null)}
-              onClick={() => setExpandedId(
-                expandedId === `${activeSet}-${idx}` ? null : `${activeSet}-${idx}`
-              )}
+              onClick={() =>
+                setExpandedId(
+                  expandedId === `${activeSet}-${idx}`
+                    ? null
+                    : `${activeSet}-${idx}`,
+                )
+              }
             >
-              <div className={`
+              <div
+                className={`
                 relative overflow-hidden rounded-lg p-6
-                ${hoveredId === `${activeSet}-${idx}` ? 'bg-blue-900/40' : 'bg-blue-900/20'}
+                ${hoveredId === `${activeSet}-${idx}` ? "bg-blue-900/40" : "bg-blue-900/20"}
                 backdrop-blur-lg transition-all duration-300
-              `}>
+              `}
+              >
                 {/* Ambient Background */}
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 opacity-50" />
-                
+
                 {/* Content */}
                 <div className="relative z-10">
                   <h3 className="text-xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
                     {item.title || item.role}
                   </h3>
-                  
+
                   <div className="flex items-center gap-2 text-sm text-blue-200 mb-3">
                     <Calendar className="w-4 h-4" />
                     <span>{item.period}</span>

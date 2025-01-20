@@ -35,38 +35,29 @@ function MyApp({ Component, pageProps, router }: AppProps) {
   if (!mounted) return null;
 
   return (
-    <ThemeProvider 
-      attribute="class" 
-      defaultTheme="dark" 
-      enableSystem={false}
-    >
-      <div className={`
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <div
+        className={`
         min-h-screen 
-        ${darkMode 
-          ? 'bg-gray-900 text-white' 
-          : 'bg-white text-gray-900'
-        } 
+        ${darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"} 
         transition-colors duration-300
-      `}>
+      `}
+      >
         <Head>
           <title>Dr. Abolghasem Sadeghi-Niaraki</title>
-          <meta name="description" content="Research Portfolio of Dr. Abolghasem Sadeghi-Niaraki" />
+          <meta
+            name="description"
+            content="Research Portfolio of Dr. Abolghasem Sadeghi-Niaraki"
+          />
           <link rel="icon" href="/favicon.ico" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
         </Head>
 
-        <Navbar 
-          darkMode={darkMode} 
-          toggleDarkMode={toggleDarkMode} 
-        />
+        <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
 
         <main className="pt-20">
           <AnimatePresence mode="wait">
-            <Component 
-              {...pageProps} 
-              key={router.route}
-              darkMode={darkMode} 
-            />
+            <Component {...pageProps} key={router.route} darkMode={darkMode} />
           </AnimatePresence>
         </main>
 
