@@ -115,32 +115,6 @@ const MainContent: React.FC<
             }`}
           />
         </Link>
-
-        <div className="flex items-center space-x-4 md:space-x-6">
-          <Search />
-
-          <motion.button
-            onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            {darkMode ? (
-              <Sun className="w-5 h-5 md:w-6 md:h-6" />
-            ) : (
-              <Moon className="w-5 h-5 md:w-6 md:h-6" />
-            )}
-          </motion.button>
-
-          <motion.button
-            onClick={toggleMenu}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <Menu className="w-5 h-5 md:w-6 md:h-6" />
-          </motion.button>
-        </div>
       </motion.header>
 
       {/* Add the main content below the header */}

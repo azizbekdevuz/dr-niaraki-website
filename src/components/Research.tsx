@@ -13,6 +13,7 @@ import {
   Clock,
   ArrowRight,
   X,
+  ExternalLink
 } from "lucide-react";
 
 const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
@@ -165,6 +166,27 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
           >
             Research Highlights
           </motion.h2>
+                    {/* New Research Page Button */}
+                    <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex justify-center mt-8 relative z-20"
+          >
+            <motion.a
+              href="/research"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`flex items-center gap-2 px-8 py-4 rounded-xl text-lg font-semibold shadow-lg transition-all duration-300 ${
+                darkMode
+                  ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white"
+                  : "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white"
+              }`}
+            >
+              Explore All Research
+              <ExternalLink size={20} />
+            </motion.a>
+          </motion.div>
         </div>
 
         {/* Category Filters */}

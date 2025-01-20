@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import Navbar from "../components/Navbar";
 
 const AdvancedBackground = dynamic(
   () => import("../components/AdvancedBackground"),
@@ -14,10 +15,10 @@ const RotatingAtomCursor = dynamic(
   { ssr: false },
 );
 
+import LoadingScreen from "./LoadingScreen";
 import { useDeviceType } from "../components/useDeviceType";
 import { useLoadingStates } from "../components/useLoadingStates";
 import textSystem from "../components/textSystem";
-import LoadingScreen from "./LoadingScreen";
 import SmoothScrollWrapper from "../components/SmoothScrollWrapper";
 import MainContent from "../components/MainContent";
 import About from "../components/About";
@@ -30,11 +31,11 @@ import Contact from "../components/Contact";
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(true);
+  const isMobile = useDeviceType();
+  const { isContentLoaded } = useLoadingStates(isMobile);
   const [imageHovered, setImageHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState(0);
-  const isMobile = useDeviceType();
-  const { isContentLoaded } = useLoadingStates(isMobile);
 
   useEffect(() => {
     const handleMouseEnter = () => {

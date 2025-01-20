@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import textSystem from "./textSystem";
-import { Quote, Calendar, BookOpen, ExternalLink } from "lucide-react";
+import { Quote, Calendar, BookOpen, ExternalLink, ArrowRight } from "lucide-react";
 
 const Publications: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
   const [hoveredPub, setHoveredPub] = useState<string | null>(null);
   const [activeYear, setActiveYear] = useState("2024");
+  const [isButtonHovered, setIsButtonHovered] = useState(false);
 
   const publications = [
     {
@@ -102,6 +103,95 @@ const Publications: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
           >
             Publications
           </motion.h2>
+
+          {/* New eye-catching navigation button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex justify-center mt-8"
+          >
+            <motion.a
+              href="/publications"
+              onHoverStart={() => setIsButtonHovered(true)}
+              onHoverEnd={() => setIsButtonHovered(false)}
+              className={`group relative overflow-hidden rounded-full inline-flex items-center gap-2 px-8 py-3 font-semibold transition-all duration-300 z-20 ${
+                darkMode
+                  ? "bg-blue-500 hover:bg-blue-600 text-white"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
+            >
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500"
+                animate={{
+                  x: isButtonHovered ? ["0%", "100%"] : "0%",
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatType: "mirror",
+                }}
+              />
+              <span className="relative z-10 flex items-center gap-2">
+                View All Publications
+                <motion.div
+                  animate={{
+                    x: isButtonHovered ? [0, 5, 0] : 0,
+                  }}
+                  transition={{
+                    duration: 1,
+                    repeat: Infinity,
+                  }}
+                >
+                  <ArrowRight size={20} />
+                </motion.div>
+              </span>
+            </motion.a>
+          </motion.div>
+                    {/* New eye-catching navigation button */}
+                    <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex justify-center mt-8"
+          >
+            <motion.a
+              href="/patents"
+              onHoverStart={() => setIsButtonHovered(true)}
+              onHoverEnd={() => setIsButtonHovered(false)}
+              className={`group relative overflow-hidden rounded-full inline-flex items-center gap-2 px-8 py-3 font-semibold transition-all duration-300 z-20 ${
+                darkMode
+                  ? "bg-blue-500 hover:bg-blue-600 text-white"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
+            >
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500"
+                animate={{
+                  x: isButtonHovered ? ["0%", "100%"] : "0%",
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatType: "mirror",
+                }}
+              />
+              <span className="relative z-10 flex items-center gap-2">
+                View All Patents
+                <motion.div
+                  animate={{
+                    x: isButtonHovered ? [0, 5, 0] : 0,
+                  }}
+                  transition={{
+                    duration: 1,
+                    repeat: Infinity,
+                  }}
+                >
+                  <ArrowRight size={20} />
+                </motion.div>
+              </span>
+            </motion.a>
+          </motion.div>
         </div>
 
         {/* Year Navigation Tabs */}

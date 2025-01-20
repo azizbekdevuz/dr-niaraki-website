@@ -128,10 +128,37 @@ const Contact: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
             animate={{ opacity: 1 }}
             className={`text-center text-lg ${
               darkMode ? "text-gray-400" : "text-gray-600"
-            }`}
+            } mb-8`}
           >
             How about collaborating on innovative research and projects?
           </motion.p>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex justify-center"
+          >
+            <motion.button
+              whileHover={{ scale: 1.05, boxShadow: "0 10px 30px -10px rgba(79, 70, 229, 0.4)" }}
+              whileTap={{ scale: 0.95 }}
+              className={`relative group px-8 py-4 rounded-full overflow-hidden ${
+                darkMode 
+                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white" 
+                  : "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
+              }`}
+              onClick={() => window.location.href = '/contact'}
+            >
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{ mixBlendMode: "overlay" }}
+              />
+              <div className="relative flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                <span className="font-semibold">Let's Connect</span>
+              </div>
+              <div className="absolute inset-0 rounded-full border-2 border-white/20" />
+            </motion.button>
+          </motion.div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start">

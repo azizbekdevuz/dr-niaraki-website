@@ -5,6 +5,9 @@ export interface ExperienceData {
   organization?: string; //organization & company name
   period: string; //period of job or experience
   additionalInformation?: string; //extra details
+  description?: string;
+  tags?: string | string[];
+  icon?: React.ElementType;
   details?: string; //more sub details
   highlights: string[]; //key parts
   progressPercentage?: number; //indicator of progress level
