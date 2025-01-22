@@ -177,6 +177,7 @@ const ContactPage: React.FC<ContactPageProps> = () => {
               />
               <div className="relative w-48 h-48 rounded-full overflow-hidden border-2 border-white/10 shadow-2xl flex items-center justify-center">
                 <Image
+                width="192" height="192"
                   src="/assets/images/contact-image.png"
                   alt="Dr. Sadeghi-Niaraki"
                   onLoad={() => setImageLoaded(true)}
@@ -193,9 +194,9 @@ const ContactPage: React.FC<ContactPageProps> = () => {
                 {!imageLoaded && (
                   <div className="absolute inset-0 flex items-center justify-center bg-gray-200/50 backdrop-blur-sm">
                     <span className="text-gray-500 text-sm opacity-70 text-center">
-                      Profile Image
+                      Let's Do
                       <br />
-                      Not Available
+                      It Together
                     </span>
                   </div>
                 )}

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import MenuOverlay from "./MenuOverlay";
 import MobileMenu from "./MobileMenu";
 import textSystem from "./textSystem";
@@ -39,6 +40,7 @@ const MainContent: React.FC<
   menuOpen,
   setMenuOpen,
 }) => {
+  const router = useRouter();
   const { setCurrentSection } = useScroll();
   const isMobile = useDeviceType();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -48,19 +50,19 @@ const MainContent: React.FC<
       icon: Github,
       title: "Research Projects",
       description: "Explore ongoing and completed research initiatives.",
-      sectionIndex: 2,
+      link: "/research",
     },
     {
       icon: Linkedin,
       title: "Publications",
       description: "Access scholarly articles and academic publications.",
-      sectionIndex: 3,
+      link: "/publications",
     },
     {
       icon: Handshake,
       title: "Collaborations",
       description: "Discover opportunities for academic partnerships.",
-      sectionIndex: 7,
+      link: "/contact",
     },
   ];
 
@@ -206,9 +208,7 @@ const MainContent: React.FC<
                 and human-computer interaction through innovative technologies.
               </p>
               <motion.button
-                onClick={() => {
-                  setCurrentSection(2);
-                }}
+                onClick={() => router.push("/research")}
                 className={`animate-bounce bg-gradient-to-r ${
                   darkMode
                     ? "from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400"
@@ -267,10 +267,7 @@ const MainContent: React.FC<
             {Cards.map((card, index) => (
               <div
                 key={index}
-                onClick={() => {
-                  console.log("Clicking section:", card.sectionIndex);
-                  setCurrentSection(card.sectionIndex);
-                }}
+                onClick={() => router.push(card.link)}
                 className="cursor-pointer"
               >
                 <InteractiveCard
@@ -292,7 +289,10 @@ const MainContent: React.FC<
         transition={{ repeat: Infinity, duration: 1.5 }}
       >
         <ArrowDown className="w-6 h-6 animate-bounce" />
-        <span className="sr-only">Scroll down</span>
+        <span className="sr-only"
+                        onClick={() => {
+                  setCurrentSection(1);
+                }}>Scroll down</span>
       </motion.div>
     </motion.div>
   );
