@@ -18,7 +18,6 @@ import LoadingScreen from "./LoadingScreen";
 import { useDeviceType } from "../components/useDeviceType";
 import { useLoadingStates } from "../components/useLoadingStates";
 import textSystem from "../components/textSystem";
-import SmoothScrollWrapper from "../components/SmoothScrollWrapper";
 import MainContent from "../components/MainContent";
 import About from "../components/About";
 import Research from "../components/Research";
@@ -74,20 +73,6 @@ export default function Home() {
       ) : (
         <AdvancedBackground theme={darkMode ? "dark" : "light"} />
       )}
-
-      <SmoothScrollWrapper
-        darkMode={darkMode}
-        sectionTitles={[
-          "Main Content",
-          "About",
-          "Research",
-          "Publications",
-          "Teaching Experience",
-          "Editorial & Peer Review",
-          "Statistics & Testimonials",
-          "Contact",
-        ]}
-      >
         <div>
           <MainContent
             isLoaded={isContentLoaded}
@@ -123,7 +108,6 @@ export default function Home() {
         <div id="contact">
           <Contact darkMode={darkMode} />
         </div>
-      </SmoothScrollWrapper>
 
       {!isMobile && <RotatingAtomCursor />}
     </div>

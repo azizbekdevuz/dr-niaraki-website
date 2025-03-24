@@ -41,7 +41,7 @@ interface ContactPageProps {
 }
 
 const ContactPage: React.FC<ContactPageProps> = () => {
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const isMobile = useDeviceType();
@@ -131,21 +131,6 @@ const ContactPage: React.FC<ContactPageProps> = () => {
       ) : (
         <AdvancedBackground theme={darkMode ? "dark" : "light"} />
       )}
-
-      {/* Dark Mode Toggle */}
-      <button
-        onClick={() => setDarkMode(!darkMode)}
-        className={`
-          fixed top-4 right-4 p-3 rounded-full transition-all duration-300
-          ${
-            darkMode
-              ? "bg-gray-800 text-white hover:bg-gray-700"
-              : "bg-gray-100 text-black hover:bg-gray-200"
-          }
-        `}
-      >
-        {darkMode ? "☀️" : "🌙"}
-      </button>
 
       <div className="relative z-10 max-w-7xl mx-auto px-8 py-16">
         {/* Header Section */}

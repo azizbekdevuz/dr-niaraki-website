@@ -479,7 +479,7 @@ const TagFilter: React.FC<{
 
 // Main Research Explorer Component
 const ComprehensiveResearchExplorer: React.FC = () => {
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode] = useState(true);
   const [selectedType, setSelectedType] = useState<PublicationType | "all">(
     "all",
   );
@@ -542,7 +542,6 @@ const ComprehensiveResearchExplorer: React.FC = () => {
     };
   }, [publicationsData]);
 
-  // Publication Card Component
   // Publication Card Component with Enhanced Interactions
   const PublicationCard: React.FC<{ publication: Publication }> = ({
     publication,
@@ -665,19 +664,6 @@ const ComprehensiveResearchExplorer: React.FC = () => {
             <Star className="mr-6 text-blue-500" size={60} />
             Research Journey Explorer
           </h1>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className={`
-              p-3 rounded-full transition-all duration-300
-              ${
-                darkMode
-                  ? "bg-gray-800 text-white hover:bg-gray-700"
-                  : "bg-gray-100 text-black hover:bg-gray-200"
-              }
-            `}
-          >
-            {darkMode ? "☀️" : "🌙"}
-          </button>
         </div>
 
         {/* Research Statistics */}

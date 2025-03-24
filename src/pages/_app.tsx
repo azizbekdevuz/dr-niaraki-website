@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import type { AppProps } from "next/app";
 import "../styles/globals.css";
 import "../styles/atomcursor.css";
+import "../styles/scrollbar.css";
 import { ThemeProvider } from "next-themes";
 import Head from "next/head";
 import Navbar from "../components/Navbar";
+import Chatbot from "@/components/Chatbot";
 import { AnimatePresence } from "framer-motion";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
@@ -58,6 +60,7 @@ function MyApp({ Component, pageProps, router }: AppProps) {
         <main className="pt-20">
           <AnimatePresence mode="wait">
             <Component {...pageProps} key={router.route} darkMode={darkMode} />
+            <Chatbot />
           </AnimatePresence>
         </main>
 

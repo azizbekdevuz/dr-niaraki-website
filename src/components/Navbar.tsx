@@ -6,9 +6,7 @@ import {
   Book,
   Award,
   FileText,
-  Send,
-  Moon,
-  Sun,
+  Send
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/router";
@@ -28,7 +26,7 @@ interface NavbarProps {
   toggleDarkMode: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode }) => {
+const Navbar: React.FC<NavbarProps> = () => {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -42,11 +40,6 @@ const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode }) => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  // Mobile menu toggle
-  const toggleMobileMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -108,56 +101,6 @@ const Navbar: React.FC<NavbarProps> = ({ darkMode, toggleDarkMode }) => {
                 </Link>
               );
             })}
-          </div>
-
-          {/* Dark Mode Toggle & Mobile Menu Button */}
-          <div className="flex items-center space-x-4">
-            <motion.button
-              onClick={toggleDarkMode}
-              whileHover={{ rotate: 180 }}
-              className={`
-                p-2 rounded-full transition-colors duration-300
-                ${
-                  darkMode
-                    ? "bg-gray-800 text-white hover:bg-gray-700"
-                    : "bg-gray-100 text-black hover:bg-gray-200"
-                }
-              `}
-            >
-              {darkMode ? (
-                <Sun className="w-5 h-5" />
-              ) : (
-                <Moon className="w-5 h-5" />
-              )}
-            </motion.button>
-
-            {/* Mobile Menu Toggle */}
-            <button
-              className="md:hidden focus:outline-none"
-              onClick={toggleMobileMenu}
-            >
-              <div
-                className={`
-                  w-6 h-1 bg-gray-800 dark:bg-white 
-                  transition-all duration-300 
-                  ${isMenuOpen ? "transform rotate-45 translate-y-1" : ""}
-                `}
-              />
-              <div
-                className={`
-                  w-6 h-1 bg-gray-800 dark:bg-white 
-                  my-1 transition-all duration-300
-                  ${isMenuOpen ? "opacity-0" : ""}
-                `}
-              />
-              <div
-                className={`
-                  w-6 h-1 bg-gray-800 dark:bg-white 
-                  transition-all duration-300
-                  ${isMenuOpen ? "transform -rotate-45 -translate-y-1" : ""}
-                `}
-              />
-            </button>
           </div>
         </div>
 
