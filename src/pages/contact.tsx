@@ -77,11 +77,11 @@ const ContactPage: React.FC<ContactPageProps> = () => {
       officialEmail: "a.sadeghi@sejong.ac.kr",
       personalEmail: "a.sadeqi313@gmail.com",
     },
-    online: {
-      website: "www.abolghasemsadeghi-n.com",
-      linkedin: "linkedin.com/in/abolghasemsadeghi-n",
-      googleScholar: "Abolghasem Sadeghi-Niaraki",
-    },
+    online: [
+      { label: "Website", url: "www.abolghasemsadeghi-n.com" },
+      { label: "LinkedIn", url: "linkedin.com/in/abolghasemsadeghi-n" },
+      { label: "Google Scholar", url: "scholar.google.com/citations?user=-V8_A5YAAAAJ&hl" },
+    ],
   };
 
   const stats = [
@@ -352,10 +352,10 @@ const ContactPage: React.FC<ContactPageProps> = () => {
                   Professional Links
                 </h2>
                 <div className="space-y-4">
-                  {Object.entries(contactInfo.online).map(([platform, url]) => (
+                  {contactInfo.online.map((link) => (
                     <motion.a
-                      key={platform}
-                      href={`https://${url}`}
+                      key={link.label}
+                      href={`https://${link.url}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-between p-3 rounded-lg group"
@@ -367,14 +367,11 @@ const ContactPage: React.FC<ContactPageProps> = () => {
                       }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      <span className="capitalize flex items-center">
-                        <Globe className="w-4 h-4 mr-2 text-blue-500" />
-                        {platform.replace(/([A-Z])/g, " $1").trim()}
-                      </span>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm opacity-60">{url}</span>
-                        <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
+                    <span className="capitalize flex items-center">
+                      <Globe className="w-4 h-4 mr-2 text-blue-500" />
+                      {link.label}
+                      <ExternalLink className="w-4 h-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </span>
                     </motion.a>
                   ))}
                 </div>
