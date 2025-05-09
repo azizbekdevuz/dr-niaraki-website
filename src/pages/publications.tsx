@@ -22,6 +22,10 @@ import {
   Layers,
   Orbit,
   TagIcon,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 
 // Dynamic Imports
@@ -63,6 +67,10 @@ const ComprehensiveResearchExplorer: React.FC = () => {
     "Urban Analytics",
   ];
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
+
   // Toggle Tag Selection
   const handleTagToggle = (tag: string) => {
     setSelectedTags((prev) =>
@@ -86,6 +94,13 @@ const ComprehensiveResearchExplorer: React.FC = () => {
           )),
     );
   }, [selectedType, searchQuery, selectedTags]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredPublications.length / itemsPerPage);
+  const paginatedPublications = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredPublications.slice(start, start + itemsPerPage);
+  }, [filteredPublications, currentPage]);
 
   // Publication Statistics
   const publicationStats = useMemo(() => {
@@ -341,9 +356,10 @@ const ComprehensiveResearchExplorer: React.FC = () => {
               <div className="flex space-x-4 mb-8">
                 <select
                   value={selectedType}
-                  onChange={(e) =>
-                    setSelectedType(e.target.value as PublicationType | "all")
-                  }
+                  onChange={(e) => {
+                    setSelectedType(e.target.value as PublicationType | "all");
+                    setCurrentPage(1); // Reset page on filter change
+                  }}
                   className={`
                     p-2 rounded-lg border
                     ${
@@ -366,7 +382,10 @@ const ComprehensiveResearchExplorer: React.FC = () => {
                     type="text"
                     placeholder="Search publications..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1); // Reset page on search
+                    }}
                     className={`
                       w-full p-2 pl-10 rounded-lg border
                       ${
@@ -386,14 +405,49 @@ const ComprehensiveResearchExplorer: React.FC = () => {
                 </div>
               </div>
 
-              {/* Publications Grid */}
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredPublications.map((publication: Publication) => (
+                {paginatedPublications.map((publication: Publication) => (
                   <PublicationCard
                     key={publication.id}
                     publication={publication}
                   />
                 ))}
+              </div>
+              {/* Enhanced Pagination Controls (no numbered buttons) */}
+              <div className="flex flex-wrap justify-center mt-8 gap-2">
+                <button
+                  className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  aria-label="First page"
+                >
+                  <ChevronsLeft size={18} />
+                </button>
+                <button
+                  className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <span className="px-4 py-1 font-medium">Page {currentPage} of {totalPages}</span>
+                <button
+                  className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  aria-label="Next page"
+                >
+                  <ChevronRight size={18} />
+                </button>
+                <button
+                  className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  aria-label="Last page"
+                >
+                  <ChevronsRight size={18} />
+                </button>
               </div>
 
               {/* No Results */}

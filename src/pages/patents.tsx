@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { patents } from "../datasets/patents";
-import { Award, Filter, Check, Clock, Globe, Search, Grid } from "lucide-react";
+import { Award, Filter, Check, Clock, Globe, Search, Grid, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { groupBy } from "lodash";
 
 const AdvancedBackground = dynamic(
@@ -283,6 +283,8 @@ const PatentsPage = () => {
   const [selectedYear, setSelectedYear] = useState("All");
   const [view, setView] = useState<"grid" | "timeline">("grid");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
   const isMobile = useDeviceType();
 
   // Update the filter logic to include search
@@ -299,6 +301,9 @@ const PatentsPage = () => {
       );
     return matchesType && matchesYear && matchesSearch;
   });
+
+  const totalPages = Math.ceil(filteredPatents.length / itemsPerPage);
+  const paginatedPatents = filteredPatents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div
@@ -395,15 +400,53 @@ const PatentsPage = () => {
 
           {/* Patents Grid */}
           {view === "grid" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPatents.map((patent: Patent) => (
-                <PatentCard
-                  key={patent.id}
-                  patent={patent}
-                  darkMode={darkMode}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {paginatedPatents.map((patent: Patent) => (
+                  <PatentCard
+                    key={patent.id}
+                    patent={patent}
+                    darkMode={darkMode}
+                  />
+                ))}
+              </div>
+              {/* Pagination Controls */}
+              <div className="flex flex-wrap justify-center mt-8 gap-2">
+                <button
+                  className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  aria-label="First page"
+                >
+                  <ChevronsLeft size={18} />
+                </button>
+                <button
+                  className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <span className="px-4 py-1 font-medium">Page {currentPage} of {totalPages}</span>
+                <button
+                  className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  aria-label="Next page"
+                >
+                  <ChevronRight size={18} />
+                </button>
+                <button
+                  className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  aria-label="Last page"
+                >
+                  <ChevronsRight size={18} />
+                </button>
+              </div>
+            </>
           ) : (
             <PatentTimeline patents={filteredPatents} darkMode={darkMode} />
           )}
