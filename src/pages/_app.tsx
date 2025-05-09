@@ -5,9 +5,9 @@ import "../styles/atomcursor.css";
 import "../styles/scrollbar.css";
 import { ThemeProvider } from "next-themes";
 import Head from "next/head";
-import Navbar from "../components/Navbar";
-import Chatbot from "@/components/Chatbot";
-import Footer from "@/components/Footer";
+import Navbar from "../components/global/Navbar";
+import Chatbot from "@/components/global/Chatbot";
+import Footer from "@/components/global/Footer";
 import { AnimatePresence } from "framer-motion";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
@@ -28,6 +28,17 @@ function MyApp({ Component, pageProps, router }: AppProps) {
   // Ensure component is mounted
   useEffect(() => {
     setMounted(true);
+
+    if (typeof window !== "undefined") {
+      try {
+        if (!sessionStorage.getItem("has-visited-site")) {
+          sessionStorage.setItem("has-visited-site", "true");
+          console.log("Session storage working");
+        }
+      } catch (e) {
+        console.error("SessionStorage access error:", e);
+      }
+    }
   }, []);
 
   // Toggle dark mode
@@ -65,7 +76,7 @@ function MyApp({ Component, pageProps, router }: AppProps) {
         </main>
 
         <Footer darkMode={darkMode} />
-        
+
         <Chatbot darkMode={darkMode} />
 
         <SpeedInsights />

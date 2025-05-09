@@ -1,8 +1,9 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useDeviceType } from "../components/useDeviceType";
+import { useDeviceType } from "@/hooks/useDeviceType";
 import {
   Phone,
   Building,
@@ -24,15 +25,15 @@ import {
 } from "lucide-react";
 
 const AdvancedBackground = dynamic(
-  () => import("../components/AdvancedBackground"),
+  () => import("../components/global/AdvancedBackground"),
   { ssr: false },
 );
 const MobileBackground = dynamic(
-  () => import("../components/MobileBackground"),
+  () => import("../components/global/MobileBackground"),
   { ssr: false },
 );
 const RotatingAtomCursor = dynamic(
-  () => import("../components/RotatingAtomCursor"),
+  () => import("../components/global/RotatingAtomCursor"),
   { ssr: false },
 );
 
@@ -162,7 +163,8 @@ const ContactPage: React.FC<ContactPageProps> = () => {
               />
               <div className="relative w-48 h-48 rounded-full overflow-hidden border-2 border-white/10 shadow-2xl flex items-center justify-center">
                 <Image
-                width="192" height="192"
+                  width="192"
+                  height="192"
                   src="/assets/images/contact-image.png"
                   alt="Dr. Sadeghi-Niaraki"
                   onLoad={() => setImageLoaded(true)}
@@ -179,7 +181,7 @@ const ContactPage: React.FC<ContactPageProps> = () => {
                 {!imageLoaded && (
                   <div className="absolute inset-0 flex items-center justify-center bg-gray-200/50 backdrop-blur-sm">
                     <span className="text-gray-500 text-sm opacity-70 text-center">
-                      Let's Do
+                      Let&#39;s Do
                       <br />
                       It Together
                     </span>
@@ -201,7 +203,7 @@ const ContactPage: React.FC<ContactPageProps> = () => {
             animate={{ opacity: 1, y: 0 }}
             className={`text-xl ${darkMode ? "text-gray-300" : "text-gray-600"}`}
           >
-            Let's collaborate on innovative research and projects
+            Let&#39;s collaborate on innovative research and projects
           </motion.p>
         </motion.div>
 
@@ -459,36 +461,23 @@ const ContactPage: React.FC<ContactPageProps> = () => {
                 flex items-center space-x-3
               `}
             >
-              <MessageSquare className="w-5 h-5" />
-              <span>Let's Connect</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <Link
+                href="mailto:a.sadeghi@sejong.ac.kr"
+                className={`relative px-8 py-4 rounded-full
+                      ${
+                        darkMode
+                          ? "bg-gray-800 hover:bg-gray-700"
+                          : "bg-white hover:bg-gray-50"
+                      } 
+                      text-lg font-semibold transition-all duration-300
+                      flex items-center space-x-3
+                `}
+              >
+                <MessageSquare className="w-5 h-5" />
+                <span>Let&#39;s Connect</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </motion.button>
-          </div>
-        </motion.div>
-
-        {/* Footer */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className={`
-            mt-16 pt-8 
-            ${
-              darkMode ? "border-t border-gray-800" : "border-t border-gray-200"
-            }
-          `}
-        >
-          <div className="text-center">
-            <p
-              className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
-            >
-              Located at Sejong University • Seoul, South Korea
-            </p>
-            <p
-              className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
-            >
-              © {new Date().getFullYear()} Dr. Abolghasem Sadeghi-Niaraki
-            </p>
           </div>
         </motion.div>
       </div>

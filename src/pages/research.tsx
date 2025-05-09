@@ -15,15 +15,15 @@ import {
   Globe,
   Sparkles,
 } from "lucide-react";
-import { HeroExperience } from "../components/HeroExperience";
-import useDeviceDetect from "../components/useDeviceDetect";
-import { researchProjectsData } from "../components/datasets/researchProjectsData";
-import { academicInitiativesData } from "../components/datasets/academicInitiativesData";
-import { researchLeadershipData } from "../components/datasets/researchLeadershipData";
-import ExperienceShowcase from "../components/ExperienceShowcase";
+import { HeroExperience } from "../components/research/HeroExperience";
+import useDeviceDetect from "@/hooks/useDeviceDetect";
+import { researchProjectsData } from "../datasets/research/researchProjectsData";
+import { academicInitiativesData } from "../datasets/research/academicInitiativesData";
+import { researchLeadershipData } from "../datasets/research/researchLeadershipData";
+import ExperienceShowcase from "../components/research/ExperienceShowcase";
 
 const RotatingAtomCursor = dynamic(
-  () => import("../components/RotatingAtomCursor"),
+  () => import("../components/global/RotatingAtomCursor"),
   { ssr: false },
 );
 
@@ -104,6 +104,8 @@ const InteractiveCard = React.memo<InteractiveCardProps>(
     );
   },
 );
+
+InteractiveCard.displayName = "InteractiveCard";
 
 const ResearchCard = React.memo<ResearchCardProps>(
   ({ data, isActive, darkMode }) => {
@@ -190,6 +192,8 @@ const ResearchCard = React.memo<ResearchCardProps>(
     );
   },
 );
+
+ResearchCard.displayName = "ResearchCard";
 
 const Research = ({ darkMode = true }: { darkMode?: boolean }) => {
   const [activeTab, setActiveTab] = useState("projects");
@@ -356,5 +360,7 @@ const Research = ({ darkMode = true }: { darkMode?: boolean }) => {
     </div>
   );
 };
+
+Research.displayName = "Research";
 
 export default React.memo(Research);

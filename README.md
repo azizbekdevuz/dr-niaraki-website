@@ -1,81 +1,73 @@
 # Dr. Niaraki Website
 
-## Project Overview
+## Overview
 
-The **Dr. Niaraki Website** is a responsive platform built using Next.js, designed to showcase Dr. Niaraki's professional presence. The project is crafted with modern web technologies, ensuring seamless performance and dynamic content handling.
+This is a modern, responsive web platform for Dr. Niaraki, built with Next.js, TypeScript, and Tailwind CSS. It showcases research, publications, patents, and more, with a focus on maintainability and developer experience.
 
-## Table of Contents
+---
 
-- [Getting Started](#getting-started)
-- [Features](#features)
-- [Technologies Used](#technologies-used)
-- [Project Structure](#project-structure)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [License](#license)
+## Quick Start for Developers
 
-## Getting Started
+1. **Clone the repository:**
+   ```bash
+   git clone <repo-url>
+   cd dr-niaraki-website
+   ```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+3. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+4. **Open [localhost:3000](http://localhost:3000) in your browser.**
 
-### 1. Clone Repository
-
-```bash
-git clone https://github.com/azizbekdevuz/dr-niaraki-website.git
-cd dr-niaraki-website
-```
-
-### 2. Install Dependencies
-
-```bash
-npm install
-```
-
-### 3. Start the Development Server
-
-```bash
-npm run dev
-```
-
-### 4. Access
-
-Visit [localhost:3000](http://localhost:3000) in your browser to view the project.
-
-## Features
-
-- **Responsive Design:** Adapts to various screen sSizes for optimal user experience.
-- **Tailwind CSS Integration:** Utilizes utility-first CSS for rapid styling.
-- **Dynamic Content Handling:** Leverages Next.js pages and API routes.
-- **TypeScript Support:** Enhances code quality and maintainability.
-- **Google Fonts Optimization:** Configured for fast font loading.
-
-## Technologies Used
-
-- **Next.js:** React-based framework for static and dynamic web applications.
-- **TypeScript:** Ensures robust typing and reduces bugs.
-- **Tailwind CSS:** CSS framework for custom, responsive design.
-- **Vercel:** Hosts and deploys the project efficiently.
+---
 
 ## Project Structure
 
-- **`/public`**: Contains static assets like images and icons.
-- **`/src`**: Houses source code and core logic.
-- **`/pages`**: Next.js page routes.
-- **`/components`**: Reusable components.
-- **`/styles`**: Global CSS and Tailwind configurations.
-- **`/api`**: Serverless API functions.
+- `/src` — All source code (see `src/README.md` for details)
+- `/public` — Static assets (images, fonts, etc.)
+- `/styles` — Global and component CSS
+- `/pages` — Next.js page routes and API endpoints
+- `/components` — Reusable UI and feature components
+- `/datasets` — Data used for publications, patents, research, etc.
+- `/hooks` — Custom React hooks
+- `/context` — React context providers
+- `/theme` — Theme and typography system
+
+---
+
+## Development Guide
+
+- **Edit or add features:** Work in the appropriate `src/` subfolder. See each folder's `README.md` for details.
+- **Add a new page:** Create a file in `src/pages/`. For API endpoints, use `src/pages/api/`.
+- **Add a new component:** Place it in the relevant `src/components/` subfolder.
+- **Add or update data:** Edit files in `src/datasets/`.
+- **Styling:** Use Tailwind CSS classes or add styles in `src/styles/`.
+- **TypeScript:** All code should be strongly typed. Avoid `any`.
+- **Linting:** Run `npx next lint` before pushing.
+- **Testing:** (Add instructions if tests are present.)
+
+---
 
 ## Deployment
 
-Deployed using [Vercel](https://vercel.com/) for Next.js support. Refer to [Next.js deployment guide](https://nextjs.org/docs/deployment) for details.
+- Deploys automatically on Vercel (see Vercel dashboard for details).
+- For manual deploy: `npm run build` then `npm start`.
+
+---
 
 ## Contributing
 
-Contributions are welcome! Please follow these steps:
+- Fork, branch, commit, and PR as usual.
+- Follow code style and folder conventions.
+- Update documentation if you add new features or folders.
 
-1. Fork the repository.
-2. Create a new branch (`feature/YourFeature`).
-3. Commit your changes.
-4. Push and submit a pull request.
+---
 
-## License
+## More Help
 
-This project is licensed under the MIT License.
+- See `src/README.md` and each subfolder's `README.md` for deep dives.
+- For questions, contact the project maintainer or check the issues tab.

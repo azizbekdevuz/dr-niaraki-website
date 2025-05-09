@@ -1,59 +1,61 @@
 /* Custom scrollbar styling */
 .scrollbar-thin {
-    scrollbar-width: thin;
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 9999px;
+}
+
+.scrollbar-thumb-gray-700::-webkit-scrollbar-thumb {
+  background-color: #374151;
+  border-radius: 9999px;
+}
+
+.scrollbar-track-gray-100::-webkit-scrollbar-track {
+  background-color: #f3f4f6;
+  border-radius: 9999px;
+}
+
+.scrollbar-track-gray-900::-webkit-scrollbar-track {
+  background-color: #111827;
+  border-radius: 9999px;
+}
+
+/* Animation for ping effect */
+@keyframes ping-slow {
+  0% {
+    transform: scale(1);
+    opacity: 1;
   }
-  
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  75%,
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
   }
-  
-  .scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
-    background-color: #d1d5db;
-    border-radius: 9999px;
+}
+
+.animate-ping-slow {
+  animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Add pulse animation for new messages */
+@keyframes pulse-once {
+  0%,
+  100% {
+    opacity: 1;
   }
-  
-  .scrollbar-thumb-gray-700::-webkit-scrollbar-thumb {
-    background-color: #374151;
-    border-radius: 9999px;
+  50% {
+    opacity: 0.8;
   }
-  
-  .scrollbar-track-gray-100::-webkit-scrollbar-track {
-    background-color: #f3f4f6;
-    border-radius: 9999px;
-  }
-  
-  .scrollbar-track-gray-900::-webkit-scrollbar-track {
-    background-color: #111827;
-    border-radius: 9999px;
-  }
-  
-  /* Animation for ping effect */
-  @keyframes ping-slow {
-    0% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    75%, 100% {
-      transform: scale(1.5);
-      opacity: 0;
-    }
-  }
-  
-  .animate-ping-slow {
-    animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-  }
-  
-  /* Add pulse animation for new messages */
-  @keyframes pulse-once {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.8;
-    }
-  }
-  
-  .animate-pulse-once {
-    animation: pulse-once 1s ease-in-out 1;
-  }
+}
+
+.animate-pulse-once {
+  animation: pulse-once 1s ease-in-out 1;
+}

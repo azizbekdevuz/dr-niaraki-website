@@ -1,20 +1,20 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
-import { useDeviceType } from "../components/useDeviceType";
-import { patents } from "../components/datasets/patents";
+import { useDeviceType } from "@/hooks/useDeviceType";
+import { patents } from "../datasets/patents";
 import { Award, Filter, Check, Clock, Globe, Search, Grid } from "lucide-react";
 import { groupBy } from "lodash";
 
 const AdvancedBackground = dynamic(
-  () => import("../components/AdvancedBackground"),
+  () => import("../components/global/AdvancedBackground"),
   { ssr: false },
 );
 const MobileBackground = dynamic(
-  () => import("../components/MobileBackground"),
+  () => import("../components/global/MobileBackground"),
   { ssr: false },
 );
 const RotatingAtomCursor = dynamic(
-  () => import("../components/RotatingAtomCursor"),
+  () => import("../components/global/RotatingAtomCursor"),
   { ssr: false },
 );
 
@@ -286,7 +286,7 @@ const PatentsPage = () => {
   const isMobile = useDeviceType();
 
   // Update the filter logic to include search
-  const filteredPatents = patents.filter((patent) => {
+  const filteredPatents = patents.filter((patent: Patent) => {
     const matchesType = selectedType === "All" || patent.type === selectedType;
     const matchesYear =
       selectedYear === "All" || patent.date.includes(selectedYear);
@@ -294,7 +294,7 @@ const PatentsPage = () => {
       searchQuery === "" ||
       patent.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       patent.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      patent.inventors.some((inventor) =>
+      patent.inventors.some((inventor: string) =>
         inventor.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     return matchesType && matchesYear && matchesSearch;
@@ -314,7 +314,6 @@ const PatentsPage = () => {
 
       <div className="relative z-10">
         <div className="max-w-7xl mx-auto px-4 py-12">
-
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold mb-4">
@@ -397,7 +396,7 @@ const PatentsPage = () => {
           {/* Patents Grid */}
           {view === "grid" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPatents.map((patent) => (
+              {filteredPatents.map((patent: Patent) => (
                 <PatentCard
                   key={patent.id}
                   patent={patent}

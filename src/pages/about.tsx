@@ -12,19 +12,19 @@ import {
   Code,
   Brain,
 } from "lucide-react";
-import { useDeviceType } from "../components/useDeviceType";
-import VideoS from "../components/VideoS";
+import { useDeviceType } from "@/hooks/useDeviceType";
+import VideoS from "@/components/index/inner/VideoS";
 
 const AdvancedBackground = dynamic(
-  () => import("../components/AdvancedBackground"),
+  () => import("../components/global/AdvancedBackground"),
   { ssr: false },
 );
 const MobileBackground = dynamic(
-  () => import("../components/MobileBackground"),
+  () => import("../components/global/MobileBackground"),
   { ssr: false },
 );
 const RotatingAtomCursor = dynamic(
-  () => import("../components/RotatingAtomCursor"),
+  () => import("../components/global/RotatingAtomCursor"),
   { ssr: false },
 );
 
@@ -241,7 +241,7 @@ const AboutPage = () => {
                     (eXtended Reality) Metaverse Research Center, Sejong
                     University, Republic of Korea, where he has been a faculty
                     member since 2017. Recently appointed as a Fellow at Harvard
-                    University's Spatial Data Lab (SDL), he conducts
+                    University&#39;s Spatial Data Lab (SDL), he conducts
                     collaborative research in spatiotemporal data analytics,
                     visualization, and geo-AI-based platforms, contributing to
                     innovative geographic data applications and natural hazards
@@ -271,7 +271,7 @@ const AboutPage = () => {
                         <li>Published 120+ peer-reviewed papers</li>
                         <li>Secured 42 patents (US & Korean)</li>
                         <li>Led $9.3M+ in research funding</li>
-                        <li>Supervised 40+ Master's & 6+ Ph.D. students</li>
+                        <li>Supervised 40+ Master&#39;s & 6+ Ph.D. students</li>
                       </ul>
                     </div>
                     <div className="space-y-4">
@@ -659,7 +659,7 @@ const AboutPage = () => {
                       Academic Supervision
                     </h3>
                     <ul className="space-y-2">
-                      <li>• Supervised 40+ Master's students</li>
+                      <li>• Supervised 40+ Master&#39;s students</li>
                       <li>• Directed 6 Ph.D. dissertations</li>
                       <li>• External examiner for 100+ theses</li>
                     </ul>
@@ -738,7 +738,7 @@ const AboutPage = () => {
                       building strong theoretical foundations.
                     </p>
                     <p>
-                      I have supervised over 40 Master's and 6 Ph.D. students,
+                      I have supervised over 40 Master&#39;s and 6 Ph.D. students,
                       guiding research in areas including Geo-AI, XR
                       technologies, and spatial computing. My approach combines
                       rigorous academic standards with practical industry
