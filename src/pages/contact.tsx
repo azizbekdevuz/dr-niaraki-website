@@ -1,9 +1,8 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import Link from "next/link";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useDeviceType } from "@/hooks/useDeviceType";
+import useDeviceDetect from "@/hooks/useDeviceDetect";
 import {
   Phone,
   Building,
@@ -45,7 +44,7 @@ const ContactPage: React.FC<ContactPageProps> = () => {
   const [darkMode] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const isMobile = useDeviceType();
+  const { isMobile } = useDeviceDetect();
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -208,7 +207,7 @@ const ContactPage: React.FC<ContactPageProps> = () => {
         </motion.div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12">
           {stats.map((stat, index) => (
             <motion.div
               key={index}
@@ -216,21 +215,13 @@ const ContactPage: React.FC<ContactPageProps> = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
               whileHover={{ scale: 1.02 }}
-              className={`
-                p-6 rounded-2xl
-                ${darkMode ? "bg-gray-800" : "bg-white"}
-                shadow-lg backdrop-blur-sm overflow-hidden group
-              `}
+              className={`p-4 sm:p-6 rounded-2xl ${darkMode ? "bg-gray-800" : "bg-white"} shadow-lg backdrop-blur-sm overflow-hidden group flex flex-col items-center`}
             >
-              <div className="flex items-center space-x-4">
-                <stat.icon className={`w-8 h-8 text-${stat.color}-500`} />
+              <div className="flex items-center space-x-3 sm:space-x-4 mb-1">
+                <stat.icon className={`w-7 h-7 sm:w-8 sm:h-8 text-${stat.color}-500`} />
                 <div>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <div
-                    className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
-                  >
-                    {stat.title}
-                  </div>
+                  <div className="text-xl sm:text-2xl font-bold">{stat.value}</div>
+                  <div className={`text-xs sm:text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{stat.title}</div>
                 </div>
               </div>
             </motion.div>
@@ -238,15 +229,9 @@ const ContactPage: React.FC<ContactPageProps> = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Academic Profile */}
-          <div
-            className={`
-            p-6 rounded-2xl
-            ${darkMode ? "bg-gray-800" : "bg-white"}
-            shadow-lg lg:col-span-2
-          `}
-          >
+          <div className={`p-4 sm:p-6 rounded-2xl ${darkMode ? "bg-gray-800" : "bg-white"} shadow-lg lg:col-span-2 mb-4 lg:mb-0`}>
             <div className="flex items-start gap-4">
               <Building className="w-6 h-6 text-blue-500 flex-shrink-0 mt-1" />
               <div>
@@ -285,13 +270,7 @@ const ContactPage: React.FC<ContactPageProps> = () => {
           </div>
 
           {/* Contact Information */}
-          <div
-            className={`
-            p-6 rounded-2xl
-            ${darkMode ? "bg-gray-800" : "bg-white"}
-            shadow-lg
-          `}
-          >
+          <div className={`p-4 sm:p-6 rounded-2xl ${darkMode ? "bg-gray-800" : "bg-white"} shadow-lg mb-4 lg:mb-0`}>
             <div className="flex items-start gap-4">
               <Phone className="w-6 h-6 text-purple-500 flex-shrink-0 mt-1" />
               <div className="flex-1">
@@ -338,13 +317,7 @@ const ContactPage: React.FC<ContactPageProps> = () => {
           </div>
 
           {/* Professional Links */}
-          <div
-            className={`
-            p-6 rounded-2xl 
-            ${darkMode ? "bg-gray-800" : "bg-white"}
-            shadow-lg
-          `}
-          >
+          <div className={`p-4 sm:p-6 rounded-2xl ${darkMode ? "bg-gray-800" : "bg-white"} shadow-lg mb-4 lg:mb-0`}>
             <div className="flex items-start gap-4">
               <Link2 className="w-6 h-6 text-pink-500 flex-shrink-0 mt-1" />
               <div className="flex-1">
@@ -380,45 +353,21 @@ const ContactPage: React.FC<ContactPageProps> = () => {
           </div>
 
           {/* Achievements */}
-          <div
-            className={`
-            p-6 rounded-2xl
-            ${darkMode ? "bg-gray-800" : "bg-white"}
-            shadow-lg lg:col-span-2
-          `}
-          >
-            <div className="flex items-start gap-4">
+          <div className={`p-4 sm:p-6 rounded-2xl ${darkMode ? "bg-gray-800" : "bg-white"} shadow-lg lg:col-span-2`}>
+            <div className="flex items-start gap-3 sm:gap-4">
               <PartyPopper className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
               <div>
-                <h2 className="text-2xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-400">
-                  Recent Achievements
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-400">Recent Achievements</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   {achievements.map((achievement, index) => (
                     <motion.div
                       key={index}
-                      className={`
-                        p-4 rounded-2xl transition-all duration-300
-                        ${
-                          darkMode
-                            ? "bg-gray-750 hover:bg-gray-700"
-                            : "bg-gray-50 hover:bg-gray-100"
-                        }
-                      `}
+                      className={`p-3 sm:p-4 rounded-2xl transition-all duration-300 ${darkMode ? "bg-gray-750 hover:bg-gray-700" : "bg-gray-50 hover:bg-gray-100"}`}
                       whileHover={{ scale: 1.02 }}
-                      transition={{ type: "spring", stiffness: 300 }}
                     >
-                      <achievement.icon
-                        className={`w-8 h-8 mb-2 ${achievement.colorClass}`}
-                      />
-                      <h3 className="font-semibold mb-1">
-                        {achievement.title}
-                      </h3>
-                      <p
-                        className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
-                      >
-                        {achievement.desc}
-                      </p>
+                      <achievement.icon className={`w-7 h-7 sm:w-8 sm:h-8 mb-2 ${achievement.colorClass}`} />
+                      <h3 className="font-semibold mb-1">{achievement.title}</h3>
+                      <p className={`text-xs sm:text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{achievement.desc}</p>
                     </motion.div>
                   ))}
                 </div>
@@ -435,45 +384,25 @@ const ContactPage: React.FC<ContactPageProps> = () => {
         >
           <div className="relative inline-block group">
             <motion.div
-              className="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-70 blur-sm"
-              animate={{
-                scale: [1, 1.1, 1],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-              }}
+              className={`absolute -inset-1 rounded-full blur-sm opacity-70 group-hover:opacity-90 transition-opacity
+                ${darkMode ? 'bg-gradient-to-r from-gray-900 via-blue-900 to-black' : 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500'}`}
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
             />
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`
-                relative px-8 py-4 rounded-full
-                ${
-                  darkMode
-                    ? "bg-gray-800 hover:bg-gray-700"
-                    : "bg-white hover:bg-gray-50"
-                } 
-                text-lg font-semibold transition-all duration-300
-                flex items-center space-x-3
-              `}
+              onClick={() => window.location.href = 'mailto:a.sadeghi@sejong.ac.kr'}
+              className={`relative px-6 py-3 sm:px-8 sm:py-4 rounded-full font-bold text-lg sm:text-xl 
+                border-2
+                ${darkMode ? 'border-blue-800/60' : 'border-blue-300/60'}
+                ${darkMode ? 'bg-gradient-to-r from-gray-900 via-blue-900 to-black' : 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500'}
+                text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all flex items-center justify-center gap-3 group`}
+              aria-label="Send email to Dr. Sadeghi-Niaraki"
             >
-              <Link
-                href="mailto:a.sadeghi@sejong.ac.kr"
-                className={`relative px-8 py-4 rounded-full
-                      ${
-                        darkMode
-                          ? "bg-gray-800 hover:bg-gray-700"
-                          : "bg-white hover:bg-gray-50"
-                      } 
-                      text-lg font-semibold transition-all duration-300
-                      flex items-center space-x-3
-                `}
-              >
-                <MessageSquare className="w-5 h-5" />
-                <span>Let&#39;s Connect</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
+              <MessageSquare className="w-5 h-5 text-white" />
+              <span>Let&#39;s Connect</span>
+              <ArrowRight className="w-5 h-5 text-white group-hover:translate-x-1 transition-transform" />
             </motion.button>
           </div>
         </motion.div>

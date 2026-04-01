@@ -15,8 +15,10 @@ import {
   X,
   ExternalLink,
 } from "lucide-react";
+import useDeviceDetect from "@/hooks/useDeviceDetect";
 
 const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
+  const { isMobile, isTablet } = useDeviceDetect();
   const [showModal, setShowModal] = useState<
     (typeof researchProjects)[0] | null
   >(null);
@@ -125,9 +127,9 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
       transition={{ duration: 0.5 }}
       className="relative min-h-screen"
     >
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-16">
+      <div className="max-w-3xl sm:max-w-5xl md:max-w-7xl mx-auto px-2 sm:px-4 md:px-8 py-8 sm:py-12 md:py-16">
         {/* Title with Floating Elements */}
-        <div className="relative mb-16">
+        <div className="relative mb-8 sm:mb-12 md:mb-16">
           <motion.div
             className="absolute inset-0 flex items-center justify-center"
             initial={{ opacity: 0 }}
@@ -152,7 +154,7 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
                   delay: i * 0.2,
                 }}
               >
-                <Sparkles size={24} />
+                <Sparkles size={isMobile ? 16 : 24} />
               </motion.div>
             ))}
           </motion.div>
@@ -160,40 +162,19 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`text-4xl md:text-5xl lg:text-6xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r ${
+            className={`text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r ${
               darkMode ? textSystem.dark.gradient : textSystem.light.gradient
             } relative z-10`}
           >
             Research Highlights
           </motion.h2>
-          {/* New Research Page Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="flex justify-center mt-8 relative z-20"
-          >
-            <motion.a
-              href="/research"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`flex items-center gap-2 px-8 py-4 rounded-xl text-lg font-semibold shadow-lg transition-all duration-300 ${
-                darkMode
-                  ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white"
-                  : "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white"
-              }`}
-            >
-              Explore All Research
-              <ExternalLink size={20} />
-            </motion.a>
-          </motion.div>
         </div>
 
         {/* Category Filters */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-wrap justify-center gap-4 mb-12"
+          className={`${isMobile ? "flex overflow-x-auto gap-2 mb-6 pb-2 no-scrollbar" : "flex flex-wrap justify-center gap-4 mb-12"}`}
         >
           {categories.map((category) => {
             const Icon = category.icon;
@@ -203,7 +184,7 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
                 onClick={() => setActiveFilter(category.id)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all duration-300 ${
+                className={`flex items-center gap-2 ${isMobile ? "px-4 py-2 text-sm" : "px-6 py-3"} rounded-full transition-all duration-300 whitespace-nowrap ${
                   activeFilter === category.id
                     ? darkMode
                       ? "bg-blue-500/20 text-blue-300"
@@ -212,8 +193,9 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
                       ? "bg-gray-800/40 hover:bg-gray-700/50"
                       : "bg-white/40 hover:bg-white/60"
                 }`}
+                aria-label={category.label}
               >
-                <Icon size={20} />
+                <Icon size={isMobile ? 16 : 20} />
                 {category.label}
               </motion.button>
             );
@@ -222,15 +204,10 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
 
         {/* Research Grid with Staggered Animation */}
         <div className="flex flex-col justify-center w-full">
-          <div className="w-full" style={{ maxWidth: "1200px" }}>
+          <div className="w-full" style={{ maxWidth: isMobile ? "100%" : isTablet ? "700px" : "1200px" }}>
             <motion.div
-              className="grid gap-8"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, 360px)",
-                justifyContent: "center",
-                width: "100%",
-              }}
+              className={`${isMobile ? "flex flex-col gap-4" : isTablet ? "grid grid-cols-2 gap-6" : "grid grid-cols-3 gap-8"}`}
+              style={isMobile ? {} : undefined}
             >
               <AnimatePresence mode="popLayout">
                 {filteredProjects.map((project, index) => {
@@ -243,19 +220,17 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
                       transition={{ duration: 0.3, delay: index * 0.1 }}
-                      onHoverStart={() =>
-                        setHoveredProject(project.title || null)
-                      }
+                      onHoverStart={() => setHoveredProject(project.title || null)}
                       onHoverEnd={() => setHoveredProject(null)}
                       className={`relative group w-full rounded-xl ${
                         darkMode ? "bg-gray-800/40" : "bg-white/40"
                       } backdrop-blur-sm border ${
                         darkMode ? "border-gray-700/50" : "border-gray-200/50"
-                      }`}
+                      } ${isMobile ? "p-4" : "p-8"}`}
                     >
                       {/* Status Indicator */}
                       <div
-                        className={`absolute top-4 right-4 flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
+                        className={`absolute top-2 right-2 flex items-center gap-2 px-2 py-1 rounded-full text-xs ${
                           project.status === "active"
                             ? darkMode
                               ? "bg-green-500/20 text-green-300"
@@ -265,43 +240,37 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
                               : "bg-gray-100 text-gray-800"
                         }`}
                       >
-                        <Activity size={14} />
+                        <Activity size={isMobile ? 10 : 14} />
                         {project.status === "active" ? "Active" : "Completed"}
                       </div>
 
-                      <div className="p-8 h-full flex flex-col">
+                      <div className="h-full flex flex-col">
                         {/* Icon and Title Section */}
-                        <div className="flex items-start gap-4 mb-4">
+                        <div className="flex items-start gap-3 mb-2">
                           <div
-                            className={`p-3 rounded-lg ${
+                            className={`p-2 rounded-lg ${
                               darkMode ? "bg-gray-700/50" : "bg-gray-100/50"
                             }`}
                           >
                             <Icon
-                              size={24}
-                              className={
-                                darkMode ? "text-blue-400" : "text-blue-600"
-                              }
+                              size={isMobile ? 16 : 24}
+                              className={darkMode ? "text-blue-400" : "text-blue-600"}
                             />
                           </div>
                           <div className="flex-1">
                             <h3
-                              className={`text-xl font-bold ${
-                                darkMode
-                                  ? textSystem.dark.primary
-                                  : textSystem.light.primary
+                              className={`font-bold ${isMobile ? "text-base" : "text-xl"} ${
+                                darkMode ? textSystem.dark.primary : textSystem.light.primary
                               }`}
                             >
                               {project.title}
                             </h3>
-                            <div className="flex items-center gap-2 mt-2">
+                            <div className="flex items-center gap-2 mt-1">
                               <Clock
-                                size={14}
-                                className={
-                                  darkMode ? "text-gray-400" : "text-gray-600"
-                                }
+                                size={isMobile ? 10 : 14}
+                                className={darkMode ? "text-gray-400" : "text-gray-600"}
                               />
-                              <span className="text-sm">
+                              <span className="text-xs sm:text-sm">
                                 {project.duration}
                               </span>
                             </div>
@@ -311,11 +280,9 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
                         {/* Description with flex-grow to push stats to bottom */}
                         <div className="flex-grow">
                           <p
-                            className={`mb-6 ${
-                              darkMode
-                                ? textSystem.dark.tertiary
-                                : textSystem.light.tertiary
-                            }`}
+                            className={`mb-4 ${
+                              darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary
+                            } ${isMobile ? "text-xs" : "text-base"}`}
                           >
                             {project.description}
                           </p>
@@ -324,24 +291,20 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
                         {/* Stats and Button Section - Always at Bottom */}
                         <div className="mt-auto">
                           {/* Stats Grid */}
-                          <div className="grid grid-cols-3 gap-4 mb-6">
+                          <div className={`grid ${isMobile ? "grid-cols-1 gap-2 mb-3" : "grid-cols-3 gap-4 mb-6"}`}>
                             {Object.entries(project.stats).map(
                               ([key, value]) => (
                                 <div key={key} className="text-center">
                                   <div
-                                    className={`text-lg font-bold ${
-                                      darkMode
-                                        ? textSystem.dark.primary
-                                        : textSystem.light.primary
+                                    className={`font-bold ${isMobile ? "text-base" : "text-lg"} ${
+                                      darkMode ? textSystem.dark.primary : textSystem.light.primary
                                     }`}
                                   >
                                     {value}
                                   </div>
                                   <div
-                                    className={`text-sm ${
-                                      darkMode
-                                        ? textSystem.dark.tertiary
-                                        : textSystem.light.tertiary
+                                    className={`text-xs ${
+                                      darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary
                                     }`}
                                   >
                                     {key}
@@ -353,16 +316,17 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
 
                           {/* Learn More Button */}
                           <motion.button
-                            whileHover={{ x: 5 }}
+                            whileHover={isMobile ? undefined : { x: 5 }}
                             onClick={() => setShowModal(project)}
-                            className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg ${
+                            className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg ${
                               darkMode
                                 ? "bg-blue-500/20 text-blue-300 hover:bg-blue-500/30"
                                 : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-                            } transition-colors duration-300`}
+                            } transition-colors duration-300 text-xs sm:text-sm`}
+                            aria-label={`Learn more about ${project.title}`}
                           >
                             Learn more
-                            <ArrowRight size={16} />
+                            <ArrowRight size={isMobile ? 12 : 16} />
                           </motion.button>
                         </div>
                       </div>
@@ -389,53 +353,45 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className={`relative w-11/12 max-w-2xl p-8 rounded-xl ${
+                className={`relative w-full max-w-xs sm:max-w-md md:max-w-2xl p-4 sm:p-6 md:p-8 rounded-xl ${
                   darkMode ? "bg-gray-900" : "bg-white"
-                } shadow-xl`}
+                } shadow-xl overflow-y-auto max-h-[90vh]`}
               >
-                <div className="mb-6">
+                <div className="mb-4 sm:mb-6">
                   <h3
-                    className={`text-2xl font-bold mb-4 ${
-                      darkMode
-                        ? textSystem.dark.primary
-                        : textSystem.light.primary
+                    className={`font-bold ${isMobile ? "text-lg" : "text-2xl"} mb-2 ${
+                      darkMode ? textSystem.dark.primary : textSystem.light.primary
                     }`}
                   >
                     {showModal.title}
                   </h3>
                   <p
-                    className={`mb-4 ${
-                      darkMode
-                        ? textSystem.dark.secondary
-                        : textSystem.light.secondary
-                    }`}
+                    className={`mb-2 sm:mb-4 ${
+                      darkMode ? textSystem.dark.secondary : textSystem.light.secondary
+                    } ${isMobile ? "text-xs" : "text-base"}`}
                   >
                     {showModal.details}
                   </p>
 
                   {/* Stats in Modal */}
-                  <div className="grid grid-cols-3 gap-6 mt-6">
+                  <div className={`grid ${isMobile ? "grid-cols-1 gap-2 mt-2" : "grid-cols-3 gap-6 mt-6"}`}>
                     {Object.entries(showModal.stats).map(([key, value]) => (
                       <div
                         key={key}
-                        className={`p-4 rounded-lg ${
+                        className={`p-2 sm:p-4 rounded-lg ${
                           darkMode ? "bg-gray-800/50" : "bg-gray-100/50"
                         }`}
                       >
                         <div
-                          className={`text-2xl font-bold mb-1 ${
-                            darkMode
-                              ? textSystem.dark.primary
-                              : textSystem.light.primary
+                          className={`font-bold ${isMobile ? "text-base" : "text-2xl"} mb-1 ${
+                            darkMode ? textSystem.dark.primary : textSystem.light.primary
                           }`}
                         >
                           {value}
                         </div>
                         <div
-                          className={`text-sm ${
-                            darkMode
-                              ? textSystem.dark.tertiary
-                              : textSystem.light.tertiary
+                          className={`text-xs ${
+                            darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary
                           }`}
                         >
                           {key}
@@ -446,18 +402,16 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
                 </div>
 
                 <div
-                  className={`flex items-center justify-between ${
-                    darkMode
-                      ? "border-t border-gray-700"
-                      : "border-t border-gray-200"
-                  } pt-4`}
+                  className={`flex items-center justify-between border-t pt-2 sm:pt-4 ${
+                    darkMode ? "border-gray-700" : "border-gray-200"
+                  }`}
                 >
                   <div
                     className={`flex items-center gap-2 ${
                       darkMode ? "text-gray-400" : "text-gray-600"
-                    }`}
+                    } text-xs sm:text-sm`}
                   >
-                    <Clock size={16} />
+                    <Clock size={isMobile ? 10 : 16} />
                     <span>{showModal.duration}</span>
                   </div>
                   <motion.button
@@ -468,9 +422,10 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
                       darkMode
                         ? "bg-gray-800 hover:bg-gray-700"
                         : "bg-gray-100 hover:bg-gray-200"
-                    }`}
+                    } ml-2`}
+                    aria-label="Close modal"
                   >
-                    <X size={20} />
+                    <X size={isMobile ? 16 : 20} />
                   </motion.button>
                 </div>
               </motion.div>
@@ -478,6 +433,27 @@ const Research: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
           )}
         </AnimatePresence>
       </div>
+      {/* New Research Page Button */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="flex justify-center mt-6 sm:mt-8 md:mt-12 relative z-20"
+      >
+        <motion.a
+          href="/research"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className={`flex items-center gap-2 px-4 py-3 sm:px-8 sm:py-4 rounded-xl text-base sm:text-lg font-semibold shadow-lg transition-all duration-300 ${
+            darkMode
+              ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white"
+              : "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white"
+          }`}
+        >
+          Explore All Research
+          <ExternalLink size={isMobile ? 16 : 20} />
+        </motion.a>
+      </motion.div>
     </motion.section>
   );
 };

@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import MenuOverlay from "./inner/MenuOverlay";
 import MobileMenu from "./inner/MobileMenu";
 import textSystem from "@/theme/textSystem";
-import { useDeviceType } from "@/hooks/useDeviceType";
 import { useScroll } from "@/context/ScrollContext";
 import InteractiveCard from "./inner/InteractiveCard";
 import {
@@ -17,6 +16,7 @@ import {
   Github,
   ArrowDown,
 } from "lucide-react";
+import useDeviceDetect from "@/hooks/useDeviceDetect";
 
 interface MainContentProps {
   isLoaded: boolean;
@@ -42,7 +42,7 @@ const MainContent: React.FC<
 }) => {
   const router = useRouter();
   const { setCurrentSection } = useScroll();
-  const isMobile = useDeviceType();
+  const { isMobile } = useDeviceDetect();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const Cards = [
@@ -129,7 +129,7 @@ const MainContent: React.FC<
       <main className="relative pt-20 px-4 md:px-8 max-w-7xl mx-auto bg-transparent">
         {/* Hero Section */}
         <section
-          className={`min-h-screen flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16 py-16 lg:py-24 ${
+          className={`min-h-screen flex flex-col lg:flex-row items-center justify-center gap-8 sm:gap-12 lg:gap-16 py-10 sm:py-16 lg:py-24 ${
             darkMode ? "text-white" : "text-gray-800"
           }`}
         >
@@ -141,7 +141,7 @@ const MainContent: React.FC<
             transition={{ delay: 0.8 }}
           >
             <div
-              className="relative w-60 h-60 md:w-80 md:h-80 lg:w-[420px] lg:h-[420px] mx-auto"
+              className="relative aspect-square w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto"
               onMouseEnter={() => setImageHovered(true)}
               onMouseLeave={() => setImageHovered(false)}
             >
@@ -149,7 +149,7 @@ const MainContent: React.FC<
                 src="/assets/images/profpic.jpg"
                 alt="Dr. Niaraki-Sadeghi"
                 fill
-                sizes="(max-width: 768px) 240px, (max-width: 1024px) 320px, 420px"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 420px"
                 className={`rounded-full transition-all duration-300 object-cover ${
                   darkMode ? "grayscale" : "grayscale-0"
                 } ${imageHovered ? "scale-105" : "scale-100"}`}
@@ -255,7 +255,7 @@ const MainContent: React.FC<
         </section>
 
         {/* Research Highlights Section */}
-        <section className="py-12 md:py-20">
+        <section className="py-8 sm:py-12 md:py-20">
           <h2
             className={`text-3xl md:text-4xl font-bold mb-8 text-center ${
               darkMode ? textSystem.dark.primary : textSystem.light.primary
@@ -263,7 +263,7 @@ const MainContent: React.FC<
           >
             Research Highlights
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
             {Cards.map((card, index) => (
               <div
                 key={index}

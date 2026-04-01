@@ -21,6 +21,7 @@ import { researchProjectsData } from "../datasets/research/researchProjectsData"
 import { academicInitiativesData } from "../datasets/research/academicInitiativesData";
 import { researchLeadershipData } from "../datasets/research/researchLeadershipData";
 import ExperienceShowcase from "../components/research/ExperienceShowcase";
+import textSystem from "@/theme/textSystem";
 
 const RotatingAtomCursor = dynamic(
   () => import("../components/global/RotatingAtomCursor"),
@@ -123,7 +124,7 @@ const ResearchCard = React.memo<ResearchCardProps>(
         onClick={toggleExpand}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`${darkMode ? "bg-blue-900/20" : "bg-blue-100/80"} p-6 mb-4 transition-all`}
+        className={`${darkMode ? "bg-blue-900/20" : "bg-blue-100/80"} p-4 sm:p-6 mb-4 transition-all`}
       >
         <div className="flex items-start gap-4">
           <div className="flex-1">
@@ -252,11 +253,12 @@ const Research = ({ darkMode = true }: { darkMode?: boolean }) => {
             <motion.button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${
-                activeTab === tab.id
-                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
-                  : "bg-white/5 hover:bg-white/10 backdrop-blur-lg"
-              }`}
+              className={`flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 font-medium
+                ${activeTab === tab.id
+                  ? `bg-gradient-to-r ${darkMode ? "from-blue-600 to-purple-600 text-white" : "from-blue-200 to-purple-400 text-blue-900"} shadow-lg`
+                  : `${darkMode ? "bg-white/10 hover:bg-white/20 text-blue-200" : "bg-white/70 hover:bg-blue-100 text-blue-700"}`
+                }
+              `}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label={tab.label}
@@ -295,23 +297,20 @@ const Research = ({ darkMode = true }: { darkMode?: boolean }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
+    <div className={`min-h-screen ${darkMode ? "bg-gradient-to-b from-gray-900 to-black" : "bg-gradient-to-b from-white to-blue-100"} ${darkMode ? "text-white" : "text-gray-900"}`}>
       <motion.div
         className="fixed inset-0 bg-[url('/grid.svg')] opacity-20 pointer-events-none"
         style={{ y: backgroundY }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-4 py-20">
+      <div className="relative max-w-7xl mx-auto px-2 sm:px-4 py-8 sm:py-20">
         <HeroExperience />
 
         <motion.h1
-          className="text-4xl md:text-5xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500"
+          className={`text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-8 sm:mb-12 bg-clip-text text-transparent bg-gradient-to-r ${darkMode ? textSystem.dark.gradient : textSystem.light.gradient}`}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: 0.5,
-            ease: "easeOut",
-          }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
         >
           Research & Experience
         </motion.h1>

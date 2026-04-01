@@ -2,6 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
 
+  pageExtensions: ["ts", "tsx"],
+  
   eslint: {
     ignoreDuringBuilds: false,
   },

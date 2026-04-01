@@ -12,8 +12,9 @@ import {
   Code,
   Brain,
 } from "lucide-react";
-import { useDeviceType } from "@/hooks/useDeviceType";
+import useDeviceDetect from "@/hooks/useDeviceDetect";
 import VideoS from "@/components/index/inner/VideoS";
+import textSystem from "@/theme/textSystem";
 
 const AdvancedBackground = dynamic(
   () => import("../components/global/AdvancedBackground"),
@@ -37,13 +38,11 @@ const Card = ({
   darkMode: boolean;
 }) => (
   <div
-    className={`rounded-lg shadow-lg p-6 transition-colors duration-300
+    className={`rounded-lg shadow-lg p-4 sm:p-6 transition-colors duration-300
     ${darkMode ? "bg-gray-900 border border-gray-700" : "bg-white"} 
-    ${
-      darkMode
-        ? "text-gray-100 [&_p]:text-gray-300 [&_h3]:text-white [&_h4]:text-white [&_li]:text-gray-300"
-        : "text-gray-800 [&_p]:text-gray-600 [&_h3]:text-gray-800 [&_h4]:text-gray-800 [&_li]:text-gray-600"
-    }`}
+    ${darkMode ? textSystem.dark.primary : textSystem.light.primary}
+    ${darkMode ? "[&_p]:text-gray-300 [&_h3]:text-white [&_h4]:text-white [&_li]:text-gray-300" : "[&_p]:text-gray-600 [&_h3]:text-gray-800 [&_h4]:text-gray-800 [&_li]:text-gray-600"}
+    `}
   >
     {children}
   </div>
@@ -62,7 +61,7 @@ const TabButton = ({
 }) => (
   <button
     onClick={onClick}
-    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors
+    className={`px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-colors
       ${
         active
           ? darkMode
@@ -80,7 +79,7 @@ const TabButton = ({
 const AboutPage = () => {
   const [darkMode] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
-  const isMobile = useDeviceType();
+  const { isMobile } = useDeviceDetect();
 
   // Handle interactive elements cursor effect
   useEffect(() => {
@@ -123,7 +122,7 @@ const AboutPage = () => {
       )}
 
       <div className="relative z-10">
-        <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-8 sm:py-12">
           {/* Hero Section */}
           <div className="mb-12">
             {/* Title and Role */}
@@ -131,7 +130,7 @@ const AboutPage = () => {
               <h1 className="text-4xl font-bold mb-4">
                 Dr. Abolghasem Sadeghi-Niaraki
               </h1>
-              <p className="text-xl text-gray-600">
+              <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary}`}>
                 Associate Professor at Sejong University | Harvard SDL Fellow |
                 Top 2% Scientist
               </p>
@@ -139,7 +138,9 @@ const AboutPage = () => {
 
             {/* Video Section - Now more prominent */}
             <div className="mb-8">
-              <VideoS darkMode={darkMode} />
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-lg">
+                <VideoS darkMode={darkMode} />
+              </div>
             </div>
 
             {/* Tags and Links - Below video */}
@@ -235,7 +236,7 @@ const AboutPage = () => {
             {activeTab === "overview" && (
               <Card darkMode={darkMode}>
                 <div className="prose max-w-none">
-                  <p className="text-lg mb-6 dark:text-gray-300">
+                  <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary} text-lg mb-6`}>
                     Dr. Abolghasem Sadeghi-Niaraki is an Associate Professor in
                     the Department of Computer Science and Engineering at the XR
                     (eXtended Reality) Metaverse Research Center, Sejong
@@ -247,7 +248,7 @@ const AboutPage = () => {
                     innovative geographic data applications and natural hazards
                     research.
                   </p>
-                  <p className="text-lg mb-6">
+                  <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary} text-lg mb-6`}>
                     With a strong academic foundation and over 15 years of
                     experience, Dr. Sadeghi-Niaraki has established himself as a
                     prolific researcher advancing the fields of Geo-AI, GIS,
@@ -263,7 +264,7 @@ const AboutPage = () => {
                   />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
                     <div className="space-y-4">
-                      <h3 className="text-xl font-semibold flex items-center">
+                      <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-xl font-semibold flex items-center`}>
                         <BookOpen className="w-5 h-5 mr-2" />
                         Research Impact
                       </h3>
@@ -275,7 +276,7 @@ const AboutPage = () => {
                       </ul>
                     </div>
                     <div className="space-y-4">
-                      <h3 className="text-xl font-semibold flex items-center">
+                      <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-xl font-semibold flex items-center`}>
                         <Award className="w-5 h-5 mr-2" />
                         Key Achievements
                       </h3>
@@ -297,7 +298,7 @@ const AboutPage = () => {
               <Card darkMode={darkMode}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
-                    <h3 className="text-xl font-semibold mb-4">
+                    <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-xl font-semibold mb-4`}>
                       Technical Expertise
                     </h3>
                     <ul className="space-y-3">
@@ -320,7 +321,7 @@ const AboutPage = () => {
                     </ul>
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold mb-4">
+                    <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-xl font-semibold mb-4`}>
                       Research Areas
                     </h3>
                     <ul className="space-y-3">
@@ -352,37 +353,37 @@ const AboutPage = () => {
                   <div className="flex items-start space-x-4">
                     <GraduationCap className="w-6 h-6 mt-1" />
                     <div>
-                      <h3 className="text-lg font-semibold">
+                      <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-lg font-semibold`}>
                         Ph.D. in Geo-Informatics Engineering
                       </h3>
-                      <p className="text-gray-600">
+                      <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary}`}>
                         INHA University, South Korea
                       </p>
-                      <p className="text-sm text-gray-500">2005 - 2008</p>
+                      <p className={`${darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary} text-sm`}>2005 - 2008</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-4">
                     <GraduationCap className="w-6 h-6 mt-1" />
                     <div>
-                      <h3 className="text-lg font-semibold">
+                      <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-lg font-semibold`}>
                         M.Sc. in GIS Engineering
                       </h3>
-                      <p className="text-gray-600">
+                      <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary}`}>
                         K.N. Toosi University of Technology
                       </p>
-                      <p className="text-sm text-gray-500">2000 - 2002</p>
+                      <p className={`${darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary} text-sm`}>2000 - 2002</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-4">
                     <GraduationCap className="w-6 h-6 mt-1" />
                     <div>
-                      <h3 className="text-lg font-semibold">
+                      <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-lg font-semibold`}>
                         Post-Doctoral Fellowship
                       </h3>
-                      <p className="text-gray-600">
+                      <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary}`}>
                         University of Melbourne, Australia
                       </p>
-                      <p className="text-sm text-gray-500">2012</p>
+                      <p className={`${darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary} text-sm`}>2012</p>
                     </div>
                   </div>
                 </div>
@@ -396,19 +397,19 @@ const AboutPage = () => {
                     <div className="flex items-start space-x-4">
                       <Award className="w-6 h-6 mt-1 text-yellow-500" />
                       <div>
-                        <h3 className="text-lg font-semibold">
+                        <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-lg font-semibold`}>
                           Stanford-Elsevier Top 2% Scientist
                         </h3>
-                        <p className="text-gray-600">2024</p>
+                        <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary}`}>2024</p>
                       </div>
                     </div>
                     <div className="flex items-start space-x-4">
                       <Award className="w-6 h-6 mt-1 text-blue-500" />
                       <div>
-                        <h3 className="text-lg font-semibold">
+                        <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-lg font-semibold`}>
                           Harvard SDL Fellowship
                         </h3>
-                        <p className="text-gray-600">2024 - Present</p>
+                        <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary}`}>2024 - Present</p>
                       </div>
                     </div>
                   </div>
@@ -416,19 +417,19 @@ const AboutPage = () => {
                     <div className="flex items-start space-x-4">
                       <Award className="w-6 h-6 mt-1 text-purple-500" />
                       <div>
-                        <h3 className="text-lg font-semibold">
+                        <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-lg font-semibold`}>
                           Australian Endeavour Fellowship
                         </h3>
-                        <p className="text-gray-600">2012</p>
+                        <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary}`}>2012</p>
                       </div>
                     </div>
                     <div className="flex items-start space-x-4">
                       <Award className="w-6 h-6 mt-1 text-green-500" />
                       <div>
-                        <h3 className="text-lg font-semibold">
+                        <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-lg font-semibold`}>
                           Best Researcher Award
                         </h3>
-                        <p className="text-gray-600">
+                        <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary}`}>
                           International Soil Scientist Awards, 2024
                         </p>
                       </div>
@@ -442,29 +443,29 @@ const AboutPage = () => {
               <Card darkMode={darkMode}>
                 <div className="space-y-8">
                   <div>
-                    <h3 className="text-xl font-semibold mb-4 flex items-center">
+                    <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-xl font-semibold mb-4 flex items-center`}>
                       <Building2 className="w-5 h-5 mr-2" />
                       Research Center Leadership
                     </h3>
                     <div className="space-y-4">
                       <div className="border-l-4 border-blue-500 pl-4">
-                        <h4 className="font-semibold">
+                        <h4 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} font-semibold`}>
                           Super-Realistic XR Technology Research Center
                         </h4>
-                        <p className="text-gray-600">Director, 2022 - 2030</p>
-                        <p className="text-sm mt-2">
+                        <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary} text-gray-600`}>Director, 2022 - 2030</p>
+                        <p className={`${darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary} text-sm mt-2`}>
                           Leading cutting-edge research in Real-Virtual
                           Interconnected Metaverse technologies
                         </p>
                       </div>
                       <div className="border-l-4 border-green-500 pl-4">
-                        <h4 className="font-semibold">
+                        <h4 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} font-semibold`}>
                           Mobile Virtual Reality Research Center
                         </h4>
-                        <p className="text-gray-600">
+                        <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary} text-gray-600`}>
                           Research Professor, 2017 - 2021
                         </p>
-                        <p className="text-sm mt-2">
+                        <p className={`${darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary} text-sm mt-2`}>
                           Managed international collaboration with 14
                           universities across 8 countries
                         </p>
@@ -473,7 +474,7 @@ const AboutPage = () => {
                   </div>
 
                   <div>
-                    <h3 className="text-xl font-semibold mb-4 flex items-center">
+                    <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-xl font-semibold mb-4 flex items-center`}>
                       <Users className="w-5 h-5 mr-2" />
                       International Collaboration
                     </h3>
@@ -502,7 +503,7 @@ const AboutPage = () => {
               <Card darkMode={darkMode}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
-                    <h3 className="text-xl font-semibold mb-4 flex items-center">
+                    <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-xl font-semibold mb-4 flex items-center`}>
                       <Code className="w-5 h-5 mr-2" />
                       Programming & Tools
                     </h3>
@@ -527,7 +528,7 @@ const AboutPage = () => {
                     </ul>
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold mb-4 flex items-center">
+                    <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-xl font-semibold mb-4 flex items-center`}>
                       <Brain className="w-5 h-5 mr-2" />
                       Domain Expertise
                     </h3>
@@ -557,39 +558,39 @@ const AboutPage = () => {
             {activeTab === "research" && (
               <Card darkMode={darkMode}>
                 <div className="space-y-6">
-                  <h3 className="text-xl font-semibold mb-4">
+                  <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-xl font-semibold mb-4`}>
                     Major Research Projects
                   </h3>
                   <div className="space-y-4">
                     <div className="border-l-4 border-blue-500 pl-4">
-                      <h4 className="font-semibold">
+                      <h4 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} font-semibold`}>
                         Super-Realistic XR Technology Research
                       </h4>
-                      <p className="text-gray-600">2022 - 2030</p>
-                      <p className="text-sm">Funding: ~750,000 USD per year</p>
-                      <p className="text-sm mt-2">
+                      <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary} text-gray-600`}>2022 - 2030</p>
+                      <p className={`${darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary} text-sm`}>Funding: ~750,000 USD per year</p>
+                      <p className={`${darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary} text-sm mt-2`}>
                         Research for Real-Virtual Interconnected Metaverse
                         applications
                       </p>
                     </div>
                     <div className="border-l-4 border-green-500 pl-4">
-                      <h4 className="font-semibold">
+                      <h4 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} font-semibold`}>
                         Mobile Virtual Reality Research Center
                       </h4>
-                      <p className="text-gray-600">2016 - 2021</p>
-                      <p className="text-sm">Funding: ~660,000 USD per year</p>
-                      <p className="text-sm mt-2">
+                      <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary} text-gray-600`}>2016 - 2021</p>
+                      <p className={`${darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary} text-sm`}>Funding: ~660,000 USD per year</p>
+                      <p className={`${darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary} text-sm mt-2`}>
                         International collaboration across 14 universities and
                         11 companies
                       </p>
                     </div>
                     <div className="border-l-4 border-purple-500 pl-4">
-                      <h4 className="font-semibold">
+                      <h4 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} font-semibold`}>
                         Knowledge Sharing Project (KSP)
                       </h4>
-                      <p className="text-gray-600">2016 - 2017</p>
-                      <p className="text-sm">Funding: 300,000 USD</p>
-                      <p className="text-sm mt-2">
+                      <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary} text-gray-600`}>2016 - 2017</p>
+                      <p className={`${darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary} text-sm`}>Funding: 300,000 USD</p>
+                      <p className={`${darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary} text-sm mt-2`}>
                         Strategic consulting with ETRI and VPST
                       </p>
                     </div>
@@ -602,31 +603,31 @@ const AboutPage = () => {
               <Card darkMode={darkMode}>
                 <div className="space-y-8">
                   <div>
-                    <h3 className="text-xl font-semibold mb-4 flex items-center">
+                    <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-xl font-semibold mb-4 flex items-center`}>
                       <Building2 className="w-5 h-5 mr-2" />
                       Academic Appointments
                     </h3>
                     <div className="space-y-4">
                       <div className="border-l-4 border-blue-500 pl-4">
-                        <h4 className="font-semibold">Associate Professor</h4>
+                        <h4 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} font-semibold`}>Associate Professor</h4>
                         <p>
                           Department of Computer Science & Engineering, Sejong
                           University
                         </p>
-                        <p className="text-gray-600">March 2017 - Present</p>
+                        <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary}`}>March 2017 - Present</p>
                       </div>
                       <div className="border-l-4 border-green-500 pl-4">
-                        <h4 className="font-semibold">Research Professor</h4>
+                        <h4 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} font-semibold`}>Research Professor</h4>
                         <p>XR Metaverse Research Center, Sejong University</p>
-                        <p className="text-gray-600">2022 - 2030</p>
+                        <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary}`}>2022 - 2030</p>
                       </div>
                       <div className="border-l-4 border-purple-500 pl-4">
-                        <h4 className="font-semibold">Assistant Professor</h4>
+                        <h4 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} font-semibold`}>Assistant Professor</h4>
                         <p>
                           Department of Geoinformatic Engineering, INHA
                           University
                         </p>
-                        <p className="text-gray-600">
+                        <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary}`}>
                           March 2009 - February 2017
                         </p>
                       </div>
@@ -640,7 +641,7 @@ const AboutPage = () => {
               <Card darkMode={darkMode}>
                 <div className="space-y-8">
                   <div>
-                    <h3 className="text-xl font-semibold mb-4">
+                    <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-xl font-semibold mb-4`}>
                       Editorial Positions
                     </h3>
                     <ul className="space-y-3">
@@ -655,7 +656,7 @@ const AboutPage = () => {
                     </ul>
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold mb-4">
+                    <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-xl font-semibold mb-4`}>
                       Academic Supervision
                     </h3>
                     <ul className="space-y-2">
@@ -665,7 +666,7 @@ const AboutPage = () => {
                     </ul>
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold mb-4">
+                    <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-xl font-semibold mb-4`}>
                       Professional Memberships
                     </h3>
                     <ul className="space-y-2">
@@ -686,13 +687,13 @@ const AboutPage = () => {
               <Card darkMode={darkMode}>
                 <div className="space-y-8">
                   <div>
-                    <h3 className="text-xl font-semibold mb-6">
+                    <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-xl font-semibold mb-6`}>
                       Contact Information
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-4">
                         <div>
-                          <h4 className="font-semibold mb-2">
+                          <h4 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} font-semibold mb-2`}>
                             Office Location
                           </h4>
                           <p>Department of Computer Science & Engineering</p>
@@ -702,7 +703,7 @@ const AboutPage = () => {
                           <p>Republic of Korea</p>
                         </div>
                         <div>
-                          <h4 className="font-semibold mb-2">
+                          <h4 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} font-semibold mb-2`}>
                             Contact Details
                           </h4>
                           <p>Tel: +82 2-3408-2981</p>
@@ -711,12 +712,12 @@ const AboutPage = () => {
                       </div>
                       <div className="space-y-4">
                         <div>
-                          <h4 className="font-semibold mb-2">Email</h4>
+                          <h4 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} font-semibold mb-2`}>Email</h4>
                           <p>Official: a.sadeghi@sejong.ac.kr</p>
                           <p>Personal: a.sadeqi313@gmail.com</p>
                         </div>
                         <div>
-                          <h4 className="font-semibold mb-2">
+                          <h4 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} font-semibold mb-2`}>
                             Research Centers
                           </h4>
                           <p>eXtended Reality (XR) Research Center</p>
@@ -727,10 +728,10 @@ const AboutPage = () => {
                   </div>
 
                   <div>
-                    <h3 className="text-xl font-semibold mb-4">
+                    <h3 className={`${darkMode ? textSystem.dark.primary : textSystem.light.primary} text-xl font-semibold mb-4`}>
                       Teaching & Mentorship
                     </h3>
-                    <p className="mb-4">
+                    <p className={`${darkMode ? textSystem.dark.secondary : textSystem.light.secondary} mb-4`}>
                       With over 15 years of academic experience, I am committed
                       to fostering the next generation of computer scientists
                       and researchers. My teaching philosophy emphasizes

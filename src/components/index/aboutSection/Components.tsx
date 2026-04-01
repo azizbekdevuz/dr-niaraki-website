@@ -1,582 +1,506 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import {
-  Sparkles,
   BookOpen,
-  Network,
-  ChevronDown,
-  Star,
+  Calendar,
+  GraduationCap,
+  Award,
   ChevronRight,
-  Book,
+  Star,
+  MapPin
 } from "lucide-react";
-import textSystem from "@/theme/textSystem";
 import { academicJourney, Experience, Awards } from "./dataComponents";
+import useDeviceDetect from "@/hooks/useDeviceDetect";
 
-interface ScrollRevealProps {
+// Efficient fade-in animation for elements
+export const FadeIn: React.FC<{
   children: React.ReactNode;
-}
-
-// Utility Components
-export const ScrollReveal: React.FC<ScrollRevealProps> = ({ children }) => {
+  delay?: number;
+}> = ({ children, delay = 0 }) => {
   const [ref, inView] = useInView({
-    threshold: 0.1,
     triggerOnce: true,
+    threshold: 0.1,
   });
+  const { isMobile } = useDeviceDetect();
 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 50 }}
-      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      initial={{ opacity: 0, y: isMobile ? 10 : 20 }}
+      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: isMobile ? 10 : 20 }}
+      transition={{ duration: isMobile ? 0.3 : 0.5, delay: isMobile ? delay * 0.05 : delay }}
     >
       {children}
     </motion.div>
   );
 };
 
-export const ParallaxHeader: React.FC<{ darkMode: boolean }> = ({
-  darkMode,
-}) => {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+// Clean, modern header with simple animation
+export const AboutHeader: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
+  const { isMobile } = useDeviceDetect();
 
   return (
     <motion.div
-      className="relative h-[40vh] overflow-hidden rounded-2xl mb-16"
-      onMouseMove={(e: React.MouseEvent<HTMLDivElement>) => {
-        const { clientX, clientY } = e;
-        const { innerWidth, innerHeight } = window;
-        setMousePosition({
-          x: (clientX - innerWidth / 2) / 100,
-          y: (clientY - innerHeight / 2) / 100,
-        });
-      }}
+      className={`${isMobile ? 'mb-8' : 'mb-12'} text-center ${
+        darkMode ? "text-white" : "text-slate-800"
+      }`}
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
     >
-      <motion.div
-        className={`absolute inset-0 bg-gradient-to-br ${darkMode ? "from-blue-600/20 to-purple-600/20" : "from-blue-400/20 to-purple-400/20"}`}
-        style={{
-          x: mousePosition.x * -15,
-          y: mousePosition.y * -15,
-        }}
-      />
-
-      {[...Array(5)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute"
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{
-            opacity: [0.3, 0.6, 0.3],
-            scale: [1, 1.2, 1],
-            x: `${25 + Math.sin(i) * 15}%`,
-            y: `${25 + Math.cos(i) * 15}%`,
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            delay: i * 0.2,
-          }}
-        >
-          <Sparkles
-            className={`w-6 h-6 ${darkMode ? "text-blue-400/30" : "text-blue-600/30"}`}
-          />
-        </motion.div>
-      ))}
-
-      <motion.div
-        className="relative z-10 flex flex-col items-center justify-center h-full"
-        style={{
-          x: mousePosition.x * 10,
-          y: mousePosition.y * 10,
-        }}
-      >
-        <motion.h2
-          className={`text-4xl md:text-5xl lg:text-6xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r ${
-            darkMode ? textSystem.dark.gradient : textSystem.light.gradient
-          }`}
-        >
-          About Dr. Sadeghi-Niaraki
-        </motion.h2>
-      </motion.div>
+      <h2 className={`${isMobile ? 'text-3xl' : 'text-4xl sm:text-5xl'} font-bold mb-4`}>
+        About Dr. Sadeghi-Niaraki
+      </h2>
+      
+      <div className="w-24 h-1 bg-blue-500 mx-auto mb-6"></div>
+      
+      <p className={`${isMobile ? 'text-lg' : 'text-xl'} ${darkMode ? "text-blue-300" : "text-blue-600"}`}>
+        XR, Geo-AI, Urban Analytics, and more
+      </p>
     </motion.div>
   );
 };
 
-// Component for displaying personal information
-export const PersonalInfo: React.FC<{ darkMode: boolean }> = ({ darkMode }) => (
-  <motion.div
-    whileHover={{ scale: 1.02 }}
-    className={`p-6 lg:p-8 rounded-2xl backdrop-blur-sm ${
-      darkMode ? "bg-gray-800/40" : "bg-white/40"
-    } border ${darkMode ? "border-gray-700/50" : "border-gray-200/50"}`}
-  >
-    <div className="flex items-start gap-4 mb-6">
-      <div
-        className={`p-3 rounded-lg ${
-          darkMode ? "bg-gray-700/50" : "bg-gray-100/50"
-        }`}
-      >
-        <BookOpen
-          className={darkMode ? "text-blue-400" : "text-blue-600"}
-          size={24}
-        />
-      </div>
-      <div>
-        <h3
-          className={`text-xl font-bold ${
-            darkMode ? textSystem.dark.primary : textSystem.light.primary
-          }`}
-        >
-          About Dr. Sadeghi-Niaraki
-        </h3>
-        <p
-          className={`mt-2 ${
-            darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary
-          }`}
-        >
-          An Iranian scholar and researcher, Associate Professor at Sejong
-          University
-        </p>
-      </div>
-    </div>
+// Personal info card with backdrop blur for integration with site background
+export const PersonalInfo: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
+  const { isMobile } = useDeviceDetect();
+
+  return (
     <div
-      className={`grid grid-cols-3 gap-4 mt-6 p-4 rounded-lg ${
-        darkMode ? "bg-gray-700/30" : "bg-gray-100/30"
+      className={`${isMobile ? 'p-4' : 'p-6'} rounded-xl shadow-md backdrop-blur-sm ${
+        darkMode ? "bg-slate-800/80" : "bg-white/80"
       }`}
     >
-      {[
-        { label: "Publications", value: "100+" },
-        { label: "Experience", value: "15+ Years" },
-        { label: "Projects", value: "30+" },
-      ].map((stat, index) => (
-        <div key={index} className="text-center">
-          <div
-            className={`text-lg font-bold ${
-              darkMode ? textSystem.dark.primary : textSystem.light.primary
-            }`}
-          >
-            {stat.value}
-          </div>
-          <div
-            className={`text-sm ${
-              darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary
-            }`}
-          >
-            {stat.label}
-          </div>
+      <div className={`flex ${isMobile ? 'flex-col items-center text-center' : 'items-start space-x-4'} mb-6`}>
+        <div
+          className={`${isMobile ? 'mb-3' : ''} p-3 rounded-lg ${
+            darkMode ? "bg-slate-700" : "bg-slate-100"
+          }`}
+        >
+          <BookOpen
+            className={darkMode ? "text-blue-300" : "text-blue-600"}
+            size={isMobile ? 20 : 24}
+          />
         </div>
-      ))}
+        
+        <div>
+          <h3
+            className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold ${
+              darkMode ? "text-white" : "text-slate-800"
+            }`}
+          >
+            About Dr. Sadeghi-Niaraki
+          </h3>
+          <p
+            className={`mt-1 ${isMobile ? 'text-sm' : ''} ${
+              darkMode ? "text-slate-300" : "text-slate-600"
+            }`}
+          >
+            An Iranian scholar and researcher, Associate Professor at Sejong University
+          </p>
+        </div>
+      </div>
+      
+      <div 
+        className={`grid grid-cols-3 gap-4 ${isMobile ? 'p-3' : 'p-4'} rounded-lg ${
+          darkMode ? "bg-slate-700/80" : "bg-slate-100/80"
+        }`}
+      >
+        {[
+          { label: "Publications", value: "100+" },
+          { label: "Experience", value: "15+ Years" },
+          { label: "Projects", value: "30+" },
+        ].map((stat, index) => (
+          <div key={index} className="text-center">
+            <div
+              className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold ${
+                darkMode ? "text-blue-300" : "text-blue-600"
+              }`}
+            >
+              {stat.value}
+            </div>
+            <div
+              className={`${isMobile ? 'text-xs' : 'text-sm'} ${
+                darkMode ? "text-slate-400" : "text-slate-500"
+              }`}
+            >
+              {stat.label}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
-  </motion.div>
-);
+  );
+};
 
-// Component for Academic Timeline
+// Academic Timeline with cleaner visualization
 export const AcademicTimeline: React.FC<{
   darkMode: boolean;
-  selectedJourney: number;
-  setSelectedJourney: (index: number) => void;
-}> = ({ darkMode, selectedJourney, setSelectedJourney }) => (
-  <div className="relative">
-    <motion.div
-      initial={{ scaleY: 0 }}
-      animate={{ scaleY: 1 }}
-      transition={{ duration: 1.5 }}
-      className={`absolute top-0 left-1/2 w-1 h-full transform -translate-x-1/2 
-        bg-gradient-to-b ${
-          darkMode
-            ? "from-blue-500 via-purple-500 to-blue-500"
-            : "from-blue-400 via-purple-400 to-blue-400"
-        }`}
-    />
+}> = ({ darkMode }) => {
+  const [expandedItem, setExpandedItem] = useState<number | null>(0);
+  const { isMobile } = useDeviceDetect();
 
-    <div className="relative flex flex-col space-y-12 lg:space-y-16">
-      {academicJourney.map((item, index) => (
-        <motion.div
-          key={index}
-          onClick={() => setSelectedJourney(index)}
-          initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          whileHover={{ scale: 1.02 }}
-          className={`flex items-center ${
-            index % 2 === 0
-              ? "flex-col sm:flex-row"
-              : "flex-col sm:flex-row-reverse"
-          } gap-8 lg:gap-12`}
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center space-x-3 mb-6">
+        <Calendar 
+          className={darkMode ? "text-blue-300" : "text-blue-600"}
+          size={isMobile ? 20 : 24}
+        />
+        <h2 
+          className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold ${
+            darkMode ? "text-white" : "text-slate-800"
+          }`}
         >
-          <div
-            className={`flex-1 ${
-              index % 2 === 0 ? "text-left sm:text-right" : "text-left"
-            }`}
-          >
-            <motion.div
-              className={`inline-block p-6 lg:p-8 rounded-xl backdrop-blur-sm 
-                  ${
-                    selectedJourney === index
-                      ? `shadow-2xl ${
-                          darkMode
-                            ? "bg-gray-700/50 ring-2 ring-blue-500/50"
-                            : "bg-white/60 ring-2 ring-blue-400/50"
-                        }`
-                      : `shadow-lg ${
-                          darkMode ? "bg-gray-800/40" : "bg-white/40"
-                        }`
-                  }`}
-            >
-              <h4
-                className={`text-xl lg:text-2xl font-bold ${
-                  darkMode ? textSystem.dark.primary : textSystem.light.primary
-                }`}
-              >
-                {item.title}
-              </h4>
-              <p
-                className={`mt-2 ${
-                  darkMode
-                    ? textSystem.dark.secondary
-                    : textSystem.light.secondary
-                }`}
-              >
-                {item.institution}
-              </p>
-              <p
-                className={`text-sm lg:text-base mt-2 ${
-                  darkMode ? "text-blue-400" : "text-blue-600"
-                }`}
-              >
-                {item.year}
-              </p>
-
-              <AnimatePresence>
-                {selectedJourney === index && (
-                  <motion.p
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className={`mt-4 lg:mt-6 lg:text-lg lg:leading-relaxed ${
-                      darkMode
-                        ? textSystem.dark.tertiary
-                        : textSystem.light.tertiary
-                    }`}
-                  >
-                    {item.details}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          </div>
-
-          <motion.div
-            className="relative z-10"
-            whileHover={{ scale: 1.2 }}
-            animate={{ rotateY: selectedJourney === index ? 180 : 0 }}
-          >
+          Academic Journey
+        </h2>
+      </div>
+      
+      <div className={`${isMobile ? 'space-y-4' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}`}>
+        {academicJourney.map((item, index) => (
+          <FadeIn key={index} delay={index * 0.1}>
             <div
-              className={`
-                  w-16 h-16 lg:w-20 lg:h-20 rounded-full 
-                  flex items-center justify-center 
-                  shadow-lg backdrop-blur-md
-                  ${
-                    darkMode
-                      ? "bg-gradient-to-br from-blue-500/20 to-purple-500/20"
-                      : "bg-gradient-to-br from-blue-400/20 to-purple-400/20"
-                  }
-                `}
+              onClick={() => setExpandedItem(expandedItem === index ? null : index)}
+              className={`cursor-pointer ${isMobile ? 'p-4' : 'p-5'} rounded-lg transition-all backdrop-blur-sm ${
+                darkMode ? "bg-slate-800/80 hover:bg-slate-700/80" : "bg-white/80 hover:bg-slate-50/80"
+              } shadow-sm border ${
+                expandedItem === index 
+                  ? darkMode ? "border-blue-400" : "border-blue-500" 
+                  : darkMode ? "border-slate-700/50" : "border-slate-200/50"
+              }`}
             >
-              <item.icon
-                className={`w-8 h-8 lg:w-10 lg:h-10 ${
-                  selectedJourney === index
-                    ? "text-white"
-                    : darkMode
-                      ? "text-blue-400"
-                      : "text-blue-600"
-                }`}
-              />
+              <div className="flex justify-between items-start">
+                <div className="flex space-x-4">
+                  <div className={`mt-1 ${darkMode ? "text-blue-300" : "text-blue-600"}`}>
+                    <GraduationCap size={isMobile ? 18 : 20} />
+                  </div>
+                  
+                  <div>
+                    <h3 
+                      className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'} ${
+                        darkMode ? "text-white" : "text-slate-800"
+                      }`}
+                    >
+                      {item.title}
+                    </h3>
+                    <p 
+                      className={`${isMobile ? 'text-xs' : ''} ${
+                        darkMode ? "text-blue-300" : "text-blue-600"
+                      }`}
+                    >
+                      {item.institution}
+                    </p>
+                    <p 
+                      className={`${isMobile ? 'text-xs' : 'text-sm'} ${
+                        darkMode ? "text-slate-400" : "text-slate-500"
+                      }`}
+                    >
+                      {item.year}
+                    </p>
+                  </div>
+                </div>
+                
+                <ChevronRight 
+                  className={`transition-transform ${expandedItem === index ? "rotate-90" : ""} 
+                  ${darkMode ? "text-blue-300" : "text-blue-600"}`}
+                  size={isMobile ? 16 : 20} 
+                />
+              </div>
+              
+              {expandedItem === index && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className={`mt-4 ${isMobile ? 'p-3' : 'p-4'} rounded ${
+                    darkMode ? "bg-slate-700/50" : "bg-slate-100"
+                  }`}
+                >
+                  <p className={`${isMobile ? 'text-sm' : ''} ${darkMode ? "text-slate-300" : "text-slate-600"}`}>
+                    {item.details}
+                  </p>
+                </motion.div>
+              )}
             </div>
-          </motion.div>
-        </motion.div>
-      ))}
+          </FadeIn>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
-// Component for Experience Item
+// Experience Item with cleaner design
 export const ExperienceItem: React.FC<{
   exp: Experience;
   index: number;
-  expandedExp: number | null;
-  setExpandedExp: (index: number | null) => void;
   darkMode: boolean;
-}> = ({ exp, index, expandedExp, setExpandedExp, darkMode }) => (
-  <motion.div
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    whileHover={{ scale: 1.01 }}
-    className={`rounded-xl overflow-hidden ${
-      darkMode ? "bg-gray-800/40" : "bg-white/40"
-    } border ${darkMode ? "border-gray-700/50" : "border-gray-200/50"}`}
-  >
-    <motion.div
-      className="p-6 lg:p-8 cursor-pointer"
-      onClick={() => setExpandedExp(expandedExp === index ? null : index)}
-    >
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <div className="flex items-start gap-4 lg:gap-6">
-            <div
-              className={`p-3 lg:p-4 rounded-lg ${
-                darkMode ? "bg-gray-700/50" : "bg-gray-100/50"
-              }`}
-            >
-              <Network
-                className={darkMode ? "text-blue-400" : "text-blue-600"}
-                size={24}
-              />
-            </div>
+}> = ({ exp, index, darkMode }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const { isMobile } = useDeviceDetect();
+  
+  return (
+    <FadeIn delay={index * 0.1}>
+      <div
+        className={`rounded-lg shadow-sm backdrop-blur-sm ${
+          darkMode ? "bg-slate-800/80" : "bg-white/80"
+        } border ${
+          isExpanded
+            ? darkMode ? "border-blue-400" : "border-blue-500"
+            : darkMode ? "border-slate-700/50" : "border-slate-200/50"
+        }`}
+      >
+        <div
+          className={`${isMobile ? 'p-4' : 'p-5'} cursor-pointer`}
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <div className="flex justify-between items-start">
             <div>
-              <h4
-                className={`text-xl lg:text-2xl font-bold ${
-                  darkMode ? textSystem.dark.primary : textSystem.light.primary
+              <h3
+                className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold ${
+                  darkMode ? "text-white" : "text-slate-800"
                 }`}
               >
                 {exp.position}
-              </h4>
+              </h3>
               <p
-                className={`mt-2 ${
-                  darkMode
-                    ? textSystem.dark.secondary
-                    : textSystem.light.secondary
+                className={`${isMobile ? 'text-xs' : ''} ${
+                  darkMode ? "text-blue-300" : "text-blue-600"
                 }`}
               >
                 {exp.institution}
               </p>
               <p
-                className={`text-sm lg:text-base mt-1 ${
-                  darkMode ? "text-blue-400" : "text-blue-600"
+                className={`${isMobile ? 'text-xs' : 'text-sm'} ${
+                  darkMode ? "text-slate-400" : "text-slate-500"
                 }`}
               >
                 {exp.duration}
               </p>
             </div>
+            
+            <ChevronRight
+              className={`transition-transform ${isExpanded ? "rotate-90" : ""} 
+              ${darkMode ? "text-blue-300" : "text-blue-600"}`}
+              size={isMobile ? 16 : 20}
+            />
           </div>
-        </div>
-        <motion.div
-          animate={{ rotate: expandedExp === index ? 180 : 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <ChevronDown
-            className={darkMode ? "text-blue-400" : "text-blue-600"}
-            size={24}
-          />
-        </motion.div>
-      </div>
 
-      <AnimatePresence>
-        {expandedExp === index && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="mt-6 lg:mt-8 space-y-6 lg:space-y-8"
-          >
-            <p
-              className={`lg:text-lg lg:leading-relaxed ${
-                darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary
-              }`}
+          {isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="mt-4 space-y-4"
             >
-              {exp.details}
-            </p>
-
-            <div className="space-y-4 lg:space-y-6">
-              <h5
-                className={`font-semibold lg:text-xl ${
-                  darkMode ? textSystem.dark.primary : textSystem.light.primary
+              <p
+                className={`${isMobile ? 'text-sm' : ''} ${
+                  darkMode ? "text-slate-300" : "text-slate-600"
                 }`}
               >
-                Key Projects
-              </h5>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-                {exp.projects.map((project, i) => (
-                  <motion.div
-                    key={`project-${index}-${i}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 * i }}
-                    className={`p-4 lg:p-6 rounded-lg ${
-                      darkMode ? "bg-gray-700/50" : "bg-white/60"
-                    } backdrop-blur-sm`}
-                  >
-                    <div className="flex items-center gap-2 lg:gap-3">
+                {exp.details}
+              </p>
+
+              <div className="space-y-2">
+                <h4
+                  className={`font-semibold ${
+                    darkMode ? "text-blue-300" : "text-blue-600"
+                  }`}
+                >
+                  Key Projects
+                </h4>
+                <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-2`}>
+                  {exp.projects.map((project, i) => (
+                    <div
+                      key={i}
+                      className={`${isMobile ? 'p-2' : 'p-3'} rounded flex items-center space-x-2 ${
+                        darkMode ? "bg-slate-700" : "bg-slate-100"
+                      }`}
+                    >
                       <Star
-                        className={darkMode ? "text-blue-400" : "text-blue-600"}
-                        size={16}
+                        className={darkMode ? "text-blue-300" : "text-blue-600"}
+                        size={isMobile ? 12 : 14}
                       />
-                      <span className="lg:text-lg">{project}</span>
+                      <span className={`${isMobile ? 'text-xs' : 'text-sm'} ${
+                        darkMode ? "text-slate-300" : "text-slate-600"
+                      }`}>
+                        {project}
+                      </span>
                     </div>
-                  </motion.div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-4 lg:space-y-6">
-              <h5
-                className={`font-semibold lg:text-xl ${
-                  darkMode
-                    ? textSystem.dark.secondary
-                    : textSystem.light.secondary
-                }`}
-              >
-                Achievements
-              </h5>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
-                {exp.achievements.map((achievement, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 * i }}
-                    className={`p-4 lg:p-6 rounded-lg ${
-                      darkMode ? "bg-gray-700/50" : "bg-white/60"
-                    } backdrop-blur-sm`}
-                  >
-                    <div className="flex items-center gap-2 lg:gap-3">
+              <div className="space-y-2">
+                <h4
+                  className={`font-semibold ${
+                    darkMode ? "text-blue-300" : "text-blue-600"
+                  }`}
+                >
+                  Achievements
+                </h4>
+                <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-2`}>
+                  {exp.achievements.map((achievement, i) => (
+                    <div
+                      key={i}
+                      className={`${isMobile ? 'p-2' : 'p-3'} rounded flex items-center space-x-2 ${
+                        darkMode ? "bg-slate-700" : "bg-slate-100"
+                      }`}
+                    >
                       <ChevronRight
-                        className={darkMode ? "text-blue-400" : "text-blue-600"}
+                        className={darkMode ? "text-blue-300" : "text-blue-600"}
+                        size={isMobile ? 12 : 14}
                       />
-                      <span className="lg:text-lg">{achievement}</span>
+                      <span className={`${isMobile ? 'text-xs' : 'text-sm'} ${
+                        darkMode ? "text-slate-300" : "text-slate-600"
+                      }`}>
+                        {achievement}
+                      </span>
                     </div>
-                  </motion.div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  </motion.div>
-);
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </FadeIn>
+  );
+};
 
-// Component for Award Item
+// Award Item with subtle hover effect
 export const AwardItem: React.FC<{
   award: Awards;
   index: number;
-  hoveredAward: number | null;
-  setHoveredAward: (index: number | null) => void;
   darkMode: boolean;
-}> = ({ award, index, hoveredAward, setHoveredAward, darkMode }) => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ delay: 0.2 * index }}
-    onHoverStart={() => setHoveredAward(index)}
-    onHoverEnd={() => setHoveredAward(null)}
-    className="group relative"
-  >
-    <motion.div
-      className={`absolute inset-0 rounded-xl bg-gradient-to-r ${award.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
-    />
+}> = ({ award, index, darkMode }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const { isMobile } = useDeviceDetect();
 
-    <div
-      className={`relative p-6 lg:p-8 rounded-xl backdrop-blur-sm ${
-        darkMode ? "bg-gray-800/40" : "bg-white/40"
-      } border ${
-        darkMode ? "border-gray-700/50" : "border-gray-200/50"
-      } transition-all duration-300 transform hover:scale-105`}
-    >
-      <div className="flex items-start gap-4">
-        <div className="flex-1">
-          <Star
-            className={`w-8 h-8 lg:w-10 lg:h-10 mb-4 lg:mb-6 ${
-              hoveredAward === index
-                ? "text-yellow-400"
-                : darkMode
-                  ? textSystem.dark.accent
-                  : textSystem.light.accent
-            } transition-colors duration-300`}
-          />
+  return (
+    <FadeIn delay={index * 0.1}>
+      <div
+        className={`rounded-lg shadow-sm backdrop-blur-sm ${
+          darkMode ? "bg-slate-800/80" : "bg-white/80"
+        } border ${
+          isExpanded
+            ? darkMode ? "border-blue-400" : "border-blue-500"
+            : darkMode ? "border-slate-700/50" : "border-slate-200/50"
+        } transition-all`}
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className={`${isMobile ? 'p-4' : 'p-5'} cursor-pointer`}>
+          <div className="flex justify-between items-start">
+            <div className="flex space-x-4">
+              <Award
+                className={isExpanded 
+                  ? "text-yellow-400" 
+                  : darkMode ? "text-blue-300" : "text-blue-600"}
+                size={isMobile ? 20 : 24}
+              />
+              
+              <div>
+                <h3
+                  className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold ${
+                    darkMode ? "text-white" : "text-slate-800"
+                  }`}
+                >
+                  {award.award}
+                </h3>
+                <p
+                  className={`${isMobile ? 'text-xs' : ''} ${
+                    darkMode ? "text-blue-300" : "text-blue-600"
+                  }`}
+                >
+                  {award.organization}
+                </p>
+                <p
+                  className={`${isMobile ? 'text-xs' : 'text-sm'} ${
+                    darkMode ? "text-slate-400" : "text-slate-500"
+                  }`}
+                >
+                  {award.year}
+                </p>
+              </div>
+            </div>
+            
+            <ChevronRight
+              className={`transition-transform ${isExpanded ? "rotate-90" : ""} 
+              ${darkMode ? "text-blue-300" : "text-blue-600"}`}
+              size={isMobile ? 16 : 20}
+            />
+          </div>
 
-          <h4
-            className={`text-xl lg:text-2xl font-bold mb-2 lg:mb-3 ${
-              darkMode ? textSystem.dark.primary : textSystem.light.primary
-            }`}
-          >
-            {award.award}
-          </h4>
+          {isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className={`mt-4 pt-4 border-t ${
+                darkMode ? "border-slate-700/50" : "border-slate-200/50"
+              }`}
+            >
+              <p
+                className={`mb-3 ${isMobile ? 'text-sm' : ''} ${
+                  darkMode ? "text-slate-300" : "text-slate-600"
+                }`}
+              >
+                {award.details}
+              </p>
 
-          <p
-            className={`mb-2 ${
-              darkMode ? textSystem.dark.secondary : textSystem.light.secondary
-            }`}
-          >
-            {award.organization}
-          </p>
-
-          <p
-            className={`text-sm lg:text-base ${
-              darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary
-            }`}
-          >
-            {award.year}
-          </p>
+              <div
+                className={`inline-block px-4 py-2 rounded-full ${isMobile ? 'text-xs' : 'text-sm'} ${
+                  darkMode
+                    ? "bg-blue-500/20 text-blue-300"
+                    : "bg-blue-100 text-blue-700"
+                }`}
+              >
+                {award.impact}
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
+    </FadeIn>
+  );
+};
 
-      <AnimatePresence>
-        {hoveredAward === index && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className={`mt-4 lg:mt-6 pt-4 lg:pt-6 border-t ${
-              darkMode ? "border-gray-700/30" : "border-gray-200/30"
-            }`}
-          >
-            <p
-              className={`mb-3 lg:mb-4 lg:text-lg lg:leading-relaxed ${
-                darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary
-              }`}
-            >
-              {award.details}
-            </p>
-
-            <div
-              className={`inline-block px-4 py-2 lg:px-6 lg:py-3 rounded-full text-sm lg:text-base ${
-                darkMode
-                  ? "bg-blue-500/20 text-blue-300"
-                  : "bg-blue-100 text-blue-800"
-              }`}
-            >
-              {award.impact}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  </motion.div>
-);
-
-// Component for Navigation Button
+// Clean, focused navigation button
 export const NavigationButton: React.FC<{ darkMode: boolean }> = ({
   darkMode,
-}) => (
-  <motion.button
-    whileHover={{ scale: 1.05 }}
-    whileTap={{ scale: 0.95 }}
-    className={`
-        px-6 py-3 lg:px-8 lg:py-4 rounded-xl
-        bg-gradient-to-r from-blue-500 to-purple-500
-        text-white font-bold lg:text-lg
-        shadow-lg hover:shadow-xl
-        transition-shadow duration-300
-        flex items-center gap-2 lg:gap-3
-        backdrop-blur-sm
-        ${darkMode ? "hover:bg-opacity-90" : "hover:bg-opacity-95"}
-      `}
-    onClick={() => (window.location.href = "/about")}
-  >
-    <Book className="w-4 h-4 lg:w-5 lg:h-5" />
-    <span>Explore Full Story</span>
-    <ChevronRight className="w-4 h-4 lg:w-5 lg:h-5" />
-  </motion.button>
-);
+}) => {
+  const { isMobile } = useDeviceDetect();
+  
+  return (
+    <div className="flex justify-center mt-10">
+      <button
+        className={`${isMobile ? 'px-6 py-2 text-base' : 'px-8 py-3 text-lg'} rounded-lg font-medium flex items-center space-x-2
+          ${darkMode 
+            ? "bg-blue-600 hover:bg-blue-700 text-white" 
+            : "bg-blue-600 hover:bg-blue-700 text-white"
+          } shadow-md transition-colors duration-200`}
+        onClick={() => (window.location.href = "/about")}
+      >
+        <span>Explore Full Story</span>
+        <ChevronRight size={isMobile ? 16 : 18} />
+      </button>
+    </div>
+  );
+};
+
+// Simple component that shows highlighted location
+export const LocationDisplay: React.FC<{ 
+  darkMode: boolean;
+  location: string;
+}> = ({ darkMode, location }) => {
+  const { isMobile } = useDeviceDetect();
+  
+  return (
+    <div className={`flex items-center space-x-2 ${
+      darkMode ? "text-slate-400" : "text-slate-500"
+    }`}>
+      <MapPin size={isMobile ? 14 : 16} />
+      <span className={`${isMobile ? 'text-xs' : 'text-sm'}`}>{location}</span>
+    </div>
+  );
+};

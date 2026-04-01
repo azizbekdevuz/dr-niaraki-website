@@ -1,8 +1,8 @@
 import React, { useState, useEffect, lazy, Suspense, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { useDeviceType } from "../hooks/useDeviceType";
 import { useLoadingStates } from "@/hooks/useLoadingStates";
 import textSystem from "../theme/textSystem";
+import useDeviceDetect from "../hooks/useDeviceDetect";
 
 // Import loading screen normally since we need it immediately
 import LoadingScreen from "@/components/ui/LoadingScreen";
@@ -62,7 +62,7 @@ const Contact = lazy(() => import("../components/index/Contact"));
 export default function Home() {
   // State management
   const [darkMode, setDarkMode] = useState(true);
-  const isMobile = useDeviceType();
+  const { isMobile } = useDeviceDetect();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { isContentLoaded, loadingProgress, isFirstVisit } =
     useLoadingStates(isMobile);
@@ -73,9 +73,9 @@ export default function Home() {
     about: false,
     research: false,
     publications: false,
-    teaching: false,
-    editorial: false,
-    statistics: false,
+    "teaching-experience": false,
+    "editorial-peer-review": false,
+    "statistics-testimonials": false,
     contact: false,
   });
 
@@ -186,7 +186,7 @@ export default function Home() {
             <ComponentLoader>Loading Teaching Experience...</ComponentLoader>
           }
         >
-          {visibleSections.teaching && (
+          {visibleSections["teaching-experience"] && (
             <TeachingExperience darkMode={darkMode} />
           )}
         </Suspense>
@@ -200,7 +200,7 @@ export default function Home() {
             </ComponentLoader>
           }
         >
-          {visibleSections.editorial && (
+          {visibleSections["editorial-peer-review"] && (
             <EditorialPeerReview darkMode={darkMode} />
           )}
         </Suspense>
@@ -214,7 +214,7 @@ export default function Home() {
             </ComponentLoader>
           }
         >
-          {visibleSections.statistics && (
+          {visibleSections["statistics-testimonials"] && (
             <StatisticsTestimonials darkMode={darkMode} />
           )}
         </Suspense>

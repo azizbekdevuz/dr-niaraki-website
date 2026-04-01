@@ -8,11 +8,14 @@ import {
   ExternalLink,
   ArrowRight,
 } from "lucide-react";
+import useDeviceDetect from "@/hooks/useDeviceDetect";
 
 const Publications: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
+  const { isMobile, isTablet } = useDeviceDetect();
   const [hoveredPub, setHoveredPub] = useState<string | null>(null);
   const [activeYear, setActiveYear] = useState("2024");
   const [isButtonHovered, setIsButtonHovered] = useState(false);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const publications = [
     {
@@ -76,26 +79,26 @@ const Publications: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
     <motion.section
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="relative min-h-screen py-20"
+      transition={{ duration: isMobile ? 0.2 : 0.5 }}
+      className="relative min-h-screen py-10 sm:py-16"
     >
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
+      <div className="max-w-2xl sm:max-w-4xl md:max-w-7xl mx-auto px-2 sm:px-4 md:px-8">
         {/* Title with floating quotes */}
-        <div className="relative mb-16">
+        <div className="relative mb-8 sm:mb-12 md:mb-16">
           <motion.div className="absolute inset-0 flex items-center justify-center">
             {[...Array(3)].map((_, i) => (
               <motion.div
                 key={i}
                 className={`absolute ${darkMode ? "text-blue-400" : "text-blue-600"}`}
-                animate={{
+                animate={isMobile ? { opacity: 0.15, scale: 1 } : {
                   opacity: [0.3, 0.6, 0.3],
                   scale: [1, 1.2, 1],
                   x: Math.sin(i * 2) * 50,
                   y: Math.cos(i * 2) * 50,
                 }}
-                transition={{ duration: 3, repeat: Infinity, delay: i * 0.2 }}
+                transition={isMobile ? { duration: 0.5 } : { duration: 3, repeat: Infinity, delay: i * 0.2 }}
               >
-                <Quote size={24} />
+                <Quote size={isMobile ? 16 : 24} />
               </motion.div>
             ))}
           </motion.div>
@@ -103,115 +106,27 @@ const Publications: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`text-4xl md:text-5xl lg:text-6xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r ${
+            className={`text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r ${
               darkMode ? textSystem.dark.gradient : textSystem.light.gradient
             } relative z-10`}
           >
             Publications
           </motion.h2>
-
-          {/* New eye-catching navigation button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="flex justify-center mt-8"
-          >
-            <motion.a
-              href="/publications"
-              onHoverStart={() => setIsButtonHovered(true)}
-              onHoverEnd={() => setIsButtonHovered(false)}
-              className={`group relative overflow-hidden rounded-full inline-flex items-center gap-2 px-8 py-3 font-semibold transition-all duration-300 z-20 ${
-                darkMode
-                  ? "bg-blue-500 hover:bg-blue-600 text-white"
-                  : "bg-blue-600 hover:bg-blue-700 text-white"
-              }`}
-            >
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500"
-                animate={{
-                  x: isButtonHovered ? ["0%", "100%"] : "0%",
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  repeatType: "mirror",
-                }}
-              />
-              <span className="relative z-10 flex items-center gap-2">
-                View All Publications
-                <motion.div
-                  animate={{
-                    x: isButtonHovered ? [0, 5, 0] : 0,
-                  }}
-                  transition={{
-                    duration: 1,
-                    repeat: Infinity,
-                  }}
-                >
-                  <ArrowRight size={20} />
-                </motion.div>
-              </span>
-            </motion.a>
-          </motion.div>
-          {/* New eye-catching navigation button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="flex justify-center mt-8"
-          >
-            <motion.a
-              href="/patents"
-              onHoverStart={() => setIsButtonHovered(true)}
-              onHoverEnd={() => setIsButtonHovered(false)}
-              className={`group relative overflow-hidden rounded-full inline-flex items-center gap-2 px-8 py-3 font-semibold transition-all duration-300 z-20 ${
-                darkMode
-                  ? "bg-blue-500 hover:bg-blue-600 text-white"
-                  : "bg-blue-600 hover:bg-blue-700 text-white"
-              }`}
-            >
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500"
-                animate={{
-                  x: isButtonHovered ? ["0%", "100%"] : "0%",
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  repeatType: "mirror",
-                }}
-              />
-              <span className="relative z-10 flex items-center gap-2">
-                View All Patents
-                <motion.div
-                  animate={{
-                    x: isButtonHovered ? [0, 5, 0] : 0,
-                  }}
-                  transition={{
-                    duration: 1,
-                    repeat: Infinity,
-                  }}
-                >
-                  <ArrowRight size={20} />
-                </motion.div>
-              </span>
-            </motion.a>
-          </motion.div>
         </div>
 
         {/* Year Navigation Tabs */}
-        <div className="flex justify-center mb-12">
+        <div className={`${isMobile ? "flex justify-center overflow-x-auto gap-2 mb-6 pb-2 no-scrollbar" : "flex justify-center mb-12"}`}>
           <div
             className={`inline-flex rounded-xl p-1 ${
               darkMode ? "bg-gray-800/40" : "bg-white/40"
-            } backdrop-blur-sm`}
+            } backdrop-blur-sm ${isMobile ? "gap-2" : ""}`}
+            style={isMobile ? { justifyContent: 'center', width: '100%' } : {}}
           >
             {years.map((year) => (
               <motion.button
                 key={year}
                 onClick={() => setActiveYear(year)}
-                className={`relative px-6 py-2 rounded-lg text-lg font-semibold transition-colors duration-300 ${
+                className={`relative ${isMobile ? "px-4 py-2 text-sm" : "px-6 py-2 text-lg"} rounded-lg font-semibold transition-colors duration-300 whitespace-nowrap ${
                   activeYear === year
                     ? darkMode
                       ? "text-blue-300"
@@ -220,9 +135,10 @@ const Publications: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
                       ? "text-gray-400 hover:text-gray-300"
                       : "text-gray-600 hover:text-gray-800"
                 }`}
+                aria-label={`Show publications for ${year}`}
               >
                 <span className="relative z-10 flex items-center gap-2">
-                  <Calendar size={16} />
+                  <Calendar size={isMobile ? 14 : 16} />
                   {year}
                 </span>
                 {activeYear === year && (
@@ -231,7 +147,7 @@ const Publications: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
                     className={`absolute inset-0 rounded-lg ${
                       darkMode ? "bg-blue-500/20" : "bg-blue-100"
                     }`}
-                    transition={{ type: "spring", duration: 0.6 }}
+                    transition={isMobile ? { duration: 0.2 } : { type: "spring", duration: 0.6 }}
                   />
                 )}
               </motion.button>
@@ -243,95 +159,174 @@ const Publications: React.FC<{ darkMode: boolean }> = ({ darkMode }) => {
         <AnimatePresence mode="wait">
           <motion.div
             key={activeYear}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: isMobile ? 10 : 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center"
+            exit={{ opacity: 0, y: isMobile ? -10 : -20 }}
+            transition={{ duration: isMobile ? 0.15 : 0.3 }}
+            className={`${isMobile ? "flex flex-col gap-3 items-center justify-center" : isTablet ? "grid grid-cols-2 gap-6 justify-items-center" : "grid grid-cols-3 gap-6 justify-items-center"}`}
           >
-            {filteredPublications.map((pub, index) => (
-              <motion.div
-                key={`${pub.year}-${index}`}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1 }}
-                onHoverStart={() => setHoveredPub(`${pub.year}-${index}`)}
-                onHoverEnd={() => setHoveredPub(null)}
-                className="w-full max-w-[360px]"
-              >
-                <div
-                  className={`h-full p-6 rounded-xl border backdrop-blur-sm transition-all duration-300 ${
-                    darkMode
-                      ? `border-gray-700/50 ${hoveredPub === `${pub.year}-${index}` ? "bg-gray-800/60" : "bg-gray-800/40"}`
-                      : `border-gray-200/50 ${hoveredPub === `${pub.year}-${index}` ? "bg-white/60" : "bg-white/40"}`
-                  }`}
+            {filteredPublications.map((pub, index) => {
+              const isExpanded = expandedIndex === index;
+              return (
+                <motion.div
+                  key={`${pub.year}-${index}`}
+                  initial={{ opacity: 0, scale: isMobile ? 1 : 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: isMobile ? 0 : index * 0.1, duration: isMobile ? 0.15 : 0.3 }}
+                  onHoverStart={() => setHoveredPub(`${pub.year}-${index}`)}
+                  onHoverEnd={() => setHoveredPub(null)}
+                  className={`w-full ${isMobile ? "max-w-xs mx-auto" : "max-w-[360px]"}`}
                 >
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-start gap-4 mb-4">
-                      <div
-                        className={`p-3 rounded-lg ${
-                          darkMode ? "bg-gray-700/50" : "bg-gray-100/50"
-                        }`}
-                      >
-                        <BookOpen
-                          className={
-                            darkMode ? "text-blue-400" : "text-blue-600"
-                          }
-                          size={24}
-                        />
+                  <div
+                    className={`h-full ${isMobile ? "p-3" : "p-6"} rounded-xl border backdrop-blur-sm transition-all ${isMobile ? "duration-150" : "duration-300"} ${
+                      darkMode
+                        ? `border-gray-700/50 ${hoveredPub === `${pub.year}-${index}` ? "bg-gray-800/60" : "bg-gray-800/40"}`
+                        : `border-gray-200/50 ${hoveredPub === `${pub.year}-${index}` ? "bg-white/60" : "bg-white/40"}`
+                    }`}
+                  >
+                    <div className="flex flex-col h-full">
+                      <div className="flex items-start gap-3 mb-2">
+                        <div
+                          className={`p-2 rounded-lg ${
+                            darkMode ? "bg-gray-700/50" : "bg-gray-100/50"
+                          }`}
+                        >
+                          <BookOpen
+                            className={darkMode ? "text-blue-400" : "text-blue-600"}
+                            size={isMobile ? 16 : 24}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <h3
+                            className={`font-bold ${isMobile ? "text-base" : "text-xl"} ${
+                              darkMode ? textSystem.dark.primary : textSystem.light.primary
+                            }`}
+                          >
+                            {pub.title}
+                          </h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-xs ${darkMode ? "text-blue-400" : "text-blue-600"}`}>{pub.type}</span>
+                            <span className="text-xs text-gray-400">{pub.year}</span>
+                          </div>
+                        </div>
                       </div>
-                      <h3
-                        className={`text-xl font-bold ${
-                          darkMode
-                            ? textSystem.dark.primary
-                            : textSystem.light.primary
-                        }`}
-                      >
-                        {pub.title}
-                      </h3>
-                    </div>
 
-                    <p
-                      className={`mb-6 flex-grow ${
-                        darkMode
-                          ? textSystem.dark.tertiary
-                          : textSystem.light.tertiary
-                      }`}
-                    >
-                      {pub.description}
-                    </p>
-
-                    <div
-                      className={`flex items-center justify-between pt-4 border-t ${
-                        darkMode ? "border-gray-700/30" : "border-gray-200/30"
-                      }`}
-                    >
-                      <span
-                        className={`text-sm ${
-                          darkMode ? "text-blue-400" : "text-blue-600"
-                        }`}
-                      >
-                        {pub.journal}
-                      </span>
-
-                      <motion.button
-                        whileHover={{ x: 5 }}
-                        className={`flex items-center gap-2 text-sm ${
-                          darkMode
-                            ? "text-blue-400 hover:text-blue-300"
-                            : "text-blue-600 hover:text-blue-700"
-                        }`}
-                      >
-                        View paper
-                        <ExternalLink size={16} />
-                      </motion.button>
+                      {/* Mobile: Toggle details */}
+                      {isMobile ? (
+                        <>
+                          <button
+                            className={`mt-2 mb-1 text-xs underline ${darkMode ? "text-blue-300" : "text-blue-700"}`}
+                            onClick={() => setExpandedIndex(isExpanded ? null : index)}
+                            aria-label={isExpanded ? "Hide details" : "Show details"}
+                          >
+                            {isExpanded ? "Hide details" : "Show details"}
+                          </button>
+                          <AnimatePresence>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="overflow-hidden"
+                                transition={{ duration: 0.12 }}
+                              >
+                                <p className={`mb-2 ${darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary} text-xs`}>{pub.description}</p>
+                                <div className="flex items-center justify-between pt-2 border-t border-gray-700/20">
+                                  <span className={`text-xs ${darkMode ? "text-blue-400" : "text-blue-600"}`}>{pub.journal}</span>
+                                  <motion.button
+                                    whileHover={isMobile ? undefined : { x: 3 }}
+                                    className={`flex items-center gap-1 text-xs ${darkMode ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-700"}`}
+                                    aria-label="View paper"
+                                  >
+                                    View paper
+                                    <ExternalLink size={12} />
+                                  </motion.button>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </>
+                      ) : (
+                        <>
+                          <p className={`mb-6 flex-grow ${darkMode ? textSystem.dark.tertiary : textSystem.light.tertiary}`}>{pub.description}</p>
+                          <div className={`flex items-center justify-between pt-4 border-t ${darkMode ? "border-gray-700/30" : "border-gray-200/30"}`}>
+                            <span className={`text-sm ${darkMode ? "text-blue-400" : "text-blue-600"}`}>{pub.journal}</span>
+                            <motion.button
+                              whileHover={{ x: 5 }}
+                              className={`flex items-center gap-2 text-sm ${darkMode ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-700"}`}
+                              aria-label="View paper"
+                            >
+                              View paper
+                              <ExternalLink size={16} />
+                            </motion.button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </motion.div>
         </AnimatePresence>
+        {/* Navigation Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="flex flex-col sm:flex-row justify-center gap-4 mt-6 sm:mt-8"
+        >
+          <motion.a
+            href="/publications"
+            onHoverStart={() => setIsButtonHovered(true)}
+            onHoverEnd={() => setIsButtonHovered(false)}
+            className={`group relative overflow-hidden rounded-full inline-flex items-center gap-2 px-4 py-2 sm:px-8 sm:py-3 font-semibold transition-all duration-300 z-20 ${
+              darkMode
+                ? "bg-blue-500 hover:bg-blue-600 text-white"
+                : "bg-blue-600 hover:bg-blue-700 text-white"
+            }`}
+          >
+            <span className="relative z-10 flex items-center gap-2">
+              View All Publications
+              <motion.div
+                animate={{
+                  x: isButtonHovered ? [0, 5, 0] : 0,
+                }}
+                transition={{
+                  duration: 1,
+                  repeat: Infinity,
+                }}
+              >
+                <ArrowRight size={isMobile ? 16 : 20} />
+              </motion.div>
+            </span>
+          </motion.a>
+          <motion.a
+            href="/patents"
+            onHoverStart={() => setIsButtonHovered(true)}
+            onHoverEnd={() => setIsButtonHovered(false)}
+            className={`group relative overflow-hidden rounded-full inline-flex items-center gap-2 px-4 py-2 sm:px-8 sm:py-3 font-semibold transition-all duration-300 z-20 ${
+              darkMode
+                ? "bg-blue-500 hover:bg-blue-600 text-white"
+                : "bg-blue-600 hover:bg-blue-700 text-white"
+            }`}
+          >
+            <span className="relative z-10 flex items-center gap-2">
+              View All Patents
+              <motion.div
+                animate={{
+                  x: isButtonHovered ? [0, 5, 0] : 0,
+                }}
+                transition={{
+                  duration: 1,
+                  repeat: Infinity,
+                }}
+              >
+                <ArrowRight size={isMobile ? 16 : 20} />
+              </motion.div>
+            </span>
+          </motion.a>
+        </motion.div>
       </div>
     </motion.section>
   );

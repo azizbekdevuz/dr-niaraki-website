@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
-import { useDeviceType } from "@/hooks/useDeviceType";
+import useDeviceDetect from "@/hooks/useDeviceDetect";
 import { patents } from "../datasets/patents";
 import { Award, Filter, Check, Clock, Globe, Search, Grid, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { groupBy } from "lodash";
@@ -192,68 +192,44 @@ const ViewToggle = ({
   </div>
 );
 
-const PatentCard = ({
-  patent,
-  darkMode,
-}: {
-  patent: Patent;
-  darkMode: boolean;
-}) => (
-  <div
-    className={`relative group p-6 rounded-xl transition-all duration-300
-        ${
-          darkMode
-            ? "bg-gray-800 hover:bg-gray-750"
-            : "bg-white hover:bg-gray-50"
-        } 
-        shadow-lg hover:shadow-xl cursor-pointer
-        border border-transparent hover:border-blue-500`}
-  >
-    <div className="absolute top-4 right-4">
-      <span
-        className={`px-3 py-1 rounded-full text-xs font-medium
-          ${getStatusColor(patent.type, darkMode)}`}
-      >
-        {patent.type}
-      </span>
-    </div>
-
-    <h3 className="font-semibold mb-3 pr-24">{patent.title}</h3>
-
-    <div className="space-y-2">
-      <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-        <span className="inline-block w-20 font-medium">Number:</span>
-        {patent.number}
-      </p>
-      <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-        <span className="inline-block w-20 font-medium">Date:</span>
-        {patent.date}
-      </p>
-      <div
-        className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
-      >
-        <span className="inline-block w-20 font-medium">Inventors:</span>
-        <div className="inline-flex flex-wrap gap-1">
-          {patent.inventors.map((inventor, idx) => (
-            <span
-              key={idx}
-              className={`inline-flex items-center px-2 py-1 rounded-full text-xs
-                  ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}
-            >
-              {inventor}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-
+const PatentCard = ({ patent, darkMode }: { patent: Patent; darkMode: boolean }) => {
+  const { isMobile } = useDeviceDetect();
+  const [showDetails, setShowDetails] = useState(false);
+  return (
     <div
-      className={`absolute inset-x-0 bottom-0 h-1 rounded-b-xl
-        transition-transform transform scale-x-0 group-hover:scale-x-100
-        bg-gradient-to-r from-blue-500 to-purple-500`}
-    />
-  </div>
-);
+      className={`relative group p-4 sm:p-6 rounded-xl transition-all duration-300
+        ${darkMode ? "bg-gray-800 hover:bg-gray-750" : "bg-white hover:bg-gray-50"}
+        shadow-lg hover:shadow-xl cursor-pointer
+        border border-transparent hover:border-blue-500 flex flex-col gap-2`}
+      onClick={() => isMobile && setShowDetails(v => !v)}
+      tabIndex={0}
+      aria-label={`View details for ${patent.title}`}
+    >
+      <div className="flex justify-between items-center mb-1">
+        <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(patent.type, darkMode)}`}>{patent.type}</span>
+        <span className="text-xs font-medium text-gray-400">{patent.date.slice(0, 4)}</span>
+      </div>
+      <h3 className="font-semibold text-base sm:text-lg mb-1 line-clamp-2 hover:line-clamp-none transition-all pr-0 sm:pr-24">{patent.title}</h3>
+      {/* Show details only on desktop or when toggled on mobile */}
+      <div className={`transition-all duration-300 ${showDetails || !isMobile ? "block" : "hidden"}`}>
+        <p className={`text-xs sm:text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}><span className="font-medium">Number:</span> {patent.number}</p>
+        <div className={`text-xs sm:text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}><span className="font-medium">Inventors:</span> {patent.inventors.join(", ")}</div>
+        {patent.applicant && <p className={`text-xs sm:text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}><span className="font-medium">Applicant:</span> {patent.applicant}</p>}
+        {patent.status && <p className={`text-xs sm:text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}><span className="font-medium">Status:</span> {patent.status}</p>}
+      </div>
+      {/* Toggle details button for mobile */}
+      {isMobile && (
+        <button
+          className="mt-1 text-xs text-blue-400 underline focus:outline-none"
+          onClick={e => { e.stopPropagation(); setShowDetails(v => !v); }}
+        >
+          {showDetails ? "Hide Details" : "Show Details"}
+        </button>
+      )}
+      <div className="absolute inset-x-0 bottom-0 h-1 rounded-b-xl transition-transform transform scale-x-0 group-hover:scale-x-100 bg-gradient-to-r from-blue-500 to-purple-500" />
+    </div>
+  );
+};
 
 const FilterButton = ({
   active,
@@ -285,7 +261,7 @@ const PatentsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
-  const isMobile = useDeviceType();
+  const { isMobile } = useDeviceDetect();
 
   // Update the filter logic to include search
   const filteredPatents = patents.filter((patent: Patent) => {
@@ -401,51 +377,69 @@ const PatentsPage = () => {
           {/* Patents Grid */}
           {view === "grid" ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {paginatedPatents.map((patent: Patent) => (
-                  <PatentCard
-                    key={patent.id}
-                    patent={patent}
-                    darkMode={darkMode}
-                  />
+                  <PatentCard key={patent.id} patent={patent} darkMode={darkMode} />
                 ))}
               </div>
               {/* Pagination Controls */}
-              <div className="flex flex-wrap justify-center mt-8 gap-2">
-                <button
-                  className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                  aria-label="First page"
-                >
-                  <ChevronsLeft size={18} />
-                </button>
-                <button
-                  className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  aria-label="Previous page"
-                >
-                  <ChevronLeft size={18} />
-                </button>
-                <span className="px-4 py-1 font-medium">Page {currentPage} of {totalPages}</span>
-                <button
-                  className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  aria-label="Next page"
-                >
-                  <ChevronRight size={18} />
-                </button>
-                <button
-                  className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                  aria-label="Last page"
-                >
-                  <ChevronsRight size={18} />
-                </button>
-              </div>
+              {isMobile ? (
+                <div className="flex justify-between items-center mt-6 gap-2">
+                  <button
+                    className="flex-1 py-2 rounded-lg bg-blue-500 text-white font-semibold disabled:opacity-50"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    aria-label="Previous page"
+                  >
+                    Previous
+                  </button>
+                  <span className="px-2 text-sm font-medium">Page {currentPage} of {totalPages}</span>
+                  <button
+                    className="flex-1 py-2 rounded-lg bg-blue-500 text-white font-semibold disabled:opacity-50"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    aria-label="Next page"
+                  >
+                    Next
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap justify-center mt-8 gap-2">
+                  <button
+                    className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    aria-label="First page"
+                  >
+                    <ChevronsLeft size={18} />
+                  </button>
+                  <button
+                    className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <span className="px-4 py-1 font-medium">Page {currentPage} of {totalPages}</span>
+                  <button
+                    className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    aria-label="Next page"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                  <button
+                    className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white transition disabled:opacity-50"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    aria-label="Last page"
+                  >
+                    <ChevronsRight size={18} />
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             <PatentTimeline patents={filteredPatents} darkMode={darkMode} />
