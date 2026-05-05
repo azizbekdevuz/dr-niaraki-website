@@ -3,6 +3,8 @@
  * POST: Upload and parse DOCX file, or confirm commit
  */
 
+import path from 'path';
+
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -19,26 +21,26 @@ import { validateDetails } from '@/validators/detailsSchema';
 export async function POST(request: NextRequest) {
   try {
     const accessStatus = await hasValidAdminAccess();
-    
+
     if (!accessStatus.isLoggedIn) {
       return NextResponse.json(
         { success: false, message: 'Unauthorized - please login' },
         { status: 401 }
       );
     }
-    
+
     const contentType = request.headers.get('content-type') || '';
-    
+
     // Handle multipart form data (file upload)
     if (contentType.includes('multipart/form-data')) {
       return handleFileUpload(request, accessStatus);
     }
-    
+
     // Handle JSON (confirm commit)
     if (contentType.includes('application/json')) {
       return handleConfirmCommit(request, accessStatus);
     }
-    
+
     return NextResponse.json(
       { success: false, message: 'Invalid content type' },
       { status: 400 }
@@ -46,9 +48,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: error instanceof Error ? error.message : 'Internal server error' 
+      {
+        success: false,
+        message: error instanceof Error ? error.message : 'Internal server error'
       },
       { status: 500 }
     );
@@ -64,14 +66,14 @@ async function handleFileUpload(
 ) {
   const formData = await request.formData();
   const file = formData.get('file');
-  
+
   if (!file || !(file instanceof File)) {
     return NextResponse.json(
       { success: false, message: 'No file uploaded' },
       { status: 400 }
     );
   }
-  
+
   // Validate file type
   if (!file.name.endsWith('.docx')) {
     return NextResponse.json(
@@ -79,7 +81,7 @@ async function handleFileUpload(
       { status: 400 }
     );
   }
-  
+
   // Validate file size (max 10MB)
   if (file.size > 10 * 1024 * 1024) {
     return NextResponse.json(
@@ -87,7 +89,7 @@ async function handleFileUpload(
       { status: 400 }
     );
   }
-  
+
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
   const uploader = 'admin';
@@ -144,53 +146,54 @@ async function handleConfirmCommit(
   // Require valid device for commit
   if (!accessStatus.hasValidDevice) {
     return NextResponse.json(
-      { 
-        success: false, 
-        message: 'Device not registered. Please register this device before committing.' 
+      {
+        success: false,
+        message: 'Device not registered. Please register this device before committing.'
       },
       { status: 403 }
     );
   }
-  
+
   const body = await request.json();
   const { data, acknowledgeWarnings, originalFilename } = body;
-  
+
   if (!data) {
     return NextResponse.json(
       { success: false, message: 'No data provided' },
       { status: 400 }
     );
   }
-  
+
   // Validate final data
   const validation = validateDetails(data);
   if (!validation.success && !acknowledgeWarnings) {
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Validation failed. Check warnings and acknowledge to proceed.',
         errors: validation.errors?.map(e => `${e.path.join('.')}: ${e.message}`) || [],
       },
       { status: 400 }
     );
   }
-  
+
   const detailsData = data as Details;
-  
+
   if (originalFilename && typeof body.fileBuffer === 'string') {
     try {
+      const sanitizedFilename = path.basename(originalFilename);
       const fileBuffer = Buffer.from(body.fileBuffer, 'base64');
-      await saveUploadedFile(fileBuffer, originalFilename, 'admin');
+      await saveUploadedFile(fileBuffer, sanitizedFilename, 'admin');
     } catch (error) {
       console.error('Failed to save uploaded file:', error);
     }
   }
-  
+
   // Try to commit to GitHub
   if (isGitHubConfigured()) {
     try {
       const result = await commitDetailsJson(detailsData, 'admin');
-      
+
       if (result) {
         return NextResponse.json({
           success: true,
@@ -209,10 +212,10 @@ async function handleConfirmCommit(
       // Fall through to fallback
     }
   }
-  
+
   // Fallback: save preview file
   const previewUrl = await saveDetailsPreview(detailsData);
-  
+
   return NextResponse.json({
     success: true,
     message: 'GitHub commit not available. Preview saved locally.',
