@@ -84,8 +84,8 @@ export async function POST(req: NextRequest) {
         }
       }
     );
-  } catch (_error) {
-    console.error("❌ Error in /api/chat:", _error);
+  } catch (error) {
+    console.error("❌ Error in /api/chat:", error);
     
     // Don't expose internal errors to client
     return NextResponse.json(

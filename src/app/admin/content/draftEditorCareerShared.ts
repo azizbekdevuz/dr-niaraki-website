@@ -4,8 +4,13 @@ import type { ExperienceEditorRow } from '@/lib/draftEditorSlice';
 export const careerFieldClass =
   'w-full px-3 py-2 rounded-lg bg-surface-secondary border border-primary text-foreground text-sm';
 
+let _fallbackCounter = 0;
+
 export function newStableId(): string {
-  return typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `id-${Date.now()}`;
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+  return `id-${Date.now()}-${_fallbackCounter++}`;
 }
 
 export function defaultJourney(): AboutJourneyItem {

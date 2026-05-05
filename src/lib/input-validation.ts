@@ -1,5 +1,7 @@
 // Input validation utilities for enhanced security
 
+const MAX_INPUT_LENGTH = 1000;
+
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
@@ -8,8 +10,6 @@ export interface ValidationResult {
 
 // Validate and sanitize chat input
 export function validateChatInput(input: unknown): ValidationResult {
-  const errors: string[] = [];
-
   // Type check
   if (typeof input !== 'string') {
     return {
@@ -18,15 +18,18 @@ export function validateChatInput(input: unknown): ValidationResult {
     };
   }
 
-  // Length validation
   const trimmed = input.trim();
+
   if (trimmed.length === 0) {
-    errors.push('Question cannot be empty');
+    return { isValid: false, errors: ['Question cannot be empty'] };
   }
-  
-  if (trimmed.length > 1000) {
-    errors.push('Question is too long (max 1000 characters)');
+
+  // Hard bail-out before any regex work (defense-in-depth against ReDoS on pathological input).
+  if (trimmed.length > MAX_INPUT_LENGTH) {
+    return { isValid: false, errors: [`Question is too long (max ${MAX_INPUT_LENGTH} characters)`] };
   }
+
+  const errors: string[] = [];
 
   // Rejection gate: detect presence of dangerous tags (not a sanitizer — input is never rendered as HTML).
   const dangerousPatterns = [
@@ -61,8 +64,8 @@ export function validateChatInput(input: unknown): ValidationResult {
 
   // Sanitize by removing extra whitespace and normalizing
   const sanitized = trimmed
-    .replace(/\s+/g, ' ') // Normalize whitespace
-    .slice(0, 1000); // Enforce max length
+    .replace(/\s+/g, ' ')
+    .slice(0, MAX_INPUT_LENGTH);
 
   return {
     isValid: errors.length === 0,

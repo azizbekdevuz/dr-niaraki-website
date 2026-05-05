@@ -177,14 +177,12 @@ async function handleConfirmCommit(
   
   const detailsData = data as Details;
   
-  // Save original file if provided
-  if (originalFilename && body.fileBuffer) {
+  if (originalFilename && typeof body.fileBuffer === 'string') {
     try {
       const fileBuffer = Buffer.from(body.fileBuffer, 'base64');
       await saveUploadedFile(fileBuffer, originalFilename, 'admin');
     } catch (error) {
       console.error('Failed to save uploaded file:', error);
-      // Continue with commit even if file save fails
     }
   }
   
