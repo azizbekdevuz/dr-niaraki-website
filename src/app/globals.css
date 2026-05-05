@@ -458,7 +458,7 @@
   }
 
   /* Optimize touch targets */
-  button, a {
+  button {
     min-height: 44px;
     min-width: 44px;
   }

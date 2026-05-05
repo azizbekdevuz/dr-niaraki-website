@@ -150,7 +150,11 @@ export default function ContactPage() {
                     <div>
                       <h3 className="font-medium text-foreground mb-1">Website</h3>
                       <a
-                        href={`https://${contactInfo.websiteDisplay}`}
+                        href={
+                          contactInfo.websiteDisplay.startsWith('http')
+                            ? contactInfo.websiteDisplay
+                            : `https://${contactInfo.websiteDisplay}`
+                        }
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-accent-primary hover:underline flex items-center gap-1"
@@ -170,16 +174,16 @@ export default function ContactPage() {
                   {socialLinks.map((social) => {
                     const SocIcon = CONTACT_SOCIAL_ICON_MAP[social.iconName];
                     return (
-                    <a
-                      key={social.name}
-                      href={social.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-secondary hover:bg-surface-hover transition-colors"
-                    >
-                      <SocIcon className={`w-5 h-5 ${social.colorClass}`} />
-                      <span className="text-foreground text-sm">{social.name}</span>
-                    </a>
+                      <a
+                        key={social.name}
+                        href={social.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-secondary hover:bg-surface-hover transition-colors"
+                      >
+                        <SocIcon className={`w-5 h-5 ${social.colorClass}`} />
+                        <span className="text-foreground text-sm">{social.name}</span>
+                      </a>
                     );
                   })}
                 </div>
