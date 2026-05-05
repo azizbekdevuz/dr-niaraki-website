@@ -61,11 +61,8 @@ function ListBlock({
               <span className="text-xs text-muted block mb-1">Id (stable key)</span>
               <input
                 value={item.id}
-                onChange={(e) =>
-                  onChange(items.map((row, idx) => (idx === i ? { ...row, id: e.target.value } : row)))
-                }
-                disabled={off}
-                className={careerFieldClass}
+                readOnly
+                className={`${careerFieldClass} opacity-60 cursor-not-allowed`}
               />
             </label>
             <label className="block">
