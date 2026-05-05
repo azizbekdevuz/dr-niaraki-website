@@ -1,11 +1,15 @@
-# Dr. Abolghasem Sadeghi-Niaraki — official site
+# Dr. Abolghasem Sadeghi-Niaraki — Official Website
 
-Next.js **15** (App Router), React **19**, TypeScript **5**, Tailwind CSS **3**, Prisma **6**, Zod **4**. Public pages read **published content from PostgreSQL via Prisma** when `DATABASE_URL` is set, with a **validated canonical seed** (`src/content/defaults.ts`) when the DB is unavailable or published JSON is invalid. Admin/editor flows cover draft, publish, restore, and document import/review/merge.
+Next.js 15 (App Router), React 19, TypeScript 5, Tailwind CSS 3, Prisma 6, Zod 4.
+Public pages read published content from PostgreSQL via Prisma when `DATABASE_URL` is set, falling back to a validated canonical seed (`src/content/defaults.ts`) when the DB is unavailable or the published row is invalid.
+Admin/editor flows cover draft, publish, restore, and document import/review/merge.
+
+> **Migration note:** The current implementation was developed in a separate renewal repository and integrated into this canonical repository via two migration commits (`refactor!: remove legacy website implementation` → `feat: introduce renewed Next.js architecture`). The two repositories had unrelated histories and different architectures, so a standard merge was not practical. All ongoing development continues here.
 
 ## Prerequisites
 
 - Node.js **18+**
-- **npm** (primary; scripts below use `npm run`)
+- **npm** (primary; all scripts below use `npm run`)
 
 ## Setup
 
@@ -23,28 +27,28 @@ Environment reference: **`.env.example`**. Admin and optional flags are document
 ## Scripts
 
 | Command | Purpose |
-|--------|---------|
+|---------|---------|
 | `npm run dev` | Development server |
 | `npm run build` / `npm start` | Production build and server |
 | `npm run lint` / `npm run lint:fix` | ESLint |
-| `npm run type-check` | TypeScript (`tsc --noEmit`) |
+| `npm run tsc` | TypeScript (`tsc --noEmit`) |
 | `npm run test` / `npm run test:run` | Vitest |
 | `npm run prisma:migrate` / `prisma:push` / `prisma:studio` | Prisma |
 | `npm run analyze` | Bundle analyzer (`ANALYZE=true` build) |
 | `npm run perf:check` | Local perf / lint / type pass helper |
 
-## Architecture (short)
+## Architecture
 
 - **`src/app/`** — App Router routes (public site, admin, API route handlers).
-- **`src/app/admin/content/workflow/`** — Extracted admin **content workflow** UI pieces (live read panel, toolbar, published versions table) composed by `workflowSections.tsx`.
-- **`src/app/admin/upload/`** — CV DOCX flow: **`page.tsx`** composes **`hooks/`** (`useAdminUploadAuthGate`, `useCvDocxWorkflow`) and **`components/`** (toolbar, legacy notice, form, warnings, preview tabs, commit). **`adminSubnavStyles.ts`** + **`src/lib/ui/chromeClassStrings.ts`** hold repeated Tailwind fragments shared with other admin/public chrome.
-- **`src/app/admin/imports/`** — Import review screen: types in **`importDetailTypes.ts`**, layout in **`importDetailBody.tsx`**, and focused **`Import*.tsx`** cards/panels (provenance, summary, warnings, merge, structured diff).
+- **`src/app/admin/content/workflow/`** — Extracted admin content workflow UI (live read panel, toolbar, published versions table) composed by `workflowSections.tsx`.
+- **`src/app/admin/upload/`** — CV DOCX flow: `page.tsx` composes hooks (`useAdminUploadAuthGate`, `useCvDocxWorkflow`) and components (toolbar, legacy notice, form, warnings, preview tabs, commit). `adminSubnavStyles.ts` + `src/lib/ui/chromeClassStrings.ts` hold shared Tailwind fragments.
+- **`src/app/admin/imports/`** — Import review screen: types in `importDetailTypes.ts`, layout in `importDetailBody.tsx`, and focused `Import*.tsx` cards/panels (provenance, summary, warnings, merge, structured diff).
 - **`src/server/`** — Server-only Prisma, auth/session, admin guards, import pipeline, public read orchestration.
 - **`src/content/`** — Zod `SiteContent` schema, seeds, validators; single source for public copy and structure.
-- **Public reads** — Prefer latest **published** row from DB when valid; otherwise validated **canonical** seed. See `src/server/content/publicSiteContent.ts` and `publishedSiteContent.ts`.
-- **Frontend** — Hybrid **CSS spatial background** (`CssSpatialBackground`) plus **bounded WebGL/XR canvas** (`XrLabCanvas` inside `SpatialFieldStack`) where enabled; respects `prefers-reduced-motion`. Custom cursor: `NEXT_PUBLIC_ENABLE_CUSTOM_CURSOR=true` (see `.env.example`, `src/styles/atomcursor.css`).
-- **Uploads on Vercel** — With `VERCEL=1` and `BLOB_READ_WRITE_TOKEN`, DOCX bytes go to **private Vercel Blob**; `UploadedFile.storedPath` records `vercel-blob-path:…` and downloads use `/api/admin/uploaded-files/[id]/file`. Locally, files stay under `public/uploads/` when Blob is not used.
-- **Admin devices** — When `DATABASE_URL` is set, registered devices live in **Postgres** (`AdminRegisteredDevice`); legacy `admin_devices.json` remains for DB-less dev. GitHub file commits **retry on 409** where used.
+- **Public reads** — Prefer latest published row from DB when valid; otherwise fall back to validated canonical seed. See `src/server/content/publicSiteContent.ts` and `publishedSiteContent.ts`.
+- **Frontend** — Hybrid CSS spatial background (`CssSpatialBackground`) plus bounded WebGL/XR canvas (`XrLabCanvas` inside `SpatialFieldStack`) where enabled; respects `prefers-reduced-motion`. Custom cursor: `NEXT_PUBLIC_ENABLE_CUSTOM_CURSOR=true` (see `.env.example`, `src/styles/atomcursor.css`).
+- **Uploads on Vercel** — With `VERCEL=1` and `BLOB_READ_WRITE_TOKEN`, DOCX bytes go to private Vercel Blob; `UploadedFile.storedPath` records `vercel-blob-path:…` and downloads use `/api/admin/uploaded-files/[id]/file`. Locally, files stay under `public/uploads/`.
+- **Admin devices** — When `DATABASE_URL` is set, registered devices live in Postgres (`AdminRegisteredDevice`); legacy `admin_devices.json` remains for DB-less dev. GitHub file commits retry on 409 where used.
 
 Binding editorial/security rules for contributors and agents: **`.cursor/rules/project.mdc`**.
 
@@ -52,7 +56,13 @@ Additional notes: **`LOADING_SYSTEM.md`** describes the public-shell loading/laz
 
 ## Styling / Tailwind
 
-Theme tokens live primarily in **`src/app/globals.css`** (CSS variables) and **`tailwind.config.js`** (maps utilities to those variables). Tailwind `content` globs include `src/app`, `src/components`, `src/lib`, `src/hooks`, and **`src/contexts`** so client providers are scanned.
+Theme tokens live primarily in **`src/app/globals.css`** (CSS variables) and **`tailwind.config.js`** (maps utilities to those variables). Tailwind `content` globs include `src/app`, `src/components`, `src/lib`, `src/hooks`, and `src/contexts` so client providers are scanned.
+
+## Deployment
+
+Targets **Vercel** (zero-config for Next.js). Set the environment variables from `.env.example` in the Vercel dashboard. Prisma needs `DATABASE_URL` pointing to a managed PostgreSQL instance (e.g. Neon, Supabase, Railway). DOCX uploads use Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set.
+
+For non-Vercel hosts, run `npm run build && npm start` behind a reverse proxy with TLS.
 
 ## Community
 
