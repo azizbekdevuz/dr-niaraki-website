@@ -17,7 +17,8 @@ function envBootstrapPassword(): string | null {
 
 /**
  * Ensures a single primary admin row exists when `ADMIN_PASSWORD` is set:
- * creates the user with a scrypt hash, or fills `passwordHash` if it was null.
+ * creates the user with a scrypt hash, fills `passwordHash` if it was null,
+ * or re-hashes if the env password was rotated since last deploy.
  * Runtime login verification uses DB hash only (no plaintext compare).
  */
 export async function ensureBootstrapAdminUser(): Promise<void> {
@@ -37,6 +38,14 @@ export async function ensureBootstrapAdminUser(): Promise<void> {
     return;
   }
   if (!existing.passwordHash) {
+    await prisma.adminUser.update({
+      where: { id: existing.id },
+      data: { passwordHash: await hashPasswordForStorage(password) },
+    });
+    return;
+  }
+  const envMatchesStored = await verifyPasswordAgainstHash(password, existing.passwordHash);
+  if (!envMatchesStored) {
     await prisma.adminUser.update({
       where: { id: existing.id },
       data: { passwordHash: await hashPasswordForStorage(password) },
