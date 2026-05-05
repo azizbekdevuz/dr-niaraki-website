@@ -1,4 +1,4 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 import { RESPONSE_TEMPLATES } from '@/lib/chat/constants';
@@ -13,21 +13,25 @@ export async function POST(req: NextRequest) {
     // Rate limiting
     const clientId = getClientIdentifier(req);
     const rateLimitResult = await rateLimiter.checkLimit(clientId);
-    
+    const retryAfterSeconds = Math.max(
+      0,
+      Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000),
+    );
+
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
-        { 
-          error: "Too many requests", 
+        {
+          error: "Too many requests",
           answer: getRandomResponse(RESPONSE_TEMPLATES.rateLimited),
-          retryAfter: Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)
-        }, 
-        { 
+          retryAfter: retryAfterSeconds
+        },
+        {
           status: 429,
           headers: {
             'X-RateLimit-Limit': '30',
             'X-RateLimit-Remaining': String(rateLimitResult.remaining),
             'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString(),
-            'Retry-After': String(Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000))
+            'Retry-After': String(retryAfterSeconds)
           }
         }
       );
@@ -39,7 +43,7 @@ export async function POST(req: NextRequest) {
       body = await req.json();
     } catch (_error) {
       return NextResponse.json(
-        { error: "Invalid JSON in request body" }, 
+        { error: "Invalid JSON in request body" },
         { status: 400 }
       );
     }
@@ -48,7 +52,7 @@ export async function POST(req: NextRequest) {
     const validationResult = validateChatInput(body.question);
     if (!validationResult.isValid) {
       return NextResponse.json(
-        { error: validationResult.errors.join(', ') }, 
+        { error: validationResult.errors.join(', ') },
         { status: 400 }
       );
     }
@@ -59,7 +63,7 @@ export async function POST(req: NextRequest) {
     const sessionId = body.sessionId;
     if (!validateSessionId(sessionId)) {
       return NextResponse.json(
-        { error: "Invalid session ID" }, 
+        { error: "Invalid session ID" },
         { status: 400 }
       );
     }
@@ -86,7 +90,7 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     console.error("❌ Error in /api/chat:", error);
-    
+
     // Don't expose internal errors to client
     return NextResponse.json(
       { answer: "I'm having trouble processing your question at the moment. Please try again shortly." },
