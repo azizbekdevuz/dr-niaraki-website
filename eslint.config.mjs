@@ -1,59 +1,94 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextPlugin from "@next/eslint-plugin-next";
-import reactPlugin from "eslint-plugin-react";
-import tsParser from "@typescript-eslint/parser";
-import tsPlugin from "@typescript-eslint/eslint-plugin";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import { FlatCompat } from "@eslint/eslintrc";
 
-export default defineConfig([
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+});
+
+const eslintConfig = [
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
-    files: ["**/*.{ts,tsx}"],
-    languageOptions: {
-      parser: tsParser,
-      ecmaVersion: 2021,
-      sourceType: "module",
-      parserOptions: {
-        ecmaFeatures: {
-          jsx: true,
-        },
-      },
-    },
-    plugins: {
-      react: reactPlugin,
-      "@typescript-eslint": tsPlugin,
-      "@next/next": nextPlugin,
+    rules: {
+      // Performance rules
+      "react-hooks/exhaustive-deps": "error",
+      "react/no-unstable-nested-components": "error",
+      
+      // Accessibility rules
+      "jsx-a11y/alt-text": "error",
+      "jsx-a11y/aria-props": "error",
+      "jsx-a11y/aria-proptypes": "error",
+      "jsx-a11y/aria-unsupported-elements": "error",
+      "jsx-a11y/role-has-required-aria-props": "error",
+      
+      // Code quality rules
+      "no-console": ["warn", { allow: ["warn", "error"] }],
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": ["error", {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_"
+      }],
+      
+      // Import rules
+      "import/order": ["error", {
+        groups: [
+          "builtin",
+          "external",
+          "internal",
+          "parent",
+          "sibling",
+          "index"
+        ],
+        "newlines-between": "always",
+        alphabetize: {
+          order: "asc",
+          caseInsensitive: true
+        }
+      }],
+      
+      // React best practices
+      "react/jsx-no-bind": ["error", {
+        allowArrowFunctions: true,
+        allowFunctions: false,
+        allowBind: false
+      }],
+      "react/prop-types": "off", // Using TypeScript
+      "react/display-name": "error",
+      
+      // TypeScript specific
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/consistent-type-imports": ["error", {
+        prefer: "type-imports"
+      }],
+      
+      // General best practices
+      "prefer-const": "error",
+      "no-var": "error",
+      "eqeqeq": ["error", "always"],
+      "curly": ["error", "all"],
+      "dot-notation": "error",
+      "no-throw-literal": "error",
+      "no-unmodified-loop-condition": "error",
+      "no-useless-call": "error",
+      "no-useless-concat": "error",
+      "prefer-template": "error",
+      "no-nested-ternary": "error",
+      "max-depth": ["error", 4],
+      "complexity": ["warn", 20]
     },
     settings: {
-      react: {
-        version: "detect",
-      },
-    },
-    rules: {
-      ...reactPlugin.configs.recommended.rules,
-      ...tsPlugin.configs.recommended.rules,
-      ...nextPlugin.configs.recommended.rules,
+      "import/resolver": {
+        typescript: {
+          alwaysTryTypes: true
+        }
+      }
+    }
+  }
+];
 
-      "react/react-in-jsx-scope": "off",
-      "react/jsx-uses-react": "off",
-      "react/prop-types": "off",
-      "react/no-unknown-property": [
-        "error",
-        {
-          ignore: ["jsx", "global"],
-        },
-      ],
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        { argsIgnorePattern: "^_" },
-      ],
-    },
-  },
-  globalIgnores([
-    ".next/**",
-    "out/**",
-    "build/**",
-    "dist/**",
-    "**/dist/**",
-    "next-env.d.ts",
-    "node_modules",
-  ]),
-]);
+export default eslintConfig;

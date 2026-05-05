@@ -1,73 +1,77 @@
-# Dr. Niaraki Website
+# Dr. Abolghasem Sadeghi-Niaraki — Official Website
 
-## Overview
+Next.js 15 (App Router), React 19, TypeScript 5, Tailwind CSS 3, Prisma 6, Zod 4.
+Public pages read published content from PostgreSQL via Prisma when `DATABASE_URL` is set, falling back to a validated canonical seed (`src/content/defaults.ts`) when the DB is unavailable or the published row is invalid.
+Admin/editor flows cover draft, publish, restore, and document import/review/merge.
 
-This is a modern, responsive web platform for Dr. Niaraki, built with Next.js, TypeScript, and Tailwind CSS. It showcases research, publications, patents, and more, with a focus on maintainability and developer experience.
+> **Migration note:** The current implementation was developed in a separate renewal repository and integrated into this canonical repository via two migration commits (`refactor!: remove legacy website implementation` → `feat: introduce renewed Next.js architecture`). The two repositories had unrelated histories and different architectures, so a standard merge was not practical. All ongoing development continues here.
 
----
+## Prerequisites
 
-## Quick Start for Developers
+- Node.js **18+**
+- **npm** (primary; all scripts below use `npm run`)
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repo-url>
-   cd dr-niaraki-website
-   ```
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-3. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
-4. **Open [localhost:3000](http://localhost:3000) in your browser.**
+## Setup
 
----
+```bash
+git clone <repository-url>
+cd dr-niaraki-website
+npm install
+cp .env.example .env   # then edit DATABASE_URL and optional admin vars
+npx prisma migrate dev # or prisma db push for a throwaway local DB
+npm run dev
+```
 
-## Project Structure
+Environment reference: **`.env.example`**. Admin and optional flags are documented there and in `src/server/admin/adminSecurityConfig.ts` / `adminBootstrap.ts`.
 
-- `/src` — All source code (see `src/README.md` for details)
-- `/public` — Static assets (images, fonts, etc.)
-- `/styles` — Global and component CSS
-- `/pages` — Next.js page routes and API endpoints
-- `/components` — Reusable UI and feature components
-- `/datasets` — Data used for publications, patents, research, etc.
-- `/hooks` — Custom React hooks
-- `/context` — React context providers
-- `/theme` — Theme and typography system
+## Scripts
 
----
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Development server |
+| `npm run build` / `npm start` | Production build and server |
+| `npm run lint` / `npm run lint:fix` | ESLint |
+| `npm run tsc` | TypeScript (`tsc --noEmit`) |
+| `npm run test` / `npm run test:run` | Vitest |
+| `npm run prisma:migrate` / `prisma:push` / `prisma:studio` | Prisma |
+| `npm run analyze` | Bundle analyzer (`ANALYZE=true` build) |
+| `npm run perf:check` | Local perf / lint / type pass helper |
 
-## Development Guide
+## Architecture
 
-- **Edit or add features:** Work in the appropriate `src/` subfolder. See each folder's `README.md` for details.
-- **Add a new page:** Create a file in `src/pages/`. For API endpoints, use `src/pages/api/`.
-- **Add a new component:** Place it in the relevant `src/components/` subfolder.
-- **Add or update data:** Edit files in `src/datasets/`.
-- **Styling:** Use Tailwind CSS classes or add styles in `src/styles/`.
-- **TypeScript:** All code should be strongly typed. Avoid `any`.
-- **Linting:** Run `npx next lint` before pushing.
-- **Testing:** (Add instructions if tests are present.)
+- **`src/app/`** — App Router routes (public site, admin, API route handlers).
+- **`src/app/admin/content/workflow/`** — Extracted admin content workflow UI (live read panel, toolbar, published versions table) composed by `workflowSections.tsx`.
+- **`src/app/admin/upload/`** — CV DOCX flow: `page.tsx` composes hooks (`useAdminUploadAuthGate`, `useCvDocxWorkflow`) and components (toolbar, legacy notice, form, warnings, preview tabs, commit). `adminSubnavStyles.ts` + `src/lib/ui/chromeClassStrings.ts` hold shared Tailwind fragments.
+- **`src/app/admin/imports/`** — Import review screen: types in `importDetailTypes.ts`, layout in `importDetailBody.tsx`, and focused `Import*.tsx` cards/panels (provenance, summary, warnings, merge, structured diff).
+- **`src/server/`** — Server-only Prisma, auth/session, admin guards, import pipeline, public read orchestration.
+- **`src/content/`** — Zod `SiteContent` schema, seeds, validators; single source for public copy and structure.
+- **Public reads** — Prefer latest published row from DB when valid; otherwise fall back to validated canonical seed. See `src/server/content/publicSiteContent.ts` and `publishedSiteContent.ts`.
+- **Frontend** — Hybrid CSS spatial background (`CssSpatialBackground`) plus bounded WebGL/XR canvas (`XrLabCanvas` inside `SpatialFieldStack`) where enabled; respects `prefers-reduced-motion`. Custom cursor: `NEXT_PUBLIC_ENABLE_CUSTOM_CURSOR=true` (see `.env.example`, `src/styles/atomcursor.css`).
+- **Uploads on Vercel** — With `VERCEL=1` and `BLOB_READ_WRITE_TOKEN`, DOCX bytes go to private Vercel Blob; `UploadedFile.storedPath` records `vercel-blob-path:…` and downloads use `/api/admin/uploaded-files/[id]/file`. Locally, files stay under `public/uploads/`.
+- **Admin devices** — When `DATABASE_URL` is set, registered devices live in Postgres (`AdminRegisteredDevice`); legacy `admin_devices.json` remains for DB-less dev. GitHub file commits retry on 409 where used.
 
----
+Binding editorial/security rules for contributors and agents: **`.cursor/rules/project.mdc`**.
+
+Additional notes: **`LOADING_SYSTEM.md`** describes the public-shell loading/lazy pattern (aligned with `LoadingContext` / `LazyComponentWrapper`).
+
+## Styling / Tailwind
+
+Theme tokens live primarily in **`src/app/globals.css`** (CSS variables) and **`tailwind.config.js`** (maps utilities to those variables). Tailwind `content` globs include `src/app`, `src/components`, `src/lib`, `src/hooks`, and `src/contexts` so client providers are scanned.
 
 ## Deployment
 
-- Deploys automatically on Vercel (see Vercel dashboard for details).
-- For manual deploy: `npm run build` then `npm start`.
+Targets **Vercel** (zero-config for Next.js). Set the environment variables from `.env.example` in the Vercel dashboard. Prisma needs `DATABASE_URL` pointing to a managed PostgreSQL instance (e.g. Neon, Supabase, Railway). DOCX uploads use Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set.
 
----
+For non-Vercel hosts, run `npm run build && npm start` behind a reverse proxy with TLS.
 
-## Contributing
+## Community
 
-- Fork, branch, commit, and PR as usual.
-- Follow code style and folder conventions.
-- Update documentation if you add new features or folders.
+- **Contributing**: see [CONTRIBUTING.md](./CONTRIBUTING.md)
+- **Code of conduct**: [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
+- **Security**: [SECURITY.md](./SECURITY.md)
+- **License**: [LICENSE](./LICENSE) (all rights reserved)
 
----
+## Security and ops notes
 
-## More Help
-
-- See `src/README.md` and each subfolder's `README.md` for deep dives.
-- For questions, contact the project maintainer or check the issues tab.
+- Security headers and rate limiting are configured for production-style deploys.
+- Treat `.env` secrets as confidential; see `.env.example` for optional legacy admin JWT restore flag.
