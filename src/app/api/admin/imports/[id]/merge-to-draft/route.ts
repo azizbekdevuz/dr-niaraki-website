@@ -59,14 +59,15 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
   }
   try {
-    const row = await mergeImportCandidateToWorkingDraft({
+    const result = await mergeImportCandidateToWorkingDraft({
       importId: id,
       action: parsed.data.action,
       changeSummary: parsed.data.changeSummary,
     });
     return NextResponse.json({
       ok: true,
-      draft: contentVersionSummary(row),
+      draft: contentVersionSummary(result.version),
+      alreadyMerged: result.alreadyMerged,
     });
   } catch (e) {
     const w = nextResponseFromWorkflowError(e);

@@ -5,13 +5,16 @@
 
 import path from 'path';
 
+import { after } from 'next/server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 import { hasValidAdminAccess } from '@/lib/admin-auth';
 import { commitDetailsJson, isGitHubConfigured } from '@/lib/github';
-import { saveUploadedFile, saveDetailsPreview } from '@/lib/storage';
-import { DocxImportParseError, processDocxUploadWithImportPersistence } from '@/server/imports/processDocxUploadImport';
+import { addUploadMetadata, saveUploadedFile, saveDetailsPreview } from '@/lib/storage';
+import { parseDocxToDetails } from '@/parser/docxParser';
+import { createUploadedFileAndImport } from '@/server/imports/createImport';
+import { scheduleDocxImportParseAfterResponse } from '@/server/imports/runDocxImportParseJob';
 import type { Details } from '@/types/details';
 import { validateDetails } from '@/validators/detailsSchema';
 
@@ -96,43 +99,98 @@ async function handleFileUpload(
   const mimeType =
     file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
+  const saveStarted = Date.now();
+  const saved = await saveUploadedFile(buffer, file.name, uploader, {
+    persistToLegacyUploadsMeta: false,
+  });
+  const saveMs = Date.now() - saveStarted;
+
+  let importId: string;
+  let uploadedFileId: string;
   try {
-    const outcome = await processDocxUploadWithImportPersistence({
+    const createStarted = Date.now();
+    const bundle = await createUploadedFileAndImport({
+      originalName: file.name,
+      storedPath: saved.storedPath,
+      mimeType,
+      sizeBytes: saved.fileSizeBytes,
+      sha256: saved.sha256,
+      sourceFormat: 'DOCX',
+    });
+    const createMs = Date.now() - createStarted;
+    importId = bundle.import.id;
+    uploadedFileId = bundle.uploadedFile.id;
+
+    scheduleDocxImportParseAfterResponse(after, {
+      importId,
+      uploadedFileId,
       buffer,
       originalName: file.name,
       mimeType,
       uploaderLabel: uploader,
     });
 
+    console.warn(
+      JSON.stringify({
+        event: 'docx_upload_enqueue',
+        importId,
+        uploadedFileId,
+        saveMs,
+        createMs,
+        status: 'UPLOADED',
+      }),
+    );
+
     return NextResponse.json({
       success: true,
-      message: outcome.import.persisted
-        ? 'File parsed successfully; import record saved.'
-        : 'File parsed successfully; import could not be saved (database unavailable).',
-      data: outcome.data,
-      warnings: outcome.parseWarnings.map((w) => `${w.field}: ${w.message}`),
-      validation: {
-        valid: outcome.validation.valid,
-        errors: outcome.validation.errors,
-      },
+      importId,
+      status: 'UPLOADED',
+      message:
+        'Import created. Parsing runs after this response — the preview will load automatically when parsing finishes.',
       canCommit: accessStatus.hasValidDevice,
       deviceRequired: !accessStatus.hasValidDevice,
-      import: outcome.import,
+      import: {
+        persisted: true,
+        importId,
+        uploadedFileId,
+        status: 'UPLOADED',
+      },
       legacyUploadMetaNote:
         'Filesystem `public/uploads/uploads_meta.json` (and optional GitHub mirror) is for filenames and download history only. Prisma `UploadedFile` / `ContentImport` are authoritative for imports and review.',
     });
   } catch (e) {
-    if (e instanceof DocxImportParseError) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: e.message,
-          import: e.importSummary,
-        },
-        { status: 500 },
-      );
-    }
-    throw e;
+    console.error('DOCX import DB persistence failed:', e);
+    await addUploadMetadata({
+      filename: saved.filename,
+      originalName: file.name,
+      uploadedAt: new Date().toISOString(),
+      uploader,
+      fileSizeBytes: saved.fileSizeBytes,
+      sha256: saved.sha256,
+      warnings: [],
+      downloadUrl: `/uploads/${saved.filename}`,
+    }).catch((err) => {
+      console.warn('Failed to append legacy uploads manifest after DB failure:', err);
+    });
+
+    const { data, warnings } = await parseDocxToDetails(buffer, file.name, uploader);
+    const validation = validateDetails(data);
+    return NextResponse.json({
+      success: false,
+      message: 'Could not save import to the database. Parsed preview is shown for recovery only.',
+      persistenceError: e instanceof Error ? e.message : 'Database error',
+      data,
+      warnings: warnings.map((w) => `${w.field}: ${w.message}`),
+      validation: {
+        valid: validation.success,
+        errors: validation.errors?.map((err) => `${err.path.join('.')}: ${err.message}`) || [],
+      },
+      canCommit: accessStatus.hasValidDevice,
+      deviceRequired: !accessStatus.hasValidDevice,
+      import: { persisted: false },
+      legacyUploadMetaNote:
+        'Filesystem `public/uploads/uploads_meta.json` (and optional GitHub mirror) is for filenames and download history only. Prisma `UploadedFile` / `ContentImport` are authoritative for imports and review.',
+    });
   }
 }
 
