@@ -58,6 +58,8 @@ export default function AdminUploadPage() {
           <CvUploadFormCard
             file={workflow.file}
             uploading={workflow.uploading}
+            importPhase={workflow.importPhase}
+            trackedImportId={workflow.trackedImportId}
             onFileChange={workflow.handleFileChange}
             onUpload={workflow.handleUpload}
           />

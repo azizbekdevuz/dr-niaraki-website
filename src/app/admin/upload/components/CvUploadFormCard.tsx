@@ -6,11 +6,13 @@ import React from 'react';
 type Props = {
   file: File | null;
   uploading: boolean;
+  importPhase: 'idle' | 'uploading' | 'processing' | 'failed' | 'ready';
+  trackedImportId: string | null;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onUpload: () => void;
 };
 
-export function CvUploadFormCard({ file, uploading, onFileChange, onUpload }: Props) {
+export function CvUploadFormCard({ file, uploading, importPhase, trackedImportId, onFileChange, onUpload }: Props) {
   return (
     <div className="card p-8 text-center">
       <div className="max-w-md mx-auto">
@@ -30,6 +32,13 @@ export function CvUploadFormCard({ file, uploading, onFileChange, onUpload }: Pr
           </div>
         ) : null}
 
+        {trackedImportId && importPhase === 'processing' ? (
+          <p className="text-sm text-muted mb-4">
+            Import <code className="text-xs bg-surface-secondary px-1 rounded">{trackedImportId.slice(0, 12)}…</code>{' '}
+            queued — parsing CV (this can take up to a minute for large files).
+          </p>
+        ) : null}
+
         <button
           type="button"
           onClick={() => void onUpload()}
@@ -39,7 +48,7 @@ export function CvUploadFormCard({ file, uploading, onFileChange, onUpload }: Pr
           {uploading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Parsing...</span>
+              <span>{importPhase === 'processing' ? 'Parsing…' : 'Uploading…'}</span>
             </>
           ) : (
             <>

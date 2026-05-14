@@ -85,7 +85,11 @@ export default function AdminImportDetailPage() {
           return;
         }
         setError(null);
-        setMergeMsg('Draft updated. Open Site content to review and publish separately.');
+        setMergeMsg(
+          data.alreadyMerged
+            ? 'This import was already merged into a draft — showing the linked version below.'
+            : 'Draft updated. Open Site content to review and publish separately.',
+        );
         await load();
       } catch {
         setMergeMsg('Merge request failed');
