@@ -195,6 +195,8 @@ export interface DetailsMeta {
   readonly uploader?: string | null;
   readonly warnings: readonly string[];
   readonly uploads?: readonly UploadMetadata[];
+  /** When `split_v1`, `mergeCvDetailsIntoSiteContent` keeps Summary of Qualifications out of professional summary paragraphs. */
+  readonly cvSummaryMergePolicy?: 'split_v1';
 }
 
 export interface Counts {

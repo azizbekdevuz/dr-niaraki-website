@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import React from 'react';
 
+import { ImportCandidateReviewPanels } from './ImportCandidateReviewPanels';
 import { ImportCandidateSummaryCard } from './ImportCandidateSummaryCard';
 import type { ImportDetailModel, ReviewPayloadModel } from './importDetailTypes';
 import { ImportMergeDraftCard } from './ImportMergeDraftCard';
@@ -48,6 +49,8 @@ export function ImportDetailBody({ imp, review, hasDraft, merging, mergeMsg, err
 
         <ImportCandidateSummaryCard imp={imp} />
 
+        <ImportCandidateReviewPanels imp={imp} review={review} />
+
         {review ? <ImportReviewWarningsPanel review={review} /> : null}
 
         <ImportMergeDraftCard imp={imp} hasDraft={hasDraft} merging={merging} onMerge={onMerge} />
@@ -59,6 +62,7 @@ export function ImportDetailBody({ imp, review, hasDraft, merging, mergeMsg, err
 }
 
 export type {
+  ImportCandidateReviewModel,
   ImportDetailModel,
   ImportReviewBlockModel,
   ImportReviewProvenanceModel,

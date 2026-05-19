@@ -39,8 +39,12 @@ export type MutableDocxContact = {
 };
 
 export type DocxParseAccum = {
+  /** @deprecated Prefer professionalSummary / qualificationsSummary */
   summary: string | null;
+  /** @deprecated Prefer qualificationsSummary */
   fullSummary: string | null;
+  professionalSummary: string | null;
+  qualificationsSummary: string | null;
   education: Education[];
   positions: Position[];
   awards: Award[];
@@ -57,6 +61,8 @@ export function createEmptyDocxParseAccum(): DocxParseAccum {
   return {
     summary: null,
     fullSummary: null,
+    professionalSummary: null,
+    qualificationsSummary: null,
     education: [],
     positions: [],
     awards: [],
@@ -88,10 +94,19 @@ function applyProfileSummaryEducationExperience(
   warnings: ParseWarning[],
 ): boolean {
   switch (section.type) {
-    case 'summary':
+    case 'professional_summary':
     case 'profile':
+      acc.professionalSummary = section.content.trim();
       acc.summary = section.content.slice(0, 500);
+      return true;
+    case 'summary_of_qualifications':
+      acc.qualificationsSummary = section.content.trim();
       acc.fullSummary = section.content;
+      return true;
+    /** Legacy single "summary" bucket — treat as professional summary body only. */
+    case 'summary':
+      acc.professionalSummary = section.content.trim();
+      acc.summary = section.content.slice(0, 500);
       return true;
     case 'education': {
       const eduResult = parseEducation(section.content);

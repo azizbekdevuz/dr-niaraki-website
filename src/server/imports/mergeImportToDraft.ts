@@ -11,9 +11,9 @@ import {
   getWorkingDraft,
 } from '@/server/content/contentWorkflowCore';
 import { prisma } from '@/server/db/prisma';
+import { getDetailsFromCandidatePayload } from '@/server/imports/candidatePayload/schema';
 import { mergeCvDetailsIntoSiteContent } from '@/server/imports/detailsToSiteContentMerge';
 import { getContentImportDetail, updateImportStatus } from '@/server/imports/repository';
-import { DetailsSchema } from '@/validators/detailsSchema';
 
 function toJsonPayload(data: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(data)) as Prisma.InputJsonValue;
@@ -38,11 +38,11 @@ async function loadDetailsFromImportRow(row: ImportDetailRow) {
   if (row.status === 'REJECTED') {
     throw new ImportMergeError('NO_CANDIDATE', 'This import was already finalized and cannot merge again.');
   }
-  const parsed = DetailsSchema.safeParse(row.candidatePayload);
-  if (!parsed.success) {
+  const parsed = getDetailsFromCandidatePayload(row.candidatePayload);
+  if (!parsed) {
     throw new ImportMergeError('INVALID_CANDIDATE', 'Stored candidate is not valid Details JSON.');
   }
-  return { importRow: row, details: parsed.data };
+  return { importRow: row, details: parsed };
 }
 
 export type MergeImportCandidateResult = {

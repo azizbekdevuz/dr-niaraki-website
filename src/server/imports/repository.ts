@@ -3,6 +3,7 @@ import 'server-only';
 import { Prisma, type ImportStatus, type UploadSourceFormat } from '@prisma/client';
 
 import { prisma } from '@/server/db/prisma';
+import { parseImportCandidatePayload } from '@/server/imports/candidatePayload/schema';
 import { ImportDomainError } from '@/server/imports/types';
 
 export type CreateUploadedFileInput = {
@@ -164,4 +165,27 @@ export async function getContentImportDetail(importId: string) {
     return null;
   }
   return row;
+}
+
+/** Prior parsed import for the same original filename — v2 `sourceTextHash` only (single-admin heuristic). */
+export async function getPriorImportSourceTextHash(input: {
+  originalName: string;
+  beforeCreatedAt: Date;
+  excludeImportId: string;
+}): Promise<string | null> {
+  const row = await prisma.contentImport.findFirst({
+    where: {
+      id: { not: input.excludeImportId },
+      createdAt: { lt: input.beforeCreatedAt },
+      status: { not: 'FAILED' },
+      uploadedFile: { originalName: input.originalName },
+    },
+    orderBy: { createdAt: 'desc' },
+    select: { candidatePayload: true },
+  });
+  if (!row?.candidatePayload || typeof row.candidatePayload !== 'object') {
+    return null;
+  }
+  const envelope = parseImportCandidatePayload(row.candidatePayload);
+  return envelope?.sourceTextHash ?? null;
 }

@@ -43,7 +43,10 @@ export interface ParserContext {
 // Section identifiers used by the parser
 export type SectionType = 
   | 'profile'
+  /** @deprecated Use professional_summary / summary_of_qualifications — kept for older saved payloads. */
   | 'summary'
+  | 'professional_summary'
+  | 'summary_of_qualifications'
   | 'education'
   | 'experience'
   | 'research'

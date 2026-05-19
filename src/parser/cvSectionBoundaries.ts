@@ -36,8 +36,9 @@ export function classifyCvSectionBoundary(line: string): SectionType | null {
   // Ordered rules: most specific first
   const rules: Array<{ re: RegExp; type: SectionType }> = [
     { re: /^journal\s+and\s+conference\s+reviews?\b/i, type: 'services' },
-    { re: /^professional\s+summary\b/i, type: 'summary' },
-    { re: /^summary\s+of\s+qualifications\b/i, type: 'summary' },
+    { re: /^professional\s+summary\b/i, type: 'professional_summary' },
+    { re: /^summary\s+of\s+qualifications\b/i, type: 'summary_of_qualifications' },
+    { re: /^summary\s*$/i, type: 'professional_summary' },
     { re: /^academic\s+qualifications\b/i, type: 'education' },
     { re: /^education(?:\s+and\s+qualifications)?$/i, type: 'education' },
     { re: /^professional\s+work\s+experiences?\b/i, type: 'experience' },

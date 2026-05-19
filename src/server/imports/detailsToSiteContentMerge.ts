@@ -1,4 +1,4 @@
-import type { SiteContent } from '@/content/schema';
+import type { ResearchProjectItem, SiteContent } from '@/content/schema';
 import { applyCvNarrativeSectionsToSiteContent } from '@/server/imports/cvNarrativeToSimpleLists';
 import {
   awardImpactFrom,
@@ -10,6 +10,20 @@ import {
 } from '@/server/imports/detailsMergeNormalize';
 import { mergeResearchInterestsFromDetails } from '@/server/imports/detailsMergeResearchInterests';
 import type { DetailsSchemaType } from '@/validators/detailsSchema';
+
+function mapDetailsResearchProjectToSite(p: DetailsSchemaType['research']['projects'][number]): ResearchProjectItem {
+  const status = p.status === 'ongoing' ? 'ongoing' : 'completed';
+  return {
+    id: p.id.trim(),
+    title: p.title.trim(),
+    description: (p.description ?? p.raw ?? '—').toString().trim(),
+    period: (p.period ?? '—').toString().trim(),
+    funding: (p.funding ?? '—').toString().trim(),
+    amount: (p.fundingAmount ?? '—').toString().trim(),
+    status,
+    role: (p.role ?? '—').toString().trim(),
+  };
+}
 
 /**
  * Merges CV `Details` (parser output) into an existing `SiteContent` baseline.
@@ -24,11 +38,18 @@ export function mergeCvDetailsIntoSiteContent(details: DetailsSchemaType, base: 
   next.profile.displayName = details.profile.name.trim() || next.profile.displayName;
   next.profile.roleLine = (details.profile.title ?? next.profile.roleLine).trim() || next.profile.roleLine;
 
-  const summaryBits = [
-    ...nonEmptyLines(details.profile.summary ?? undefined),
-    ...nonEmptyLines(details.about.brief ?? undefined),
-    ...nonEmptyLines(details.about.full ?? undefined),
-  ];
+  const split = details.meta?.cvSummaryMergePolicy === 'split_v1';
+
+  const summaryBits = split
+    ? [
+        ...nonEmptyLines(details.profile.summary ?? undefined),
+        ...nonEmptyLines(details.about.brief ?? undefined),
+      ]
+    : [
+        ...nonEmptyLines(details.profile.summary ?? undefined),
+        ...nonEmptyLines(details.about.brief ?? undefined),
+        ...nonEmptyLines(details.about.full ?? undefined),
+      ];
   const paras = summaryBits.length > 0 ? summaryBits : next.about.page.professionalSummaryParagraphs;
   next.about.page.professionalSummaryParagraphs = paras;
   next.profile.homeAboutIntro =
@@ -132,6 +153,7 @@ export function mergeCvDetailsIntoSiteContent(details: DetailsSchemaType, base: 
   };
 
   mergeResearchInterestsFromDetails(details, next);
+  next.research.projects = details.research.projects.map(mapDetailsResearchProjectToSite);
   applyCvNarrativeSectionsToSiteContent(details.about, next);
 
   return next;

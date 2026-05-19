@@ -12,8 +12,18 @@ type Props = {
 };
 
 export function ImportMergeDraftCard({ imp, hasDraft, merging, onMerge }: Props) {
+  const hint = imp.candidateReview?.reviewHint;
+  const showReviewCaution = hint === 'NEEDS_REVIEW' || hint === 'RAW_CHANGED_ONLY';
+
   return (
     <div className="card p-4 space-y-3">
+      {showReviewCaution ? (
+        <div className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-foreground">
+          <strong className="text-warning">Review recommended:</strong> envelope <code className="font-mono">reviewHint</code> is{' '}
+          <code className="font-mono">{hint}</code>. Inspect parser warnings, count checks, and structured diffs before merging.
+          Draft creation is not blocked in this phase.
+        </div>
+      ) : null}
       <p className="font-medium text-foreground">Merge into working draft</p>
       <p className="text-xs text-muted">
         Creates or replaces the <strong>working draft</strong> only. Does not publish. Imports already merged cannot
