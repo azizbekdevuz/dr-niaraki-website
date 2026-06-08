@@ -9,73 +9,19 @@ import {
   buildStructuredReviewBlocks,
   structuredMergeDiffIsVacuous,
 } from '@/server/imports/importReviewStructured';
-import type { DetailsSchemaType } from '@/validators/detailsSchema';
-
-function minimalDetails(overrides: Partial<DetailsSchemaType> = {}): DetailsSchemaType {
-  const base: DetailsSchemaType = {
-    profile: {
-      name: 'Dr X',
-      title: 'Prof',
-      photoUrl: null,
-      summary: null,
-      meta: null,
-    },
-    about: {
-      brief: null,
-      full: null,
-      education: [],
-      positions: [],
-      awards: [],
-      languages: [],
-      cvNarrativeSections: [],
-    },
-    research: { interests: [], projects: [], grants: [] },
-    publications: [],
-    patents: [],
-    contact: {
-      email: 'x@y.com',
-      personalEmail: null,
-      phone: null,
-      fax: null,
-      cellPhone: null,
-      address: null,
-      department: null,
-      university: null,
-      website: null,
-      cvUrl: null,
-      social: {},
-    },
-    rawHtml: null,
-    counts: {
-      publications: 0,
-      patents: 0,
-      projects: 0,
-      awards: 0,
-      students: 0,
-    },
-    meta: {
-      sourceFileName: 'f.docx',
-      parsedAt: '2026-01-01T00:00:00.000Z',
-      parserVersion: 't',
-      commitSha: null,
-      uploader: null,
-      warnings: [],
-    },
-  };
-  return { ...base, ...overrides };
-}
+import { minimalImportDetails } from '@/tests/fixtures/minimalImportDetails';
 
 describe('Phase 3A import payload & merge', () => {
   it('split_v1 keeps Summary of Qualifications out of professional summary paragraphs', () => {
     const baseline = assertSiteContent(SITE_CONTENT_RAW);
-    const details = minimalDetails({
-      meta: { ...minimalDetails().meta, cvSummaryMergePolicy: 'split_v1' },
+    const details = minimalImportDetails({
+      meta: { ...minimalImportDetails().meta, cvSummaryMergePolicy: 'split_v1' },
       profile: {
-        ...minimalDetails().profile,
+        ...minimalImportDetails().profile,
         summary: 'Professional only line.',
       },
       about: {
-        ...minimalDetails().about,
+        ...minimalImportDetails().about,
         full: 'Qualifications only — must not appear in about.page paragraphs.',
       },
     });
@@ -144,7 +90,7 @@ describe('Phase 3A import payload & merge', () => {
       link: null,
       raw: null,
     }));
-    const details = minimalDetails({
+    const details = minimalImportDetails({
       patents,
       counts: { publications: 0, patents: 5, projects: 0, awards: 0, students: 0 },
     });
@@ -172,7 +118,7 @@ describe('Phase 3A import payload & merge', () => {
 
   it('mergeCvDetailsIntoSiteContent maps CV research.projects into site research.projects', () => {
     const baseline = assertSiteContent(SITE_CONTENT_RAW);
-    const details = minimalDetails({
+    const details = minimalImportDetails({
       research: {
         interests: [],
         projects: [

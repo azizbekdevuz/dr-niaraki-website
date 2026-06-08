@@ -5,5 +5,6 @@ export {
   ContentWorkflowError,
   getWorkingDraft,
   createWorkingDraftFromCanonicalSiteContent,
+  discardWorkingDraft,
   saveWorkingDraft,
 } from './contentWorkflowCore';

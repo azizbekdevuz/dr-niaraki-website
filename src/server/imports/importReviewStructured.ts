@@ -3,13 +3,12 @@ import type {
   AboutExperienceItem,
   AboutJourneyItem,
   PatentItem,
-  PublicationItem,
-  ResearchProjectItem,
   SimpleListItem,
   SiteContent,
 } from '@/content/schema';
 import { extractEditorSliceFromSiteContent } from '@/lib/draftEditorSlice';
 import { diffIdLists, shallowFieldChanges, type StructuredListDiff } from '@/server/imports/importListDiff';
+import { diffPublicationsSemantically, diffResearchProjectsSemantically } from '@/server/imports/semanticListDiff';
 
 const LEGACY_UPLOADS_META_NOTE =
   '`uploads_meta.json` / mirrored upload files are legacy listing + download metadata only. Prisma `UploadedFile` + `ContentImport` are authoritative for imports, review, and merge-to-draft.';
@@ -187,12 +186,7 @@ export function buildStructuredReviewBlocks(
     ['title', 'organization', 'year', 'details', 'impact', 'category'],
   );
 
-  const pubDiff = diffIdLists<PublicationItem>(
-    baseline.publications.items,
-    merged.publications.items,
-    (p) => p.title,
-    ['title', 'authors', 'journal', 'year', 'type', 'doi'],
-  );
+  const pubDiff = diffPublicationsSemantically(baseline.publications.items, merged.publications.items);
 
   const patDiff = diffIdLists<PatentItem>(
     baseline.patents.items,
@@ -208,11 +202,9 @@ export function buildStructuredReviewBlocks(
     ['name', 'description', 'keywords'],
   );
 
-  const researchProjectsDiff = diffIdLists<ResearchProjectItem>(
+  const researchProjectsDiff = diffResearchProjectsSemantically(
     baseline.research.projects,
     merged.research.projects,
-    (r) => r.title,
-    ['title', 'description', 'period', 'funding', 'amount', 'status', 'role'],
   );
 
   const teachingDiff = diffIdLists<SimpleListItem>(

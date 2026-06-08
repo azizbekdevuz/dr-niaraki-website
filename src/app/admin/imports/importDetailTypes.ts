@@ -1,3 +1,5 @@
+export type ReviewBaselineQuery = 'auto' | 'working_draft' | 'canonical' | 'published';
+
 export type ImportCandidateReviewModel = {
   schemaVersion: number;
   envelopeVersion: number;
@@ -70,8 +72,39 @@ export type ImportReviewBlockModel = {
 
 export type ReviewPayloadModel = {
   baselineSource: string;
+  /** Human-readable description of the baseline snapshot (canonical, working draft, or published). */
+  baselineLabel: string;
+  /** Which alternate baselines exist for this admin session (drives the baseline selector). */
+  baselineCapabilities: {
+    hasWorkingDraft: boolean;
+    hasPublished: boolean;
+  };
   blocks: ImportReviewBlockModel[];
   warnings: { message: string; code?: string }[];
   provenance: ImportReviewProvenanceModel | null;
   legacyUploadsMetaNote: string;
+  mergeSafety: ImportMergeSafetyModel;
+};
+
+export type ImportMergeSectionRiskLabel =
+  | 'safe_to_merge'
+  | 'needs_review'
+  | 'review_only_default'
+  | 'requires_explicit_replace';
+
+export type ImportMergeSectionSafetyModel = {
+  id: string;
+  title: string;
+  risk: ImportMergeSectionRiskLabel;
+  includeInSafeMerge: boolean;
+  reasons: string[];
+};
+
+export type ImportMergeSafetyModel = {
+  defaultMergeMode: 'safe_update';
+  /** `full_replace` requires `acknowledgeHighRisk` when any section is not safe_to_merge. */
+  fullReplaceRequiresAck: boolean;
+  sections: ImportMergeSectionSafetyModel[];
+  /** Cross-cutting notes (unmapped sections, envelope hints, parser severity, etc.). */
+  notes: string[];
 };

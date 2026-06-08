@@ -59,6 +59,29 @@ function buildRawSections(sections: readonly DetectedSection[]): ImportRawSectio
   }));
 }
 
+function inferUnknownHeaderContactMapping(s: DetectedSection): {
+  mappedWebsiteSection: string;
+  parserUsed: string;
+  confidence: 'alias';
+} | null {
+  if (s.type !== 'unknown') {
+    return null;
+  }
+  const title = s.title.toLowerCase();
+  const body = s.content;
+  const hasEmail = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(body);
+  const hasPhone = /(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/.test(body);
+  const hasUrl = /\bhttps?:\/\/[^\s]+/i.test(body) || /\bwww\.[^\s]+/i.test(body);
+  const titleHint =
+    /\b(preamble|header|contact|vitae|curriculum|cv|personal|profile|information|about\s+me)\b/i.test(title);
+  const compact = body.trim().length < 8000;
+  const looksContact = hasEmail || hasPhone || hasUrl;
+  if (compact && looksContact && (titleHint || body.trim().length < 3500)) {
+    return { mappedWebsiteSection: 'cv.header', parserUsed: 'preambleHeuristic', confidence: 'alias' };
+  }
+  return null;
+}
+
 function mapSectionToWebsiteTarget(
   s: DetectedSection,
 ): Pick<SectionMappingReportRow, 'mappedWebsiteSection' | 'confidence' | 'parserUsed'> {
@@ -86,18 +109,41 @@ function mapSectionToWebsiteTarget(
     return { mappedWebsiteSection: e.path, confidence: 'exact', parserUsed: e.parser };
   }
   if (t === 'unknown') {
+    const inferred = inferUnknownHeaderContactMapping(s);
+    if (inferred) {
+      return inferred;
+    }
     return { mappedWebsiteSection: null, confidence: 'unmapped', parserUsed: 'none' };
   }
   return { mappedWebsiteSection: null, confidence: 'alias', parserUsed: 'narrativeOrUnknown' };
 }
 
-function buildMappingReport(sections: readonly DetectedSection[]): SectionMappingReportRow[] {
+function structuredItemCountForSection(
+  s: DetectedSection,
+  sections: readonly DetectedSection[],
+  details: Details,
+): number {
+  const lineCount = s.content.split('\n').filter((l) => l.trim().length > 0).length;
+  const sameTypeCount = (type: DetectedSection['type']) => sections.filter((x) => x.type === type).length;
+  if (s.type === 'publications' && sameTypeCount('publications') === 1) {
+    return details.publications.length;
+  }
+  if (s.type === 'patents' && sameTypeCount('patents') === 1) {
+    return details.patents.length;
+  }
+  if (s.type === 'research' && sameTypeCount('research') === 1) {
+    return details.research.projects.length;
+  }
+  if (s.type === 'publications' || s.type === 'patents' || s.type === 'research') {
+    return lineCount;
+  }
+  return lineCount;
+}
+
+function buildMappingReport(sections: readonly DetectedSection[], details: Details): SectionMappingReportRow[] {
   return sections.map((s, i) => {
     const m = mapSectionToWebsiteTarget(s);
-    let itemCount = s.content.split('\n').filter((l) => l.trim().length > 0).length;
-    if (s.type === 'publications' || s.type === 'patents' || s.type === 'research') {
-      itemCount = 0;
-    }
+    const itemCount = structuredItemCountForSection(s, sections, details);
     return {
       docxSectionId: `ts-sec-${i}-${sha256Hex(s.title).slice(0, 10)}`,
       docxSectionTitle: s.title,
@@ -115,6 +161,9 @@ function buildUnmapped(sections: readonly DetectedSection[]): ImportUnmappedSect
   const out: ImportUnmappedSectionRef[] = [];
   sections.forEach((s, i) => {
     if (s.type === 'unknown' && s.content.trim().length > 0) {
+      if (inferUnknownHeaderContactMapping(s)) {
+        return;
+      }
       out.push({
         sectionId: `ts-sec-${i}-${sha256Hex(s.title).slice(0, 10)}`,
         title: s.title,
@@ -154,7 +203,7 @@ export function buildImportCandidatePayload(input: {
   importWarnings: ImportWarningItem[];
 }): ImportCandidatePayload {
   const rawSections = buildRawSections(input.sections);
-  const sectionMappingReport = buildMappingReport(input.sections);
+  const sectionMappingReport = buildMappingReport(input.sections, input.details);
   const unmappedSections = buildUnmapped(input.sections);
   const normalizedFull = normalizeWhitespace(input.rawDocumentText);
   const declaredPatents = extractDeclaredPatentCountFromText(normalizedFull);
