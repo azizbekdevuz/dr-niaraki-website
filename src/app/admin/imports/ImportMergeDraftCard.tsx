@@ -125,8 +125,8 @@ function MergeModeControls({
             }}
           />
           <span>
-            <strong className="text-foreground">Safe update (default)</strong> — skips list sections marked “No” above;
-            profile/summary still merge when allowed.
+            <strong className="text-foreground">Safe update (default)</strong> — only sections marked “Yes” above are
+            merged; patents, publications, CV narratives, and high-churn lists stay on the baseline.
           </span>
         </label>
         <label className="flex items-center gap-2">
@@ -137,7 +137,8 @@ function MergeModeControls({
             onChange={() => setMergeMode('full_replace')}
           />
           <span>
-            <strong className="text-foreground">Full replace</strong> — maps all import lists into the draft like before.
+            <strong className="text-foreground">Full replace</strong> — overwrites list-backed sections from the import
+            (can remove curated data). Not recommended unless intentional.
             {needsAck ? ' Requires acknowledgement below.' : ''}
           </span>
         </label>
@@ -187,9 +188,8 @@ export function ImportMergeDraftCard({ imp, review, hasDraft, merging, onMerge }
 
       <p className="font-medium text-foreground">Merge into working draft</p>
       <p className="text-xs text-muted">
-        Creates or replaces the <strong>working draft</strong> only. Does not publish. Imports already merged cannot merge
-        again. If a draft already exists, use <strong>Replace</strong> only when you intend to overwrite the whole draft
-        payload.
+        Updates the <strong>working draft</strong> only — visitors still see the published site until you publish from Site
+        content. Safe update is the default; merge mode controls how much of the import is applied.
       </p>
       <div className="flex flex-wrap gap-3">
         <button
@@ -213,7 +213,7 @@ export function ImportMergeDraftCard({ imp, review, hasDraft, merging, onMerge }
         <p className="text-xs text-muted">No working draft yet — use &quot;Create&quot; first.</p>
       ) : (
         <p className="text-xs text-muted">
-          A draft exists — &quot;Replace&quot; overwrites the working draft with the mapped import (still not published).
+          A draft exists — &quot;Replace&quot; reapplies this import using the selected merge mode (still not published).
         </p>
       )}
     </div>

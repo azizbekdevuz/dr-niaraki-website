@@ -120,7 +120,7 @@ export default function AdminImportDetailPage() {
         setMergeMsg(
           data.alreadyMerged
             ? 'This import was already merged into a draft — showing the linked version below.'
-            : 'Draft updated. Open Site content to review and publish separately.',
+            : 'Working draft updated. Review it in Site content before publishing — the public site is unchanged until then.',
         );
         await load();
       } catch {

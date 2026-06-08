@@ -42,7 +42,7 @@ Environment reference: **`.env.example`**. Admin and optional flags are document
 - **`src/app/`** — App Router routes (public site, admin, API route handlers).
 - **`src/app/admin/content/workflow/`** — Extracted admin content workflow UI (live read panel, toolbar, published versions table) composed by `workflowSections.tsx`.
 - **`src/app/admin/upload/`** — CV DOCX flow: `page.tsx` composes hooks (`useAdminUploadAuthGate`, `useCvDocxWorkflow`) and components (toolbar, legacy notice, form, warnings, preview tabs, commit). `adminSubnavStyles.ts` + `src/lib/ui/chromeClassStrings.ts` hold shared Tailwind fragments.
-- **`src/app/admin/imports/`** — Import review screen: types in `importDetailTypes.ts`, layout in `importDetailBody.tsx`, and focused `Import*.tsx` cards/panels (provenance, summary, warnings, merge, structured diff).
+- **`src/app/admin/imports/`** — Import review screen: types in `importDetailTypes.ts`, layout in `importDetailBody.tsx`, and focused `Import*.tsx` cards/panels (provenance, summary, warnings, merge, structured diff). Operational guide: [docs/admin-import-workflow.md](./docs/admin-import-workflow.md).
 - **`src/server/`** — Server-only Prisma, auth/session, admin guards, import pipeline, public read orchestration.
 - **`src/content/`** — Zod `SiteContent` schema, seeds, validators; single source for public copy and structure.
 - **Public reads** — Prefer latest published row from DB when valid; otherwise fall back to validated canonical seed. See `src/server/content/publicSiteContent.ts` and `publishedSiteContent.ts`.
