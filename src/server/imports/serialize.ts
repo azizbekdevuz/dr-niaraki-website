@@ -2,13 +2,20 @@ import 'server-only';
 
 import type { ContentImport, UploadedFile } from '@prisma/client';
 
+import { getDetailsFromCandidatePayload, parseImportCandidatePayload } from '@/server/imports/candidatePayload/schema';
 import {
   importWarningItemSchema,
+  type ImportCandidateReviewMetadataDto,
   type ImportCandidateSummaryDto,
   type ImportDetailDto,
+  type ImportRawSectionSummaryDto,
+  type ImportSectionMappingRowDto,
   type ImportSummaryDto,
   type ImportWarningItem,
 } from '@/server/imports/types';
+
+const MAX_REVIEW_SECTION_ROWS = 200;
+const RAW_TEXT_PREVIEW_MAX = 120;
 
 export function parseImportWarnings(input: unknown): ImportWarningItem[] {
   const parsed = importWarningItemSchema.array().safeParse(input);
@@ -33,24 +40,103 @@ export function toImportSummary(row: ImportWithFile): ImportSummaryDto {
   };
 }
 
-export function buildImportCandidateSummary(payload: unknown): ImportCandidateSummaryDto | null {
-  if (!payload || typeof payload !== 'object') {
+function inferParserWarningSeverity(w: { code?: string; message: string }): 'info' | 'warning' | 'error' {
+  const code = (w.code ?? '').toUpperCase();
+  const msg = w.message;
+  if (/\[error\]/i.test(msg) || code === 'PARSE_EXCEPTION') {
+    return 'error';
+  }
+  if (
+    code === 'PATENT_COUNT_MISMATCH' ||
+    code === 'VALIDATION' ||
+    code === 'RAW_CHANGED_ONLY' ||
+    code === 'MISSING_CONTACT_EMAIL' ||
+    code === 'EMPTY_PUBLICATIONS'
+  ) {
+    return 'warning';
+  }
+  return 'info';
+}
+
+/**
+ * Compact envelope metadata for admin GET import detail (no full `rawDocumentText`).
+ */
+export function buildImportCandidateReviewMetadata(payload: unknown): ImportCandidateReviewMetadataDto | null {
+  const parsed = parseImportCandidatePayload(payload);
+  if (!parsed) {
     return null;
   }
-  const p = payload as Record<string, unknown>;
-  const profile = p.profile as Record<string, unknown> | undefined;
-  const pubs = p.publications as unknown[] | undefined;
-  const pats = p.patents as unknown[] | undefined;
+  const pairCap = Math.min(parsed.rawSections.length, parsed.sectionMappingReport.length, MAX_REVIEW_SECTION_ROWS);
+  const rawSectionSummaries: ImportRawSectionSummaryDto[] = [];
+  for (let i = 0; i < pairCap; i += 1) {
+    const rs = parsed.rawSections[i]!;
+    const mr = parsed.sectionMappingReport[i]!;
+    const trimmed = rs.rawText.trim();
+    let textPreview: string | undefined;
+    if (trimmed.length > 0) {
+      textPreview =
+        trimmed.length > RAW_TEXT_PREVIEW_MAX ? `${trimmed.slice(0, RAW_TEXT_PREVIEW_MAX)}…` : trimmed;
+    }
+    rawSectionSummaries.push({
+      sectionId: rs.id,
+      title: mr.docxSectionTitle,
+      mappedWebsiteSection: mr.mappedWebsiteSection,
+      confidence: mr.confidence,
+      itemCount: mr.itemCount,
+      warningCount: mr.warnings.length + rs.warnings.length,
+      textPreview,
+    });
+  }
+
+  const mapRow = (mr: (typeof parsed.sectionMappingReport)[number]): ImportSectionMappingRowDto => ({
+    docxSectionTitle: mr.docxSectionTitle,
+    normalizedTitle: mr.normalizedTitle,
+    mappedWebsiteSection: mr.mappedWebsiteSection,
+    confidence: mr.confidence,
+    parserUsed: mr.parserUsed,
+    itemCount: mr.itemCount,
+    warningCount: mr.warnings.length,
+  });
+
   return {
-    profileName: typeof profile?.name === 'string' ? profile.name : null,
-    publicationCount: Array.isArray(pubs) ? pubs.length : 0,
-    patentCount: Array.isArray(pats) ? pats.length : 0,
-    rawHtmlTruncated: p.rawHtmlTruncated === true,
+    schemaVersion: parsed.schemaVersion,
+    envelopeVersion: parsed.envelopeVersion,
+    reviewHint: parsed.reviewHint,
+    sourceTextHash: parsed.sourceTextHash,
+    parserVersion: parsed.parserVersion,
+    mappingVersion: parsed.mappingVersion,
+    rawSectionSummaries,
+    unmappedSections: parsed.unmappedSections.map((u) => ({ ...u })),
+    sectionMappingReport: parsed.sectionMappingReport.slice(0, MAX_REVIEW_SECTION_ROWS).map(mapRow),
+    countValidation: {
+      entries: parsed.countValidation.entries.map((e) => ({ ...e })),
+    },
+    parserWarnings: parsed.parserWarnings.map((w) => ({
+      code: w.code,
+      path: w.path,
+      message: w.message,
+      severity: inferParserWarningSeverity(w),
+    })),
+  };
+}
+
+export function buildImportCandidateSummary(payload: unknown): ImportCandidateSummaryDto | null {
+  const details = getDetailsFromCandidatePayload(payload);
+  if (!details) {
+    return null;
+  }
+  const profile = details.profile;
+  return {
+    profileName: typeof profile.name === 'string' ? profile.name : null,
+    publicationCount: details.publications.length,
+    patentCount: details.patents.length,
+    rawHtmlTruncated: Boolean((details as { rawHtmlTruncated?: boolean }).rawHtmlTruncated),
   };
 }
 
 export function toImportDetail(row: ImportWithFileAndVersions): ImportDetailDto {
   const summary = toImportSummary(row);
+  const detailsOnly = getDetailsFromCandidatePayload(row.candidatePayload);
   return {
     ...summary,
     mimeType: row.uploadedFile.mimeType,
@@ -59,8 +145,9 @@ export function toImportDetail(row: ImportWithFileAndVersions): ImportDetailDto 
     sourceFormat: row.uploadedFile.sourceFormat,
     rawPreviewPath: row.rawPreviewPath,
     rawExtract: row.rawExtract,
-    candidatePayload: row.candidatePayload,
+    candidatePayload: (detailsOnly ?? row.candidatePayload) as ImportDetailDto['candidatePayload'],
     candidateSummary: buildImportCandidateSummary(row.candidatePayload),
+    candidateReview: buildImportCandidateReviewMetadata(row.candidatePayload),
     warnings: parseImportWarnings(row.warnings),
     linkedVersionIds: row.versions.map((v: { id: string }) => v.id),
   };

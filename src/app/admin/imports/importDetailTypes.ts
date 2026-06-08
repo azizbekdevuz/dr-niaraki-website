@@ -1,3 +1,43 @@
+export type ReviewBaselineQuery = 'auto' | 'working_draft' | 'canonical' | 'published';
+
+export type ImportCandidateReviewModel = {
+  schemaVersion: number;
+  envelopeVersion: number;
+  reviewHint: string;
+  sourceTextHash: string;
+  parserVersion: string;
+  mappingVersion: string;
+  rawSectionSummaries: Array<{
+    sectionId: string;
+    title: string;
+    mappedWebsiteSection: string | null;
+    confidence: string;
+    itemCount: number;
+    warningCount: number;
+    textPreview?: string;
+  }>;
+  unmappedSections: Array<{ sectionId: string; title: string; reason: string }>;
+  sectionMappingReport: Array<{
+    docxSectionTitle: string;
+    normalizedTitle: string;
+    mappedWebsiteSection: string | null;
+    confidence: string;
+    parserUsed: string;
+    itemCount: number;
+    warningCount: number;
+  }>;
+  countValidation: {
+    entries: Array<{
+      domain: string;
+      declaredInHeading: number | null;
+      extractedCount: number;
+      severity: string;
+      code: string;
+    }>;
+  };
+  parserWarnings: Array<{ code?: string; path?: string; message: string; severity: string }>;
+};
+
 export type ImportDetailModel = {
   id: string;
   status: string;
@@ -10,6 +50,8 @@ export type ImportDetailModel = {
     patentCount: number;
     rawHtmlTruncated: boolean;
   } | null;
+  /** Present for envelope `candidatePayload` (from GET import / review). */
+  candidateReview?: ImportCandidateReviewModel | null;
 };
 
 export type ImportReviewProvenanceModel = {
@@ -30,8 +72,39 @@ export type ImportReviewBlockModel = {
 
 export type ReviewPayloadModel = {
   baselineSource: string;
+  /** Human-readable description of the baseline snapshot (canonical, working draft, or published). */
+  baselineLabel: string;
+  /** Which alternate baselines exist for this admin session (drives the baseline selector). */
+  baselineCapabilities: {
+    hasWorkingDraft: boolean;
+    hasPublished: boolean;
+  };
   blocks: ImportReviewBlockModel[];
   warnings: { message: string; code?: string }[];
   provenance: ImportReviewProvenanceModel | null;
   legacyUploadsMetaNote: string;
+  mergeSafety: ImportMergeSafetyModel;
+};
+
+export type ImportMergeSectionRiskLabel =
+  | 'safe_to_merge'
+  | 'needs_review'
+  | 'review_only_default'
+  | 'requires_explicit_replace';
+
+export type ImportMergeSectionSafetyModel = {
+  id: string;
+  title: string;
+  risk: ImportMergeSectionRiskLabel;
+  includeInSafeMerge: boolean;
+  reasons: string[];
+};
+
+export type ImportMergeSafetyModel = {
+  defaultMergeMode: 'safe_update';
+  /** `full_replace` requires `acknowledgeHighRisk` when any section is not safe_to_merge. */
+  fullReplaceRequiresAck: boolean;
+  sections: ImportMergeSectionSafetyModel[];
+  /** Cross-cutting notes (unmapped sections, envelope hints, parser severity, etc.). */
+  notes: string[];
 };

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import React from 'react';
 
+import { ImportCandidateReviewPanels } from './ImportCandidateReviewPanels';
 import { ImportCandidateSummaryCard } from './ImportCandidateSummaryCard';
 import type { ImportDetailModel, ReviewPayloadModel } from './importDetailTypes';
 import { ImportMergeDraftCard } from './ImportMergeDraftCard';
@@ -17,7 +18,10 @@ type Props = {
   merging: boolean;
   mergeMsg: string | null;
   error: string | null;
-  onMerge: (action: 'create' | 'replace') => void;
+  onMerge: (
+    action: 'create' | 'replace',
+    opts: { mergeMode: 'safe_update' | 'full_replace'; acknowledgeHighRisk: boolean },
+  ) => void;
 };
 
 export function ImportDetailBody({ imp, review, hasDraft, merging, mergeMsg, error, onMerge }: Props) {
@@ -48,9 +52,17 @@ export function ImportDetailBody({ imp, review, hasDraft, merging, mergeMsg, err
 
         <ImportCandidateSummaryCard imp={imp} />
 
+        <ImportCandidateReviewPanels imp={imp} review={review} />
+
         {review ? <ImportReviewWarningsPanel review={review} /> : null}
 
-        <ImportMergeDraftCard imp={imp} hasDraft={hasDraft} merging={merging} onMerge={onMerge} />
+        <ImportMergeDraftCard
+          imp={imp}
+          review={review}
+          hasDraft={hasDraft}
+          merging={merging}
+          onMerge={onMerge}
+        />
 
         {review ? <ImportStructuredReviewBlocks review={review} /> : null}
       </div>
@@ -59,7 +71,9 @@ export function ImportDetailBody({ imp, review, hasDraft, merging, mergeMsg, err
 }
 
 export type {
+  ImportCandidateReviewModel,
   ImportDetailModel,
+  ReviewBaselineQuery,
   ImportReviewBlockModel,
   ImportReviewProvenanceModel,
   ReviewPayloadModel,

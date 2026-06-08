@@ -5,6 +5,7 @@
 
 import type { ImportStatus } from '@prisma/client';
 
+import type { ImportCandidatePayload } from '@/server/imports/candidatePayload/types';
 import type { ImportWarningItem } from '@/server/imports/types';
 import type { Details } from '@/types/details';
 import type { ParseWarning } from '@/types/parser';
@@ -131,6 +132,19 @@ export function detailsCandidateForImportStorage(details: Details): Record<strin
     o.rawHtml = raw.slice(0, RAW_HTML_STORE_MAX);
     o.rawHtmlTruncated = true;
     o.rawHtmlOriginalLength = raw.length;
+  }
+  return o;
+}
+
+/** Prisma JSON storage for the candidate envelope — truncates nested `details.rawHtml` only. */
+export function importCandidatePayloadForImportStorage(payload: ImportCandidatePayload): Record<string, unknown> {
+  const o = JSON.parse(JSON.stringify(payload)) as Record<string, unknown>;
+  const details = o.details as Record<string, unknown> | undefined;
+  const raw = details?.rawHtml;
+  if (details && typeof raw === 'string' && raw.length > RAW_HTML_STORE_MAX) {
+    details.rawHtml = raw.slice(0, RAW_HTML_STORE_MAX);
+    details.rawHtmlTruncated = true;
+    details.rawHtmlOriginalLength = raw.length;
   }
   return o;
 }

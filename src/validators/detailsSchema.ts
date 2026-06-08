@@ -208,6 +208,8 @@ export const DetailsMetaSchema = z.object({
   uploader: z.string().nullable().optional(),
   warnings: z.array(z.string()).default([]),
   uploads: z.array(UploadMetadataSchema).optional(),
+  /** When set, `mergeCvDetailsIntoSiteContent` omits `about.full` from professional summary merge (Phase 3A split). */
+  cvSummaryMergePolicy: z.literal('split_v1').optional(),
 });
 
 // Counts schema

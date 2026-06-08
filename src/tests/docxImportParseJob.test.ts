@@ -65,7 +65,11 @@ describe('runDocxImportParseJob', () => {
     vi.mocked(parseDocxToDetails).mockReset();
     vi.mocked(persistImportParseOutcome).mockReset();
     vi.mocked(persistImportParseFailure).mockReset();
-    vi.mocked(parseDocxToDetails).mockResolvedValue({ data: sampleDetails, warnings: [] });
+    vi.mocked(parseDocxToDetails).mockResolvedValue({
+      data: sampleDetails,
+      warnings: [],
+      artifacts: { rawDocumentText: '', sections: [] },
+    });
     vi.mocked(persistImportParseOutcome).mockResolvedValue({} as never);
     vi.mocked(persistImportParseFailure).mockResolvedValue({} as never);
   });
@@ -82,7 +86,10 @@ describe('runDocxImportParseJob', () => {
     expect(['PARSED', 'NEEDS_REVIEW']).toContain(r.import.status);
     expect(persistImportParseOutcome).toHaveBeenCalledWith(
       'im1',
-      expect.objectContaining({ parserVersion: 'test-parser' }),
+      expect.objectContaining({
+        parserVersion: 'test-parser',
+        candidatePayload: expect.objectContaining({ schemaVersion: 2 }),
+      }),
     );
   });
 
@@ -109,7 +116,11 @@ describe('scheduleDocxImportParseAfterResponse', () => {
   beforeEach(() => {
     vi.mocked(parseDocxToDetails).mockReset();
     vi.mocked(persistImportParseOutcome).mockReset();
-    vi.mocked(parseDocxToDetails).mockResolvedValue({ data: sampleDetails, warnings: [] });
+    vi.mocked(parseDocxToDetails).mockResolvedValue({
+      data: sampleDetails,
+      warnings: [],
+      artifacts: { rawDocumentText: '', sections: [] },
+    });
     vi.mocked(persistImportParseOutcome).mockResolvedValue({} as never);
   });
 

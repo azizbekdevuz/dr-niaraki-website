@@ -33,6 +33,71 @@ export type ImportCandidateSummaryDto = {
   rawHtmlTruncated: boolean;
 };
 
+export type ImportParserWarningItemDto = {
+  code?: string;
+  path?: string;
+  message: string;
+  severity: 'info' | 'warning' | 'error';
+};
+
+export type ImportCountValidationEntryDto = {
+  domain: string;
+  declaredInHeading: number | null;
+  extractedCount: number;
+  severity: 'info' | 'warning' | 'error';
+  code: string;
+};
+
+export type ImportCountValidationDto = {
+  entries: ImportCountValidationEntryDto[];
+};
+
+export type ImportUnmappedSectionDto = {
+  sectionId: string;
+  title: string;
+  reason: string;
+};
+
+/** Per-section compact line for admin review (no full raw text). */
+export type ImportRawSectionSummaryDto = {
+  sectionId: string;
+  title: string;
+  mappedWebsiteSection: string | null;
+  confidence: 'exact' | 'alias' | 'fuzzy' | 'unmapped';
+  itemCount: number;
+  warningCount: number;
+  /** Truncated preview only; omitted when empty */
+  textPreview?: string;
+};
+
+export type ImportSectionMappingRowDto = {
+  docxSectionTitle: string;
+  normalizedTitle: string;
+  mappedWebsiteSection: string | null;
+  confidence: 'exact' | 'alias' | 'fuzzy' | 'unmapped';
+  parserUsed: string;
+  itemCount: number;
+  warningCount: number;
+};
+
+/**
+ * Envelope-only metadata for import review UI (GET import detail / review).
+ * Omits `rawDocumentText`; includes hashes and compact section summaries only.
+ */
+export type ImportCandidateReviewMetadataDto = {
+  schemaVersion: number;
+  envelopeVersion: number;
+  reviewHint: 'READY' | 'NEEDS_REVIEW' | 'RAW_CHANGED_ONLY';
+  sourceTextHash: string;
+  parserVersion: string;
+  mappingVersion: string;
+  rawSectionSummaries: ImportRawSectionSummaryDto[];
+  unmappedSections: ImportUnmappedSectionDto[];
+  sectionMappingReport: ImportSectionMappingRowDto[];
+  countValidation: ImportCountValidationDto;
+  parserWarnings: ImportParserWarningItemDto[];
+};
+
 export type ImportDetailDto = ImportSummaryDto & {
   mimeType: string;
   sizeBytes: number;
@@ -42,6 +107,8 @@ export type ImportDetailDto = ImportSummaryDto & {
   rawExtract: Prisma.JsonValue | null;
   candidatePayload: Prisma.JsonValue | null;
   candidateSummary: ImportCandidateSummaryDto | null;
+  /** Present when `candidatePayload` is a parsed envelope (`schemaVersion` === 2). */
+  candidateReview: ImportCandidateReviewMetadataDto | null;
   warnings: ImportWarningItem[];
   linkedVersionIds: string[];
 };

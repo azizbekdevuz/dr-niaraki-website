@@ -3,10 +3,11 @@ import 'server-only';
 import type { ImportStatus, Prisma } from '@prisma/client';
 
 import { PARSER_VERSION, parseDocxToDetails } from '@/parser/docxParser';
+import { buildImportCandidatePayload } from '@/server/imports/candidatePayload/builder';
 import {
   buildDocxRawExtractEnvelope,
-  detailsCandidateForImportStorage,
   heuristicImportWarnings,
+  importCandidatePayloadForImportStorage,
   mergeImportWarningLists,
   parseWarningsToImportItems,
   resolveImportStatusAfterParse,
@@ -81,7 +82,7 @@ export async function runDocxImportParseJob(input: {
 
   try {
     const parseStart = Date.now();
-    const { data, warnings } = await parseDocxToDetails(
+    const { data, warnings, artifacts } = await parseDocxToDetails(
       input.buffer,
       input.originalName,
       input.uploaderLabel ?? undefined,
@@ -109,7 +110,14 @@ export async function runDocxImportParseJob(input: {
       validationSuccess: validation.success,
       parseWarnings: warnings,
     });
-    const candidateJson = detailsCandidateForImportStorage(data);
+    const envelope = buildImportCandidatePayload({
+      rawDocumentText: artifacts.rawDocumentText,
+      parserVersion: PARSER_VERSION,
+      details: data,
+      sections: artifacts.sections,
+      importWarnings,
+    });
+    const candidateJson = importCandidatePayloadForImportStorage(envelope) as Prisma.InputJsonValue;
 
     const persistStart = Date.now();
     await persistImportParseOutcome(input.importId, {

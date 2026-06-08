@@ -148,6 +148,8 @@ export const ResearchProjectSchema = z.object({
   role: z.string().min(1),
 });
 
+export type ResearchProjectItem = z.infer<typeof ResearchProjectSchema>;
+
 export const ResearchPageSchema = z.object({
   heroIntro: z.string().min(1),
   collaborationHeading: z.string().min(1),

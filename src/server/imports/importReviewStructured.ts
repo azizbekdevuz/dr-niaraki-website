@@ -3,15 +3,33 @@ import type {
   AboutExperienceItem,
   AboutJourneyItem,
   PatentItem,
-  PublicationItem,
   SimpleListItem,
   SiteContent,
 } from '@/content/schema';
 import { extractEditorSliceFromSiteContent } from '@/lib/draftEditorSlice';
 import { diffIdLists, shallowFieldChanges, type StructuredListDiff } from '@/server/imports/importListDiff';
+import { diffPublicationsSemantically, diffResearchProjectsSemantically } from '@/server/imports/semanticListDiff';
 
 const LEGACY_UPLOADS_META_NOTE =
   '`uploads_meta.json` / mirrored upload files are legacy listing + download metadata only. Prisma `UploadedFile` + `ContentImport` are authoritative for imports, review, and merge-to-draft.';
+
+/** Blocks ignored when deciding if the merge produced any structured list/scalar diffs (provenance noise, raw-only gate). */
+const STRUCTURED_MERGE_SKIP_IDS = new Set(['provenance', 'legacy_note', 'raw_document_change']);
+
+/**
+ * True when every non-skipped review block has empty added/removed/changed (e.g. only provenance differs).
+ */
+export function structuredMergeDiffIsVacuous(blocks: ImportReviewBlock[]): boolean {
+  for (const b of blocks) {
+    if (STRUCTURED_MERGE_SKIP_IDS.has(b.id)) {
+      continue;
+    }
+    if (b.added.length || b.removed.length || b.changed.length) {
+      return false;
+    }
+  }
+  return true;
+}
 
 export type ReviewChangedItem = { label: string; lines: string[] };
 
@@ -168,12 +186,7 @@ export function buildStructuredReviewBlocks(
     ['title', 'organization', 'year', 'details', 'impact', 'category'],
   );
 
-  const pubDiff = diffIdLists<PublicationItem>(
-    baseline.publications.items,
-    merged.publications.items,
-    (p) => p.title,
-    ['title', 'authors', 'journal', 'year', 'type', 'doi'],
-  );
+  const pubDiff = diffPublicationsSemantically(baseline.publications.items, merged.publications.items);
 
   const patDiff = diffIdLists<PatentItem>(
     baseline.patents.items,
@@ -187,6 +200,11 @@ export function buildStructuredReviewBlocks(
     merged.research.interests,
     (r) => r.name,
     ['name', 'description', 'keywords'],
+  );
+
+  const researchProjectsDiff = diffResearchProjectsSemantically(
+    baseline.research.projects,
+    merged.research.projects,
   );
 
   const teachingDiff = diffIdLists<SimpleListItem>(
@@ -241,6 +259,7 @@ export function buildStructuredReviewBlocks(
     formatListDiff('Publications (site list)', 'publications', pubDiff),
     formatListDiff('Patents (site list)', 'patents', patDiff),
     formatListDiff('Research interests', 'research_interests', researchDiff),
+    formatListDiff('Research projects', 'research_projects', researchProjectsDiff),
     {
       id: 'legacy_note',
       title: 'Upload history note',

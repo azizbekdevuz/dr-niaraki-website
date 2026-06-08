@@ -37,7 +37,13 @@ import {
 } from './parserUtils';
 
 // Parser version - update when making significant changes
-export const PARSER_VERSION = 'v1.2.0';
+export const PARSER_VERSION = 'v1.3.0';
+
+/** Mammoth text + split sections — used for `candidatePayload` v2 raw preservation. */
+export type DocxParseArtifacts = {
+  rawDocumentText: string;
+  sections: DetectedSection[];
+};
 
 /**
  * Main function to parse DOCX buffer into structured Details
@@ -46,7 +52,7 @@ export async function parseDocxToDetails(
   buffer: Buffer,
   sourceFileName: string,
   uploader?: string
-): Promise<{ data: Details; warnings: ParseWarning[] }> {
+): Promise<{ data: Details; warnings: ParseWarning[]; artifacts: DocxParseArtifacts }> {
   const warnings: ParseWarning[] = [];
   
   // Parse DOCX using mammoth
@@ -76,18 +82,21 @@ export async function parseDocxToDetails(
   
   // Parse each section
   const parsedData = await parseSections(sections, text, warnings);
-  
+
+  const professionalBody = parsedData.professionalSummary ?? parsedData.summary ?? null;
+  const qualificationsBody = parsedData.qualificationsSummary ?? null;
+
   // Construct final Details object
   const details: Details = {
     profile: {
       name: extractProfileName(text) || 'Dr. Abolghasem Sadeghi-Niaraki',
       title: extractProfileTitle(text),
       photoUrl: '/images/profpic.jpg',
-      summary: parsedData.summary || null,
+      summary: professionalBody,
     },
     about: {
-      brief: parsedData.summary?.slice(0, 300) || null,
-      full: parsedData.fullSummary || null,
+      brief: professionalBody?.slice(0, 300) || null,
+      full: qualificationsBody,
       education: parsedData.education,
       positions: parsedData.positions,
       awards: parsedData.awards,
@@ -117,10 +126,15 @@ export async function parseDocxToDetails(
       commitSha: null,
       uploader: uploader || null,
       warnings: warnings.map(w => `${w.field}: ${w.message}`),
+      cvSummaryMergePolicy: 'split_v1',
     },
   };
-  
-  return { data: details, warnings };
+
+  return {
+    data: details,
+    warnings,
+    artifacts: { rawDocumentText: text, sections },
+  };
 }
 
 /**
@@ -152,8 +166,12 @@ async function parseSections(
   fullText: string,
   warnings: ParseWarning[]
 ): Promise<{
+  /** First ~500 chars of professional summary (legacy / diagnostics). */
   summary: string | null;
+  /** Legacy: was combined summary+qualifications — now qualifications only when present. */
   fullSummary: string | null;
+  professionalSummary: string | null;
+  qualificationsSummary: string | null;
   education: Education[];
   positions: Position[];
   awards: Award[];
@@ -200,6 +218,8 @@ async function parseSections(
   return {
     summary: acc.summary,
     fullSummary: acc.fullSummary,
+    professionalSummary: acc.professionalSummary,
+    qualificationsSummary: acc.qualificationsSummary,
     education: acc.education,
     positions: acc.positions,
     awards: acc.awards,

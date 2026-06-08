@@ -9,6 +9,7 @@ import type { NextRequest } from 'next/server';
 import { readUploadBufferByStoredPath } from '@/lib/storage';
 import { requireFullAdminAccessForContent } from '@/server/admin/contentWorkflowAccess';
 import { internalErrorResponse } from '@/server/admin/contentWorkflowHttp';
+import { getDetailsFromCandidatePayload } from '@/server/imports/candidatePayload/schema';
 import { getContentImportDetail } from '@/server/imports/repository';
 import { DocxImportParseError, runDocxImportParseJob } from '@/server/imports/runDocxImportParseJob';
 
@@ -42,7 +43,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       });
     }
 
-    if (row.candidatePayload !== null && row.candidatePayload !== undefined) {
+    if (getDetailsFromCandidatePayload(row.candidatePayload) !== null) {
       return NextResponse.json({
         ok: true,
         skipped: true,

@@ -12,7 +12,7 @@ import type { CvNarrativeKind, CvNarrativeSection } from '@/types/details';
 
 export const CV_NARRATIVE_LIST_ITEM_PREFIX = 'cv-nar-';
 
-function narrativeKindsForSiteList(
+export function narrativeKindsForSiteList(
   list: 'teaching' | 'supervision' | 'service',
 ): readonly CvNarrativeKind[] {
   if (list === 'teaching') {
@@ -54,6 +54,15 @@ export function mergeSiteSimpleListWithCvNarratives(
     }
   }
   return [...kept, ...additions];
+}
+
+/** Non-empty CV narrative sections that would merge into a public site list on import. */
+export function candidateCvNarrativesForSiteList(
+  narratives: readonly CvNarrativeSection[] | undefined,
+  list: 'teaching' | 'supervision' | 'service',
+): CvNarrativeSection[] {
+  const kinds = narrativeKindsForSiteList(list);
+  return (narratives ?? []).filter((s) => kinds.includes(s.kind) && s.body.trim().length > 0);
 }
 
 export function applyCvNarrativeSectionsToSiteContent(

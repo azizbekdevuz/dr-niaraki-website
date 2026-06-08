@@ -90,6 +90,30 @@ export async function createWorkingDraftFromCanonicalSiteContent(input?: {
   return row;
 }
 
+/**
+ * Deletes the active working draft row. Does not touch published versions or public content.
+ * Records a `SYSTEM_NOTE` audit entry (no Prisma enum migration).
+ */
+export async function discardWorkingDraft(): Promise<{ discardedVersionId: string }> {
+  const draft = await getWorkingDraft();
+  if (!draft) {
+    throw new ContentWorkflowError('NO_DRAFT', 'No working draft exists to discard.');
+  }
+  if (draft.status !== 'DRAFT' || draft.draftSlot !== WORKING_DRAFT_SLOT) {
+    throw new ContentWorkflowError('IMMUTABLE_VERSION', 'Only an active working draft can be discarded.');
+  }
+  const id = draft.id;
+  await prisma.contentVersion.delete({ where: { id } });
+  await recordContentEvent({
+    eventType: 'SYSTEM_NOTE',
+    payload: {
+      action: 'WORKING_DRAFT_DISCARDED',
+      discardedVersionId: id,
+    },
+  });
+  return { discardedVersionId: id };
+}
+
 export async function saveWorkingDraft(input: {
   payload: unknown;
   changeSummary?: string | null;

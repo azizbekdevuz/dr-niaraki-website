@@ -17,6 +17,8 @@ import { ImportMergeError, mergeImportCandidateToWorkingDraft } from '@/server/i
 const bodySchema = z
   .object({
     action: z.enum(['create', 'replace']),
+    mergeMode: z.enum(['safe_update', 'full_replace']).optional(),
+    acknowledgeHighRisk: z.boolean().optional(),
     changeSummary: z.string().max(2000).nullable().optional(),
   })
   .strict();
@@ -27,7 +29,7 @@ function mergeErrorResponse(e: ImportMergeError): NextResponse {
   let status = 400;
   if (e.code === 'IMPORT_NOT_FOUND') {
     status = 404;
-  } else if (e.code === 'MERGE_VALIDATION_FAILED' || e.code === 'INVALID_CANDIDATE') {
+  } else if (e.code === 'MERGE_VALIDATION_FAILED' || e.code === 'INVALID_CANDIDATE' || e.code === 'MERGE_ACK_REQUIRED') {
     status = 422;
   }
   return NextResponse.json({ ok: false, error: e.code, message: e.message }, { status });
@@ -62,6 +64,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const result = await mergeImportCandidateToWorkingDraft({
       importId: id,
       action: parsed.data.action,
+      mergeMode: parsed.data.mergeMode,
+      acknowledgeHighRisk: parsed.data.acknowledgeHighRisk,
       changeSummary: parsed.data.changeSummary,
     });
     return NextResponse.json({

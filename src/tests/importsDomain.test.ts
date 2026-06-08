@@ -12,6 +12,7 @@ vi.mock('@/server/db/prisma', () => ({
 }));
 
 import { prisma } from '@/server/db/prisma';
+import { buildImportCandidatePayload } from '@/server/imports/candidatePayload/builder';
 import { isTerminalImportStatus } from '@/server/imports/importStatus';
 import {
   createContentImportRecord,
@@ -20,6 +21,47 @@ import {
 } from '@/server/imports/repository';
 import { parseImportWarnings, toImportDetail, toImportSummary } from '@/server/imports/serialize';
 import { ImportDomainError } from '@/server/imports/types';
+import type { DetectedSection } from '@/types/parser';
+import { validateDetails } from '@/validators/detailsSchema';
+
+const minimalImportDetails = {
+  profile: { name: 'X', title: null, photoUrl: null, summary: null, meta: null },
+  about: {
+    brief: null,
+    full: null,
+    education: [],
+    positions: [],
+    awards: [],
+    languages: [],
+    cvNarrativeSections: [],
+  },
+  research: { interests: [], projects: [], grants: [] },
+  publications: [],
+  patents: [],
+  contact: {
+    email: 'x@y.com',
+    personalEmail: null,
+    phone: null,
+    fax: null,
+    cellPhone: null,
+    address: null,
+    department: null,
+    university: null,
+    website: null,
+    cvUrl: null,
+    social: {},
+  },
+  rawHtml: null,
+  counts: { publications: 0, patents: 0, projects: 0, awards: 0, students: 0 },
+  meta: {
+    sourceFileName: 'cv.docx',
+    parsedAt: '2026-01-02T03:04:05.000Z',
+    parserVersion: '1',
+    commitSha: null,
+    uploader: null,
+    warnings: [],
+  },
+};
 
 describe('importsDomain', () => {
   it('parseImportWarnings accepts a valid array and falls back for invalid shapes', () => {
@@ -49,7 +91,7 @@ describe('importsDomain', () => {
       warnings: [{ message: 'w' }],
       rawPreviewPath: null,
       rawExtract: { a: 1 },
-      candidatePayload: { profile: { displayName: 'X' } },
+      candidatePayload: minimalImportDetails,
       createdAt,
       updatedAt,
       uploadedFile: {
@@ -76,14 +118,97 @@ describe('importsDomain', () => {
     const detail = toImportDetail(row);
     expect(detail.warnings).toEqual([{ message: 'w' }]);
     expect(detail.linkedVersionIds).toEqual(['ver1']);
-    expect(detail.candidatePayload).toEqual({ profile: { displayName: 'X' } });
+    expect(detail.candidatePayload).toEqual(minimalImportDetails);
     expect(detail.rawExtract).toEqual({ a: 1 });
     expect(detail.candidateSummary).toEqual({
-      profileName: null,
+      profileName: 'X',
       publicationCount: 0,
       patentCount: 0,
       rawHtmlTruncated: false,
     });
+    expect(detail.candidateReview).toBeNull();
+  });
+
+  it('toImportDetail has null candidateReview for malformed candidatePayload', () => {
+    const createdAt = new Date('2026-01-02T03:04:05.000Z');
+    const updatedAt = new Date('2026-01-03T03:04:05.000Z');
+    const row = {
+      id: 'imp-bad',
+      uploadedFileId: 'up1',
+      status: 'NEEDS_REVIEW' as const,
+      parserVersion: '1',
+      warnings: [],
+      rawPreviewPath: null,
+      rawExtract: null,
+      candidatePayload: { notValidDetails: true },
+      createdAt,
+      updatedAt,
+      uploadedFile: {
+        id: 'up1',
+        originalName: 'cv.docx',
+        storedPath: '/files/cv.docx',
+        mimeType: 'application/whatever',
+        sizeBytes: 10,
+        sha256: 'abc',
+        sourceFormat: 'DOCX' as const,
+        uploadedAt: createdAt,
+      },
+      versions: [],
+    };
+    const detail = toImportDetail(row);
+    expect(detail.candidateReview).toBeNull();
+    expect(detail.candidateSummary).toBeNull();
+  });
+
+  it('toImportDetail includes candidateReview for envelope payloads', () => {
+    const vd = validateDetails(minimalImportDetails);
+    expect(vd.success).toBe(true);
+    const sections: DetectedSection[] = [
+      { type: 'patents', title: 'Patents', content: 'Patent A', confidence: 1 },
+    ];
+    const envelope = buildImportCandidatePayload({
+      rawDocumentText: 'Patents (99 Registered & Completed)\n\nX',
+      parserVersion: 'pv',
+      details: vd.data!,
+      sections,
+      importWarnings: [{ message: 'aux', code: 'INFO_LINE' }],
+    });
+    const createdAt = new Date('2026-01-02T03:04:05.000Z');
+    const updatedAt = new Date('2026-01-03T03:04:05.000Z');
+    const row = {
+      id: 'imp-env',
+      uploadedFileId: 'up1',
+      status: 'PARSED' as const,
+      parserVersion: 'pv',
+      warnings: [],
+      rawPreviewPath: null,
+      rawExtract: null,
+      candidatePayload: envelope as unknown as Prisma.JsonValue,
+      createdAt,
+      updatedAt,
+      uploadedFile: {
+        id: 'up1',
+        originalName: 'cv.docx',
+        storedPath: '/files/cv.docx',
+        mimeType: 'application/whatever',
+        sizeBytes: 10,
+        sha256: 'abc',
+        sourceFormat: 'DOCX' as const,
+        uploadedAt: createdAt,
+      },
+      versions: [],
+    };
+    const detail = toImportDetail(row);
+    expect(detail.candidateReview).not.toBeNull();
+    expect(detail.candidateReview!.schemaVersion).toBe(2);
+    expect(detail.candidateReview!.envelopeVersion).toBe(1);
+    expect(detail.candidateReview!.sourceTextHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(detail.candidateReview!.rawSectionSummaries).toHaveLength(1);
+    expect(detail.candidateReview!.sectionMappingReport.length).toBeGreaterThanOrEqual(1);
+    expect(detail.candidateReview!.parserWarnings.some((w) => w.severity === 'info')).toBe(true);
+    const patentEntry = detail.candidateReview!.countValidation.entries.find((e) => e.code === 'PATENT_COUNT_MISMATCH');
+    expect(patentEntry).toBeDefined();
+    expect(patentEntry!.severity).toBe('warning');
   });
 });
 

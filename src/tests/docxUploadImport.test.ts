@@ -104,7 +104,11 @@ describe('processDocxUploadWithImportPersistence', () => {
         updatedAt: new Date(),
       },
     });
-    vi.mocked(parseDocxToDetails).mockResolvedValue({ data: sampleDetails, warnings: [] });
+    vi.mocked(parseDocxToDetails).mockResolvedValue({
+      data: sampleDetails,
+      warnings: [],
+      artifacts: { rawDocumentText: '', sections: [] },
+    });
     vi.mocked(persistImportParseOutcome).mockResolvedValue({} as never);
     vi.mocked(persistImportParseFailure).mockResolvedValue({} as never);
   });
@@ -130,6 +134,7 @@ describe('processDocxUploadWithImportPersistence', () => {
       'im1',
       expect.objectContaining({
         parserVersion: 'test-parser',
+        candidatePayload: expect.objectContaining({ schemaVersion: 2 }),
       }),
     );
     expect(createUploadedFileAndImport).toHaveBeenCalledWith(
