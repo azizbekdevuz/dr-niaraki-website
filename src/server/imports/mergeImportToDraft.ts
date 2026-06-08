@@ -126,6 +126,7 @@ export async function mergeImportCandidateToWorkingDraft(input: {
   const safety = evaluateImportMergeSectionSafety({
     reviewBlocks: safetyBlocks,
     candidateReview: buildImportCandidateReviewMetadata(importRow.candidatePayload),
+    cvNarrativeSections: details.about.cvNarrativeSections,
   });
 
   const mergeMode = input.mergeMode ?? 'safe_update';

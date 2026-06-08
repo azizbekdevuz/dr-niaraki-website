@@ -173,6 +173,7 @@ export async function buildImportReviewPayload(
   const mergeSafety = evaluateImportMergeSectionSafety({
     reviewBlocks: mergeSafetyBlocks,
     candidateReview: buildImportCandidateReviewMetadata(row.candidatePayload),
+    cvNarrativeSections: parsed.about.cvNarrativeSections,
   });
 
   const mergedCandidate = mergeCvDetailsIntoSiteContent(parsed, baseline);

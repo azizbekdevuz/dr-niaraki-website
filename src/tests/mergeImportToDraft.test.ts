@@ -34,6 +34,7 @@ import { assertSiteContent, validateSiteContent } from '@/content/validators';
 import { getWorkingDraft } from '@/server/content/contentWorkflowCore';
 import { prisma } from '@/server/db/prisma';
 import { buildImportCandidatePayload } from '@/server/imports/candidatePayload/builder';
+import { CV_NARRATIVE_LIST_ITEM_PREFIX } from '@/server/imports/cvNarrativeToSimpleLists';
 import { ImportMergeError, mergeImportCandidateToWorkingDraft } from '@/server/imports/mergeImportToDraft';
 import { getContentImportDetail, updateImportStatus } from '@/server/imports/repository';
 import { minimalImportDetails } from '@/tests/fixtures/minimalImportDetails';
@@ -199,6 +200,145 @@ describe('mergeImportCandidateToWorkingDraft', () => {
       }),
     ).rejects.toMatchObject({ code: 'MERGE_ACK_REQUIRED' });
     expect(prisma.contentVersion.create).not.toHaveBeenCalled();
+  });
+
+  it('safe_update preserves teaching/supervision/service when candidate has cv narrative imports', async () => {
+    const details = minimalImportDetails({
+      about: {
+        ...minimalImportDetails().about,
+        cvNarrativeSections: [
+          {
+            id: 'nar-teach-1',
+            kind: 'teaching',
+            sectionTitle: 'Teaching Experiences',
+            body: 'Raw imported teaching narrative.',
+            sourceSectionType: 'services',
+          },
+          {
+            id: 'nar-lead-1',
+            kind: 'leadership_supervision',
+            sectionTitle: 'Supervision',
+            body: 'Raw imported supervision narrative.',
+            sourceSectionType: 'academic_narrative',
+          },
+          {
+            id: 'nar-svc-1',
+            kind: 'professional_services',
+            sectionTitle: 'Professional Service',
+            body: 'Raw imported service narrative.',
+            sourceSectionType: 'services',
+          },
+        ],
+      },
+    });
+    const envelope = buildImportCandidatePayload({
+      rawDocumentText: 'cv body',
+      parserVersion: 't',
+      details,
+      sections: [],
+      importWarnings: [],
+    });
+    vi.mocked(getContentImportDetail).mockResolvedValue({
+      id: 'imp-nar',
+      status: 'PARSED',
+      candidatePayload: envelope,
+      uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
+      createdAt: new Date(),
+      versions: [],
+    } as never);
+    vi.mocked(getWorkingDraft).mockResolvedValue(null);
+    vi.mocked(prisma.contentVersion.create).mockResolvedValue({
+      id: 'cv-nar',
+      status: 'DRAFT',
+      draftSlot: 'main',
+      importId: 'imp-nar',
+      payload: {},
+      label: null,
+      changeSummary: null,
+      createdBy: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      publishedAt: null,
+      publishSequence: null,
+    } as never);
+
+    await mergeImportCandidateToWorkingDraft({ importId: 'imp-nar', action: 'create' });
+
+    const createArg = vi.mocked(prisma.contentVersion.create).mock.calls[0]?.[0];
+    const validated = validateSiteContent(createArg!.data.payload);
+    expect(validated.success).toBe(true);
+    if (!validated.success) {
+      return;
+    }
+    const baseline = assertSiteContent(SITE_CONTENT_RAW);
+    expect(validated.data.teaching).toEqual(baseline.teaching);
+    expect(validated.data.supervision).toEqual(baseline.supervision);
+    expect(validated.data.service).toEqual(baseline.service);
+  });
+
+  it('full_replace with acknowledgement applies cv narrative rows to teaching/supervision/service', async () => {
+    const details = minimalImportDetails({
+      about: {
+        ...minimalImportDetails().about,
+        cvNarrativeSections: [
+          {
+            id: 'nar-teach-1',
+            kind: 'teaching',
+            sectionTitle: 'Teaching Experiences',
+            body: 'Applied teaching narrative.',
+            sourceSectionType: 'services',
+          },
+        ],
+      },
+    });
+    const envelope = buildImportCandidatePayload({
+      rawDocumentText: 'cv body',
+      parserVersion: 't',
+      details,
+      sections: [],
+      importWarnings: [],
+    });
+    vi.mocked(getContentImportDetail).mockResolvedValue({
+      id: 'imp-nar-fr',
+      status: 'PARSED',
+      candidatePayload: envelope,
+      uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
+      createdAt: new Date(),
+      versions: [],
+    } as never);
+    vi.mocked(getWorkingDraft).mockResolvedValue(null);
+    vi.mocked(prisma.contentVersion.create).mockResolvedValue({
+      id: 'cv-nar-fr',
+      status: 'DRAFT',
+      draftSlot: 'main',
+      importId: 'imp-nar-fr',
+      payload: {},
+      label: null,
+      changeSummary: null,
+      createdBy: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      publishedAt: null,
+      publishSequence: null,
+    } as never);
+
+    await mergeImportCandidateToWorkingDraft({
+      importId: 'imp-nar-fr',
+      action: 'create',
+      mergeMode: 'full_replace',
+      acknowledgeHighRisk: true,
+    });
+
+    const createArg = vi.mocked(prisma.contentVersion.create).mock.calls[0]?.[0];
+    const validated = validateSiteContent(createArg!.data.payload);
+    expect(validated.success).toBe(true);
+    if (!validated.success) {
+      return;
+    }
+    expect(
+      validated.data.teaching.some((row) => row.id === `${CV_NARRATIVE_LIST_ITEM_PREFIX}nar-teach-1`),
+    ).toBe(true);
+    expect(validated.data.teaching[0]?.body).toContain('Applied teaching narrative');
   });
 
   it('allows full_replace when acknowledgeHighRisk is true', async () => {

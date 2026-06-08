@@ -96,6 +96,43 @@ describe('importMergeSectionSafety', () => {
     expect(report.notes.some((n) => n.includes('NEEDS_REVIEW'))).toBe(true);
   });
 
+  it('marks teaching/supervision/service review-only when candidate has cv narrative imports', () => {
+    const report = evaluateImportMergeSectionSafety({
+      reviewBlocks: [],
+      candidateReview: candidateReview(),
+      cvNarrativeSections: [
+        {
+          id: 'nar-teach-1',
+          kind: 'teaching',
+          sectionTitle: 'Teaching Experiences',
+          body: 'Raw CV teaching block.',
+          sourceSectionType: 'services',
+        },
+        {
+          id: 'nar-lead-1',
+          kind: 'leadership_supervision',
+          sectionTitle: 'Supervision',
+          body: 'Raw CV supervision block.',
+          sourceSectionType: 'academic_narrative',
+        },
+        {
+          id: 'nar-svc-1',
+          kind: 'skills',
+          sectionTitle: 'Skills',
+          body: 'Raw CV skills block.',
+          sourceSectionType: 'services',
+        },
+      ],
+    });
+    for (const id of ['teaching', 'supervision', 'service'] as const) {
+      const row = report.sections.find((s) => s.id === id);
+      expect(row?.risk).toBe('review_only_default');
+      expect(row?.includeInSafeMerge).toBe(false);
+    }
+    expect(freezeKeysFromSafetyReport(report).has('cvNarrative')).toBe(true);
+    expect(report.notes.some((n) => n.includes('CV narrative'))).toBe(true);
+  });
+
   it('downgrades publications in safe merge when parser errors mention publications', () => {
     const blocks: ImportReviewBlock[] = [
       reviewBlock({ id: 'publications', title: 'Pubs', added: ['a'], removed: [], changed: [] }),

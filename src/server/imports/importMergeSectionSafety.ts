@@ -1,7 +1,12 @@
 import 'server-only';
 
+import {
+  CV_NARRATIVE_LIST_ITEM_PREFIX,
+  candidateCvNarrativesForSiteList,
+} from '@/server/imports/cvNarrativeToSimpleLists';
 import type { ImportReviewBlock } from '@/server/imports/importReviewStructured';
 import type { ImportCandidateReviewMetadataDto } from '@/server/imports/types';
+import type { CvNarrativeSection } from '@/types/details';
 
 export type ImportMergeSectionRiskLabel =
   | 'safe_to_merge'
@@ -61,9 +66,51 @@ function maxRisk(a: ImportMergeSectionRiskLabel, b: ImportMergeSectionRiskLabel)
  * Heuristic section-level safety for DOCX import → working draft merge.
  * Drives `safe_update` (default) freezes and `full_replace` acknowledgement requirements.
  */
+function reviewBlockShowsCvNarImports(block: ImportReviewBlock | undefined): boolean {
+  if (!block) {
+    return false;
+  }
+  const lines = [
+    ...block.added,
+    ...block.removed,
+    ...block.changed.flatMap((c) => c.lines),
+  ];
+  return lines.some((line) => line.includes(CV_NARRATIVE_LIST_ITEM_PREFIX));
+}
+
+function assessCvNarrativeSiteList(
+  id: 'teaching' | 'supervision' | 'service',
+  title: string,
+  narratives: readonly CvNarrativeSection[] | undefined,
+  block: ImportReviewBlock | undefined,
+  assessList: (
+    listId: string,
+    listTitle: string,
+    opts: { heavyRemoved: number; heavyChurn: number; extraRisk?: ImportMergeSectionRiskLabel },
+  ) => ImportMergeSectionSafety,
+): ImportMergeSectionSafety {
+  const hasNarrativeImport = candidateCvNarrativesForSiteList(narratives, id).length > 0;
+  const hasCvNarChurn = reviewBlockShowsCvNarImports(block);
+  if (hasNarrativeImport || hasCvNarChurn) {
+    return {
+      id,
+      title,
+      risk: 'review_only_default',
+      includeInSafeMerge: false,
+      reasons: [
+        hasNarrativeImport
+          ? 'Imported CV narrative sections would populate this public list with raw rows — use full replace with acknowledgement to apply.'
+          : 'Structured diff shows cv-nar- list changes — held back from safe merge.',
+      ],
+    };
+  }
+  return assessList(id, title, { heavyRemoved: 4, heavyChurn: 14 });
+}
+
 export function evaluateImportMergeSectionSafety(input: {
   reviewBlocks: readonly ImportReviewBlock[];
   candidateReview: ImportCandidateReviewMetadataDto | null;
+  cvNarrativeSections?: readonly CvNarrativeSection[];
 }): ImportMergeSafetyReport {
   const notes: string[] = [];
   const bm = blockMap(input.reviewBlocks);
@@ -189,6 +236,15 @@ export function evaluateImportMergeSectionSafety(input: {
   const ri = assessList('research_interests', 'Research interests', { heavyRemoved: 3, heavyChurn: 12 });
   sections.push(ri);
 
+  const narratives = input.cvNarrativeSections;
+  if (
+    narratives?.some((s) => s.body.trim().length > 0 && s.kind !== 'other')
+  ) {
+    notes.push(
+      'CV narrative sections are present — teaching, supervision, and service lists are review-only in safe update.',
+    );
+  }
+
   for (const id of ['teaching', 'supervision', 'service'] as const) {
     let title: string;
     if (id === 'teaching') {
@@ -198,7 +254,7 @@ export function evaluateImportMergeSectionSafety(input: {
     } else {
       title = 'Service';
     }
-    sections.push(assessList(id, title, { heavyRemoved: 4, heavyChurn: 14 }));
+    sections.push(assessCvNarrativeSiteList(id, title, narratives, bm.get(id), assessList));
   }
 
   const fullReplaceRequiresAck = sections.some((s) => s.risk !== 'safe_to_merge');
@@ -250,7 +306,7 @@ export function mergeSectionBlockIdToFreezeKey(blockId: string): CvDetailsMergeF
     case 'teaching':
     case 'supervision':
     case 'service':
-      return null;
+      return 'cvNarrative';
     default:
       return null;
   }
