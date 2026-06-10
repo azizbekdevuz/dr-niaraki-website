@@ -1,0 +1,28 @@
+Publications
+Publication Summary
+Over 200 peer-reviewed publications in top-tier international journals.
+
+Books and Book Chapters
+Books
+Sadeghi-Niaraki, A. (2009). Ontology-based and User-centric Spatial Modeling in GIS. VDM Publisher, Germany.
+Sadeghi-Niaraki, A., Shakeri, M. (2015). Python Programming for GIS Engineering. K.N.Toosi University Publication (in Persian).
+Book Chapters
+Ranjgar, B., Razavi-Termeh, S. V., Sadeghi-Niaraki, A., & Choi, S. M. (2022). Natural Hazard Susceptibility Mapping Using Ubiquitous GeoAI Concept. In Current Overview on Science and Technology Research (pp. 100-119). B P International Publisher, UK.
+JOURNAL PAPERS (SCIE, SCI, SSCI)
+Razavi-Termeh, S. V., Sadeghi-Niaraki, A., Abba, S. I., Ali, F., & Choi, S. M. (2024). Enhancing spatial prediction of groundwater-prone areas through optimization. 14(11), 1-25. (SCIE-Q1-IF: 5.7)
+Razavi-Termeh, S. V., Sadeghi-Niaraki, A., Naqvi, R. A., Farman, A., & Choi, S. M. (2024). Cutting-Edge Strategies for Absence Data Identification in Natural Hazards. Journal of Hydrology. (SCIE-Q1-IF: 5.9)
+Razavi-Termeh, S. V., Sadeghi-Niaraki, A., Naqvi, R. A., Farman, A., & Choi, S. M. (2024). Spatio-Temporal Modeling of Asthma-Prone Areas. Sustainable Cities and Society. (SCIE-Q1-IF: 10.5)
+Rashidian, M., Malek, M. R., Sadeghi-Niaraki, A., & Choi, S. M. (2024). Epidemic exposure risk assessment in digital contact tracing. Digital Health, 10, 20552076241261929. (SSCI-Q2-IF: 2.9)
+Razavi-Termeh, S. V., Sadeghi-Niaraki, A., Farhangi, F., Khiadani, M., Pirasteh, S., & Choi, S. M. (2024). Solving Water Scarcity Challenges in Arid Regions. Chemosphere, 142859. (SCIE-Q1-IF: 8.1)
+Shakeri, M., Park, H., Jeon, I., Sadeghi-Niaraki, A., & Woo, W. (2023). User behavior modeling for AR personalized recommendations. Virtual Reality, 1-18. (SCIE-Q2-IF: 4.2)
+Razavi-Termeh, S. V., Hatamiafkoueieh, J., Sadeghi-Niaraki, A., & Choi, S. M. (2023). A GIS-based multi-objective evolutionary algorithm for landslide susceptibility mapping. SRERA. (SCIE-Q2-IF: 4.2)
+Hosseini, F. S., Seo, M. B., Razavi-Termeh, S. V., Sadeghi-Niaraki, A., & Choi, S. M. (2023). GeoAI and Satellite Imagery Fusion for Soil Physical Property Predicting. Sustainability, 15(19). (SSCI-Q2-IF: 3.9)
+Rokhsaritalemi, S., Sadeghi-Niaraki, A., & Choi, S. M. (2023). Exploring Emotion Analysis using AI, GIS, and XR. IEEE Access. (SCIE-Q2-IF: 3.9)
+Razavi-Termeh, S. V., Seo, M., Sadeghi-Niaraki, A., & Choi, S. M. (2023). Flash flood detection in the Monsoon period by integration of optical and radar satellite imagery. Weather and Climate Extremes, 41, 100595. (SCIE-Q1-IF: 8.0)
+Razavi-Termeh, S. V., Sadeghi-Niaraki, A., Naqvi, R. A., & Choi, S. M. (2023). Dust detection and susceptibility mapping by aiding satellite imagery time series. Environmental Pollution, 335, 122241. (SCIE-Q1-IF: 8.9)
+Razavi-Termeh, S. V., Sadeghi-Niaraki, A., & Choi, S. M. (2023). A new approach using biology-inspired metaheuristic algorithms to enhance flood susceptibility mapping. Journal of Environmental Management, 345. (SCIE-Q1-IF: 8.7)
+Farhangi, F., Sadeghi-Niaraki, A., Safari Bazargani, J., Razavi-Termeh, S. V., & Choi, S. M. (2023). Time-Series Hourly Sea Surface Temperature Prediction Using Deep Neural Network Models. JMSE, 11(6). (SCIE-Q1-IF: 2.9)
+Bahadori, N., Razavi-Termeh, S. V., Sadeghi-Niaraki, A., Al-Kindi, K. M., & Choi, S. M. (2023). Wildfire Susceptibility Mapping Using Deep Learning in Two Satellite Imagery Dataset. Forests, 14(7). (SCIE-Q1-IF: 2.9)
+Farahani, M., Razavi-Termeh, S. V., Sadeghi-Niaraki, A., & Choi, S. M. (2023). Hybridization of Spatial Modeling and Deep Learning for People's Visual Perception. Sustainability, 15(13). (SSCI-Q2-IF: 3.9)
+Razavi-Termeh, S. V., Sadeghi-Niaraki, A., Seo, M., & Choi, S. M. (2023). Application of genetic algorithm in optimization of ensemble-based machine learning for flood susceptibility. Science of The Total Environment, 873. (SCIE-Q1-IF: 9.8)
+Sadeghi-Niaraki, A. (2023). Internet of Thing (IoT) review of review: Bibliometric overview. Future Generation Computer Systems. (SCIE-Q1-IF: 7.307)

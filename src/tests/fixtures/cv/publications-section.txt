@@ -1,0 +1,29 @@
+Publications
+Publication Summary
+Over 200 peer-reviewed publications in top-tier international journals and conferences.
+Multiple books and book chapters in Geo-AI, GIS and spatial computing.
+Regular contributor to major conferences in computer science and geospatial technologies.
+Publications have contributed to recognition as one of the Top 2% Scientists worldwide.
+Books and Book Chapters
+Books
+Sadeghi-Niaraki, A. (2009). Ontology-based and User-centric Spatial Modeling in GIS: Basics, Concepts, Methods, Applications. VDM - The Publisher, Saarbrücken, Germany.
+Sadeghi-Niaraki, A., Shakeri, M. (2015). Python Programming for Engineering especially for GIS Engineering. K.N.Toosi University Publication (in Persian).
+Sadeghi-Niaraki, A., Shakeri, M. (2016). Spatial Analysis Programming using Python. K.N.Toosi University Publication (in Persian).
+Sadeghi-Niaraki, A., Ghafuri, H. (2018). Decentralized Spatial Computing (Author Matt Duckham) translation in Persian. K.N.Toosi University Publication.
+Sadeghi-Niaraki, A., Shakeri, M. (2019). Simulation of Complex Systems in GIS (Author: Patrice Langlois) translation in Persian. K.N.Toosi University Publication.
+Book Chapters
+Ranjgar, B., Razavi-Termeh, S. V., Sadeghi-Niaraki, A., & Choi, S. M. (2022). Natural Hazard Susceptibility Mapping Using Ubiquitous Geospatail Artificial Intelligence (Ubiquitous GeoAI) Concept. In Current Overview on Science and Technology Research (pp. 100-119). B P International Publisher, UK.
+Sadeghi-Niaraki, A., Kim, K., & Lee, Ch. (2008). Soft Computing as Transdisciplinary Science and Technology. In R. Chbeir, Y. Badr, A. Abraham, D. Laurent & F. Ferri (Eds.), IEEE/ACM Press, Paris, France.
+JOURNAL PAPERS (SCIE, SCI, SSCI)
+Razavi-Termeh, S. V., Sadeghi-Niaraki, A., Abba, S. I., Ali, F., & Choi, S. M. (2024). Enhancing spatial prediction of groundwater-prone areas through optimization of a boosting algorithm with bio-inspired metaheuristic algorithms. 14(11), 1-25. (SCIE-Q1-IF: 5.7, TOP7%)
+Razavi-Termeh, S. V., Sadeghi-Niaraki, A., Naqvi, R. A., Farman, A., & Choi, S. M. (2024). Cutting-Edge Strategies for Absence Data Identification in Natural Hazards. Journal of Hydrology. (SCIE-Q1-IF: 5.9, TOP10%)
+Razavi-Termeh, S. V., Sadeghi-Niaraki, A., Naqvi, R. A., Farman, A., & Choi, S. M. (2024). Spatio-Temporal Modeling of Asthma-Prone Areas. Sustainable Cities and Society. (SCIE-Q1-IF: 10.5, TOP2%)
+Rashidian, M., Malek, M. R., Sadeghi-Niaraki, A., & Choi, S. M. (2024). Epidemic exposure risk assessment in digital contact tracing. Digital Health, 10, 20552076241261929. (SSCI-Q2-IF: 2.9)
+Razavi-Termeh, S. V., Sadeghi-Niaraki, A., Farhangi, F., Khiadani, M., Pirasteh, S., & Choi, S. M. (2024). Solving Water Scarcity Challenges in Arid Regions. Chemosphere, 142859. (SCIE-Q1-IF: 8.1, TOP8%)
+Shakeri, M., Park, H., Jeon, I., Sadeghi-Niaraki, A., & Woo, W. (2023). User behavior modeling for AR personalized recommendations in spatial transitions. Virtual Reality, 1-18. (SCIE-Q2-IF: 4.2)
+Razavi-Termeh, S. V., Hatamiafkoueieh, J., Sadeghi-Niaraki, A., Choi, S. M., & Al-Kindi, K. M. (2023). A GIS-based multi-objective evolutionary algorithm for landslide susceptibility mapping. Stochastic Environmental Research and Risk Assessment, 1-26. (SCIE-Q2-IF: 4.2)
+Hosseini, F. S., Seo, M. B., Razavi-Termeh, S. V., Sadeghi-Niaraki, A., Jamshidi, M., & Choi, S. M. (2023). Geospatial Artificial Intelligence (GeoAI) and Satellite Imagery Fusion for Soil Physical Property Predicting. Sustainability, 15(19), 14125. (SSCI-Q2-IF: 3.9)
+Conference Papers
+Bazargani, J. S., Sadeghi-Niaraki, A., & Choi, S. M. (2023). Avatar Emotion Recognition using Non-verbal Communication, Pacific Graphics (2023).
+Rokhsaritalemi, S., Sadeghi-Niaraki A., Soo-Mi Choi, Emot Act AR: Tailoring Content through User Emotion and Activity Analysis, IEEE VR 2024 Posters, ORLANDO, FL USA, 2024.3.16-21.
+Rokhsaritalemi, S., Ko, B. S., Sadeghi-Niaraki, A., & Choi, S. M. (2023, March). Geospatial Augmented Reality Tourist System. In 2023 IEEE Conference on Virtual Reality and 3D User Interfaces Abstracts and Workshops (VRW), IEEE VR 2023 (pp. 611-612).

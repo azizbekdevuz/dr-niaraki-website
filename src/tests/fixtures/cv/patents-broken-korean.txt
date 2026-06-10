@@ -1,0 +1,61 @@
+Patents (52 Registered & Completed)
+International Patent
+US International Patent (US11,816,804B2) - Nov 14, 2023
+Title: "Tourist Accommodation Recommendation Method and System Using Multi-Criteria Decision-Making and Augmented Reality"
+Inventors: Abolghasem Sadeghi-Niaraki, Soo-Mi Choi, Somaieh Rokhsaritalemi
+US International Patent (18/821,509) - Aug 30, 2024 Patent application completed
+Title: "IOT-BASED APPROACH METHOD FOR LEARNING GEOMETRIC SHAPES IN EARLY CHILDHOOD"
+Inventors: Abolghasem Sadeghi-Niaraki, Soo-Mi Choi, SAFARI BAZARGANI JALAL
+US International Patent (18/818,158) - Aug 28, 2024 Patent application completed
+Title: "SEMANTIC INFORMATION RETRIEVAL METHOD FOR AUGMENTED REALITY DOMAIN"
+Inventors: Abolghasem Sadeghi-Niaraki, Soo-Mi Choi, Tamer Abuhmed
+Registered Korean Patents
+10-2356500 (Jan 24, 2022) Registered
+Geospatial Information System-Based Modeling Approach for Leakage Management in Urban Water Distribution Networks
+Abolghasem Sadeghi-Niaraki, Soo-Mi Choi
+10-2307898 (Sept 27, 2021) Registered
+Groundwater Potential Mapping Using Integrated Ensemble of Three Bivariate Statistical Models with Random Forest and Logistic Tree Models
+Abolghasem Sadeghi-Niaraki, Soo-Mi Choi
+10-22089060 (Jan 22, 2021) Registered
+Method and Apparatus for Enhancing Response Coordination through Assessment of Response Network Structural Dynamics
+Abolghasem Sadeghi-Niaraki, Soo-Mi Choi
+10-2148349 (Aug 20, 2020) Registered
+Context-Aware Route Finding Algorithm for Self-Driving Tourists Using Ontology
+Abolghasem Sadeghi-Niaraki, Soo-Mi Choi
+10-2252678 (May 11, 2021) Registered
+Spatial Cluster-Based Model for Static Rebalancing Bike Sharing Problem
+Abolghasem Sadeghi-Niaraki, Soo-Mi Choi
+10-2003643 (Jul 18, 2019) Registered
+Semantic Interoperability of GIS and MCDA Tools for Environmental Assessment and Decision Making
+Soo-Mi Choi, Abolghasem Sadeghi-Niaraki, Mohammadreza Jelokhani-Niaraki
+10-2010180 (Aug 06, 2019) Registered
+Methodological Framework for Assessment of Ubiquitous Cities Using ANP and DEMATEL Method
+Soo-Mi Choi, Abolghasem Sadeghi-Niaraki
+10-2011215 (Aug 08, 2019) Registered
+Ubiquitous Sensor Network Simulation and Emulation Environments
+Abolghasem Sadeghi-Niaraki, Soo-Mi Choi
+10-2706021 (Sept 09, 2024) Registered in 2024
+Method and Device for Generating a Wildfire Vulnerability Map Using Artificial Intelligence
+Soo-Mi Choi, Abolghasem Sadeghi-Niaraki
+10-2679714 (Jun 25, 2024) Registered in 2024
+Methodological Framework for Assessment of Ubiquitous Cities Using ANP and DEMATEL Method
+Soo-Mi Choi, Abolghasem Sadeghi-Niaraki
+10-2718516 (Oct 14, 2024) Registered in 2024
+Ubiquitous Sensor Network Simulation and Emulation Environments
+Soo-Mi Choi, Abolghasem Sadeghi-Niaraki
+10-2707106 (Sept 11, 2024) Registered in 2024
+System and Method for Representing Real World of a Road Network for Route Planning in GIS
+Soo-Mi Choi, Abolghasem Sadeghi-Niaraki
+10-2718568 (Oct 14, 2024) Registered in 2024
+Ontology Based Personalized Route Planning System Using Multi Criteria Decision Making Approach
+Abolghasem Sadeghi-Niaraki, Soo-Mi Choi, Seyed Vahid Razavi-Termeh
+Patent Applications Completed
+10-2023-0068491 (May 26, 2023) Patent application completed
+Ubiquitous GIS-Based Outdoor Evacuation Support for Earthquake Disaster Response
+Abolghasem Sadeghi-Niaraki, Soo-Mi Choi
+10-2023-0070773 (Jun 1, 2023) Patent application completed
+Fuzzy Logic and Distance Metrics Based Approach for Measuring Spatial Similarity Among COVID-19 Epicenters
+Abolghasem Sadeghi-Niaraki, Soo-Mi Choi, Tamer Abuhmed
+10-2021-0135546 (Oct 13, 2021) Patent under examination
+Method and Device for Long-Term Temperature Modeling
+Soo-Mi Choi, Abolghasem Sadeghi-Niaraki
