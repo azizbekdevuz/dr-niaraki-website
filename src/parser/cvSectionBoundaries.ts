@@ -33,6 +33,22 @@ export function classifyCvSectionBoundary(line: string): SectionType | null {
     return null;
   }
 
+  // Suppress ALL-CAPS inline subsection banners that appear inside publication
+  // and patent body text.  This guard MUST precede the rules[] loop because
+  // those rules are /i (case-insensitive) and would otherwise match ALL-CAPS
+  // forms and incorrectly promote them to top-level section boundaries.
+  if (s === s.toUpperCase() && /[A-Z]/.test(s)) {
+    if (
+      /^BOOKS\s+AND\s+BOOK\s+CHAPTERS$/.test(s) ||
+      /^BOOKS$/.test(s) ||
+      /^BOOK\s+CHAPTERS$/.test(s) ||
+      /^CONFERENCE\s+PAPERS$/.test(s) ||
+      /^JOURNAL\s+PAPERS\b/.test(s)
+    ) {
+      return null;
+    }
+  }
+
   // Ordered rules: most specific first
   const rules: Array<{ re: RegExp; type: SectionType }> = [
     { re: /^journal\s+and\s+conference\s+reviews?\b/i, type: 'services' },

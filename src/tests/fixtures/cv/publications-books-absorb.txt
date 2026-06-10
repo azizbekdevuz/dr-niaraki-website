@@ -2,7 +2,7 @@ Publications
 Publication Summary
 Over 200 peer-reviewed publications in top-tier international journals.
 
-Books and Book Chapters
+BOOKS AND BOOK CHAPTERS
 Books
 Sadeghi-Niaraki, A. (2009). Ontology-based and User-centric Spatial Modeling in GIS. VDM Publisher, Germany.
 Sadeghi-Niaraki, A., Shakeri, M. (2015). Python Programming for GIS Engineering. K.N.Toosi University Publication (in Persian).

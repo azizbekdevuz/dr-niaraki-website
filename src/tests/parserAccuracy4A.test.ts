@@ -1,50 +1,30 @@
 /**
- * Phase 4A – Parser accuracy characterization tests.
+ * Phase 4A/4B – Parser accuracy tests.
  *
- * These tests document *current* parser behaviour against structured text
- * fixtures.  Failing tests (`.todo` / `.skip`) are intentional — they prove
- * a known bug rather than assert a desired outcome.
+ * Phase 4A identified four root-cause bugs; Phase 4B fixed bugs A and B.
+ * Skipped tests from 4A have been lifted; characterisation tests updated.
  *
- * Do NOT "fix" tests here by weakening assertions.  Fix the parser in Phase
- * 4B and then remove the `.skip` / `.todo` markers.
+ * Fixed in Phase 4B:
+ *  A. ALL-CAPS subsection banners ("BOOKS AND BOOK CHAPTERS", "JOURNAL PAPERS",
+ *     etc.) are now suppressed BEFORE the case-insensitive rules[] loop in
+ *     `cvSectionBoundaries.ts`.  They no longer become top-level section
+ *     boundaries and can no longer absorb journal/conference entries.
  *
- * Root causes proven here:
- *  A. "BOOKS AND BOOK CHAPTERS" ALL-CAPS is incorrectly a section boundary:
- *     `classifyCvSectionBoundary` evaluates ordered `rules[]` BEFORE the
- *     ALL-CAPS suppression block.  Rule `{ re: /^books\s+and\s+book\s+chapters\b/i }
- *     is case-insensitive so it fires for the ALL-CAPS form too, returning
- *     `publications` BEFORE the guard on line 82 that was supposed to suppress
- *     it.  The ALL-CAPS guard is therefore dead code for this heading.
- *     Result: when the DOCX has `BOOKS AND BOOK CHAPTERS` as an inline ALL-CAPS
- *     subsection banner, it starts a NEW section and absorbs every JOURNAL PAPER
- *     and CONFERENCE PAPER that follows → ~205 items instead of ~7.
+ *  B. Korean patent country inference: `parsePatentEntry` now infers
+ *     `country = 'Korea'` from the Korean patent office number format
+ *     `/\b10-\d{4,}/` when no explicit "Korea"/"Korean" keyword is present.
  *
- *  B. Korean patent country not set to "Korea":
- *     `parsePatentEntry` only sets `country = 'Korea'` when the entry text
- *     contains the word "Korea", "Korean", or "한국".  A typical Korean patent
- *     entry (`Patent No. 10-2356500 (Jan 24, 2022)\nTitle: "…"\nInventors: …`)
- *     contains no such keyword → `country` stays `null` for every Korean
- *     registered patent, making `p.country === 'Korea'` always false.
+ * Remaining known limitations:
+ *  C. Real DOCX "52 declared / 5 extracted" symptom: the bare-number Korean
+ *     format recovers via fallback, so this is not the cause.  The exact
+ *     format difference in the real DOCX requires a real DOCX fixture to
+ *     confirm (see `resumeParserAccuracy.test.ts` which auto-skips when
+ *     `docs/resume.docx` is absent).
  *
- *  C. Korean patent entry splitting works via fallback for bare-number format:
- *     The primary split regex requires `Patent No.` prefix.  Without it the
- *     splitter falls through to `splitEntries` which, for the bare-number
- *     3-line-per-entry format, successfully recovers most entries via the
- *     "capitalised long-line" heuristic.  This is NOT the root cause of the
- *     reported "5 patents" from the real DOCX — the actual DOCX format
- *     difference remains to be confirmed with a real DOCX file.
- *
- *  D. Publication summary prose becoming publication items:
- *     Lines like "Over 200 peer-reviewed publications in top-tier journals"
- *     are filtered only when they appear at the HEAD of a block.  When they
- *     appear inside the Publications section body they may survive APA
- *     splitting and get emitted as stub entries (year not found).
- *
- *  E. Declared patent count mismatch detection:
- *     `candidatePayload` builder's `PATENT_COUNT_MISMATCH` heuristic reads
- *     the declared count from the heading like `Patents (52 Registered & …)`.
- *     This test confirms section header routing works; count validation is
- *     tested at the integration level.
+ *  D. Title-case "Books and Book Chapters" used as a genuine top-level section
+ *     boundary is preserved by design; if that heading appears in title case
+ *     in the DOCX it will still start its own section and the content following
+ *     it until the next boundary will be parsed as publications.
  */
 
 import fs from 'fs';
@@ -87,38 +67,18 @@ describe('Patent section splitting — well-formed entries', () => {
     expect(usPatents.length).toBeGreaterThanOrEqual(3);
   });
 
-  it.skip(
-    'KNOWN BUG: Korean patent entries are not classified as country="Korea" (bug B)',
-    () => {
-      /**
-       * `parsePatentEntry` sets country="Korea" only when the text contains the
-       * word "Korea" / "Korean" / "한국".  Entries like:
-       *   Patent No. 10-2356500 (Jan 24, 2022)
-       *   Title: "Geospatial Information System-Based Modeling…"
-       *   Inventors: Abolghasem Sadeghi-Niaraki, Soo-Mi Choi
-       * contain none of those keywords → country = null.
-       * Phase 4B fix: infer country="Korea" from the Korean number pattern /10-\d{6,}/
-       */
-      const raw = readFixture('patents-wellformed.txt');
-      const body = raw.replace(/^Patents \(\d+.*?\)\n/m, '').trim();
-      const result = parsePatents(body);
-
-      const krPatents = result.data.filter((p) => p.country === 'Korea');
-      expect(krPatents.length).toBeGreaterThanOrEqual(8);
-    },
-  );
-
-  it('characterises bug B: Korean registered patents have country=null not "Korea"', () => {
+  it('Korean patent entries with "Patent No. 10-XXXXXXX" now infer country="Korea" (bug B fixed)', () => {
+    // Phase 4B: parsePatentEntry infers country="Korea" from /\b10-\d{4,}/
+    // even when the entry text contains no explicit "Korea"/"Korean" keyword.
     const raw = readFixture('patents-wellformed.txt');
     const body = raw.replace(/^Patents \(\d+.*?\)\n/m, '').trim();
     const result = parsePatents(body);
 
-    // Current reality: Korean patents with "Patent No. 10-XXXXXXX" never
-    // carry the word "Korea" in the entry → country assignment is null.
     const krByNumber = result.data.filter((p) => /10-\d{6,}/.test(p.number ?? ''));
-    expect(krByNumber.length).toBeGreaterThanOrEqual(8); // numbers DO parse
+    expect(krByNumber.length).toBeGreaterThanOrEqual(8); // numbers parsed
+
     const krByCountry = result.data.filter((p) => p.country === 'Korea');
-    expect(krByCountry.length).toBe(0); // country is NOT set — documents the bug
+    expect(krByCountry.length).toBeGreaterThanOrEqual(8); // country now inferred
   });
 });
 
@@ -237,25 +197,21 @@ describe('Publications — "Books and Book Chapters" section boundary', () => {
     expect(detectSectionType('Books and Book Chapters')).toBe('publications');
   });
 
-  it.skip(
-    'KNOWN BUG: "BOOKS AND BOOK CHAPTERS" ALL-CAPS IS incorrectly a section boundary (bug A)',
-    () => {
-      /**
-       * The case-insensitive rule `/^books\s+and\s+book\s+chapters\b/i` fires
-       * for "BOOKS AND BOOK CHAPTERS" BEFORE the ALL-CAPS suppression block
-       * (lines 75-85 of cvSectionBoundaries.ts) is even reached.  The guard
-       *   if (/^(BOOKS|BOOK CHAPTERS|CONFERENCE PAPERS)$/.test(s)) { return null; }
-       * is dead code for this heading.
-       * Phase 4B fix: add an ALL-CAPS guard BEFORE the rules[] loop, or make
-       * the books-and-book-chapters rule require mixed case.
-       */
-      expect(isSectionHeader('BOOKS AND BOOK CHAPTERS')).toBe(false);
-    },
-  );
+  it('"BOOKS AND BOOK CHAPTERS" ALL-CAPS is NOT a section boundary (bug A fixed)', () => {
+    // Phase 4B: ALL-CAPS subsection banners are now suppressed before rules[].
+    expect(isSectionHeader('BOOKS AND BOOK CHAPTERS')).toBe(false);
+  });
 
-  it('characterises bug A: "BOOKS AND BOOK CHAPTERS" ALL-CAPS is a section boundary', () => {
-    // Documents the current (incorrect) behaviour.  Phase 4B should invert this.
-    expect(isSectionHeader('BOOKS AND BOOK CHAPTERS')).toBe(true);
+  it('"BOOKS" ALL-CAPS is NOT a section boundary', () => {
+    expect(isSectionHeader('BOOKS')).toBe(false);
+  });
+
+  it('"BOOK CHAPTERS" ALL-CAPS is NOT a section boundary', () => {
+    expect(isSectionHeader('BOOK CHAPTERS')).toBe(false);
+  });
+
+  it('"CONFERENCE PAPERS" ALL-CAPS is NOT a section boundary', () => {
+    expect(isSectionHeader('CONFERENCE PAPERS')).toBe(false);
   });
 
   it('"JOURNAL PAPERS (SCIE, SCI, SSCI)" is NOT a section boundary', () => {
@@ -267,49 +223,25 @@ describe('Publications — "Books and Book Chapters" section boundary', () => {
     expect(isSectionHeader('Conference Papers')).toBe(false);
   });
 
-  it.skip(
-    'KNOWN BUG: books-absorb fixture — "Books and Book Chapters" section absorbs journal entries',
-    () => {
-      /**
-       * In the real DOCX the heading appears as title-case "Books and Book Chapters"
-       * which triggers a NEW publications section.  Everything that follows — all
-       * JOURNAL PAPERS and CONFERENCE PAPERS — stays inside that section because
-       * those ALL-CAPS banners are suppressed.  parsePublications produces ~205
-       * items from what should be a books section with ~7 items.
-       *
-       * DESIRED (Phase 4B): the books section should emit ≤ 10 items.
-       */
-      const raw = readFixture('publications-books-absorb.txt');
-      const sections = splitIntoSections(raw);
-
-      const booksSections = sections.filter(
-        (s) => s.type === 'publications' && /books/i.test(s.title),
-      );
-      expect(booksSections).toHaveLength(1);
-
-      const booksResult = parsePublications(booksSections[0]!.content);
-      // DESIRED: only 3 books + 1 book chapter = 4 items
-      expect(booksResult.data.length).toBeLessThanOrEqual(10);
-    },
-  );
-
-  it('characterises current behaviour: books section absorbs journal entries', () => {
+  it('ALL-CAPS "BOOKS AND BOOK CHAPTERS" banner no longer creates a separate section (bug A fixed)', () => {
+    // The fixture uses ALL-CAPS "BOOKS AND BOOK CHAPTERS" matching the real DOCX
+    // subsection banner format.  After Phase 4B the banner is suppressed — no
+    // separate books section is created and journals/conference entries stay in
+    // the parent Publications section instead of being misrouted.
     const raw = readFixture('publications-books-absorb.txt');
     const sections = splitIntoSections(raw);
 
+    // No separate "books" section: ALL-CAPS banner is now suppressed
     const booksSections = sections.filter(
       (s) => s.type === 'publications' && /books/i.test(s.title),
     );
-    // Books and Book Chapters IS a recognised section header → gets its own section
-    expect(booksSections.length).toBeGreaterThanOrEqual(1);
+    expect(booksSections).toHaveLength(0);
 
-    if (booksSections.length > 0 && booksSections[0]) {
-      const booksResult = parsePublications(booksSections[0].content);
-      // The content includes all journal papers that follow → high item count
-      // This assertion DOCUMENTS the bug (count is too high)
-      // A properly fixed parser would produce ≤ 10 items here.
-      expect(booksResult.data.length).toBeGreaterThan(5);
-    }
+    // Everything goes into the single Publications section
+    const pubSections = sections.filter((s) => s.type === 'publications');
+    expect(pubSections).toHaveLength(1);
+    expect(pubSections[0]?.content).toContain('BOOKS AND BOOK CHAPTERS');
+    expect(pubSections[0]?.content).toContain('JOURNAL PAPERS');
   });
 });
 

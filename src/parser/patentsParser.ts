@@ -193,10 +193,13 @@ function parsePatentEntry(
   // Determine type
   patent.type = determinePatentType(trimmed);
   
-  // Determine country
+  // Determine country: keyword check first, then infer from Korean patent-office
+  // number format (10-XXXXXXX registered / 10-YYYY-XXXXXXX application).
   if (/\bUS\b|United States|International/.test(trimmed)) {
     patent.country = 'US';
   } else if (/Korea|Korean|한국/.test(trimmed)) {
+    patent.country = 'Korea';
+  } else if (/\b10-\d{4,}/.test(trimmed)) {
     patent.country = 'Korea';
   }
   
