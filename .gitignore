@@ -45,8 +45,8 @@ next-env.d.ts
 .cursor
 .vscode
 
-# docs
+# docs — ignore scripts dir and private DOCX files; markdown docs are tracked
 /scripts
-/docs
+docs/*.docx
 resume.docx
 vercel-cookies.txt
