@@ -1,0 +1,41 @@
+Patents (52 Registered & Completed)
+International Patent
+US International Patent (US11,816,804B2) - Nov 14, 2023
+Title: "Fake Tourist Recommendation Method Using AR and GIS"
+Inventors: Test Author One, Test Author Two, Test Author Three
+Status: Registration completed
+US International Patent (US 2025/0166525 A1) - May 22, 2025
+Title: "Fake IoT-Based Learning Method for Early Childhood"
+Inventors: Test Author One, Test Author Two
+Status: Application completed
+US International Patent (US 2025/0166317 A1) - May 22, 2025
+Title: "Fake Semantic Retrieval Method for Augmented Reality"
+Inventors: Test Author One, Test Author Two
+Status: Application completed
+Registered Korean Patents
+10-2828547 – 2025-06-27 Fake spatial-temporal distribution analysis method and apparatus
+10-2798332 – 2025-04-16 Fake asthma-prone area modeling using a machine learning model
+10-2795932 – 2025-04-10 Fake geospatial AI and satellite imagery fusion for soil prediction
+10-2769388 – 2025-02-13 Fake tourist recommendation system using multi-criteria decision making
+10-2768733 – 2025-02-12 Fake dust detection and susceptibility mapping method using satellite imagery
+10-2766766 – 2025-02-07 Fake GIS-based multi-objective evolutionary algorithm for landslide mapping
+10-2749146 – 2024-12-27 Fake augmented reality-based border management system
+10-2718568 – 2024-10-14 Fake spatio-temporal modelling of asthma-prone areas with metaheuristic algorithms
+10-2718516 – 2024-10-14 Fake augmented reality-based tourism recommendation system and method
+10-2707106 – 2024-09-11 Fake method and apparatus for generating epidemic risk map
+10-2706021 – 2024-09-09 Fake forest fire susceptibility mapping using artificial intelligence
+10-2679714 – 2024-06-25 Fake system for evaluating quality of life at different spatial levels
+10-2356500 – 2022-01-24 Fake geospatial information system for leakage management in water distribution
+10-2307898 – 2021-09-27 Fake groundwater potential mapping using bivariate statistical models
+10-2252678 – 2021-05-11 Fake spatial cluster-based model for static rebalancing bike sharing
+10-2208906 – 2021-01-22 Fake method for enhancing response coordination in network structural dynamics
+10-2148349 – 2020-08-20 Fake context-aware route-finding algorithm for self-driving tourists
+10-2011215 – 2019-08-08 Fake ubiquitous sensor network simulation and emulation environments
+10-2010180 – 2019-08-06 Fake methodological framework for assessment of ubiquitous cities
+10-2003643 – 2019-07-18 Fake semantic interoperability of GIS and MCDA tools for environmental assessment
+Completed Korean Patent Applications
+10-2025-0097451 – 2025-07-18 Fake methods and apparatus for spatiotemporal modeling of urban resilience
+10-2025-0097450 – 2025-07-18 Fake metaverse-based educational method and apparatus
+10-2025-0090232 – 2025-07-04 Fake mixed reality-based object placement method for robotics and extended reality
+10-2025-0085046 – 2025-06-26 Fake method and device for Alzheimer disease diagnosis in metaverse
+10-2025-0084059 – 2025-06-25 Fake method and device to generate groundwater potential map using human-based algorithms

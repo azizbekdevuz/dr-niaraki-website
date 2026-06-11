@@ -224,8 +224,8 @@ describe('Publications — "Books and Book Chapters" section boundary', () => {
   });
 
   it('ALL-CAPS "BOOKS AND BOOK CHAPTERS" banner no longer creates a separate section (bug A fixed)', () => {
-    // The fixture uses ALL-CAPS "BOOKS AND BOOK CHAPTERS" matching the real DOCX
-    // subsection banner format.  After Phase 4B the banner is suppressed — no
+    // The fixture uses ALL-CAPS "BOOKS AND BOOK CHAPTERS", the subsection-banner
+    // format characterized in Phase 4A.
     // separate books section is created and journals/conference entries stay in
     // the parent Publications section instead of being misrouted.
     const raw = readFixture('publications-books-absorb.txt');
@@ -242,6 +242,74 @@ describe('Publications — "Books and Book Chapters" section boundary', () => {
     expect(pubSections).toHaveLength(1);
     expect(pubSections[0]?.content).toContain('BOOKS AND BOOK CHAPTERS');
     expect(pubSections[0]?.content).toContain('JOURNAL PAPERS');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// D2. Phase 4C — Korean single-line format (real DOCX format)
+// ---------------------------------------------------------------------------
+
+describe('Patent splitting — Korean single-line format (Phase 4C, real DOCX format)', () => {
+  /**
+   * Real DOCX (2025) uses this format for Korean patents — NO "Patent No." prefix:
+   *
+   *   Registered Korean Patents
+   *   10-2828547 – 2025-06-27 Spatial-temporal distribution analysis method…
+   *   10-2798332 – 2025-04-16 Asthma-prone area modeling using machine learning…
+   *
+   * And for applications:
+   *   Completed Korean Patent Applications
+   *   10-2025-0097451 – 2025-07-18 Methods and apparatus for spatiotemporal modeling…
+   *
+   * Phase 4B's primary split regex did NOT cover this format.
+   * Phase 4C adds `\b10-\d{4,}` to the split trigger.
+   */
+  it('extracts all Korean registered entries from single-line format', () => {
+    const raw = readFixture('patents-korean-singleline.txt');
+    const body = raw.replace(/^Patents \(\d+.*?\)\n/m, '').trim();
+    const result = parsePatents(body);
+
+    // 3 US + 20 Korean registered + 5 Korean applications = 28 entries
+    expect(result.data.length).toBeGreaterThanOrEqual(25);
+  });
+
+  it('Korean single-line entries have country=Korea inferred from number pattern', () => {
+    const raw = readFixture('patents-korean-singleline.txt');
+    const body = raw.replace(/^Patents \(\d+.*?\)\n/m, '').trim();
+    const result = parsePatents(body);
+
+    const krPatents = result.data.filter((p) => p.country === 'Korea');
+    expect(krPatents.length).toBeGreaterThanOrEqual(22); // 20 registered + 5 apps - some may have US marker
+  });
+
+  it('US International Patents still extract correctly alongside Korean entries', () => {
+    const raw = readFixture('patents-korean-singleline.txt');
+    const body = raw.replace(/^Patents \(\d+.*?\)\n/m, '').trim();
+    const result = parsePatents(body);
+
+    const usPatents = result.data.filter((p) => p.country === 'US');
+    expect(usPatents.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('Korean single-line entries extract patent numbers', () => {
+    const raw = readFixture('patents-korean-singleline.txt');
+    const body = raw.replace(/^Patents \(\d+.*?\)\n/m, '').trim();
+    const result = parsePatents(body);
+
+    // Check specific known numbers from fixture
+    const numbers = result.data.map((p) => p.number).filter(Boolean);
+    expect(numbers.some((n) => n?.includes('2828547'))).toBe(true);
+    expect(numbers.some((n) => n?.includes('2356500'))).toBe(true);
+  });
+
+  it('Korean application entries (10-XXXX-XXXXXXX format) are also split', () => {
+    const raw = readFixture('patents-korean-singleline.txt');
+    const body = raw.replace(/^Patents \(\d+.*?\)\n/m, '').trim();
+    const result = parsePatents(body);
+
+    // Application number format: 10-2025-0097451
+    const appNumbers = result.data.map((p) => p.number).filter((n) => /10-\d{4}-\d{7}/.test(n ?? ''));
+    expect(appNumbers.length).toBeGreaterThanOrEqual(4);
   });
 });
 

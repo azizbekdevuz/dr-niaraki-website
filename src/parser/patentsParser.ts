@@ -20,24 +20,36 @@ import {
  * Splits a patents section where each entry begins with US/KR/application markers
  * (Sejong-style CV), instead of relying on generic splitEntries heuristics alone.
  */
+/**
+ * Returns true for a chunk that looks like a real patent entry rather than a
+ * bare subsection header like "Registered Korean Patents".
+ */
+function looksLikePatentEntry(chunk: string): boolean {
+  if (extractPatentNumber(chunk)) {
+    return true;
+  }
+  return /\b(?:Patent\s+No\.|Application\s+No|US\s+International\s+Patent|\b10-\d{4,})/i.test(
+    chunk,
+  );
+}
+
 function splitPatentSectionIntoEntries(text: string): string[] {
   const raw = text.replace(/\r/g, '').trim();
   if (!raw) {
     return [];
   }
 
+  // Primary split: fire before any line that starts a new patent entry.
+  // Covers:
+  //  - "US International Patent (…)" — US format
+  //  - "Patent No. 10-XXXXXXX" — Korean registered with prefix
+  //  - "Application No. 10-XXXX-XXXXXXX" — Korean application with prefix
+  //  - "10-XXXXXXX – YYYY-MM-DD …" — Korean single-line bare number format
+  //    (real DOCX style from 2025 DOCX: no "Patent No." prefix)
   const blocks = raw.split(
-    /\n(?=[^\n]*?(?:\bUS\s+International\s+Patent\b|\bPatent\s+No\.|\bApplication\s+No\.?\b))/i,
+    /\n(?=[^\n]*?(?:\bUS\s+International\s+Patent\b|\bPatent\s+No\.|\bApplication\s+No\.?\b|\b10-\d{4,}))/i,
   );
-  const trimmed = blocks
-    .map((b) => b.trim())
-    .filter((b) => b.length > 22)
-    .filter((chunk) => {
-      if (extractPatentNumber(chunk)) {
-        return true;
-      }
-      return /\b(?:Patent\s+No\.|Application\s+No|US\s+International\s+Patent)/i.test(chunk);
-    });
+  const trimmed = blocks.map((b) => b.trim()).filter((b) => b.length > 22).filter(looksLikePatentEntry);
   if (trimmed.length >= 4) {
     return trimmed;
   }
@@ -46,12 +58,7 @@ function splitPatentSectionIntoEntries(text: string): string[] {
   const t2 = byAppOnly
     .map((b) => b.trim())
     .filter((b) => b.length > 22)
-    .filter((chunk) => {
-      if (extractPatentNumber(chunk)) {
-        return true;
-      }
-      return /\b(?:Patent\s+No\.|Application\s+No|US\s+International\s+Patent)/i.test(chunk);
-    });
+    .filter(looksLikePatentEntry);
   if (t2.length >= 4) {
     return t2;
   }
