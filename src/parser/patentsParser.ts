@@ -227,6 +227,32 @@ function parsePatentEntry(
   
   // Fallback title extraction
   if (!patent.title) {
+    // Korean single-line format: "10-XXXXXXX – YYYY-MM-DD Title text…"
+    // or application format:     "10-YYYY-XXXXXXX – YYYY-MM-DD Title text…"
+    //
+    // The generic fallback below corrupts these titles by removing only the
+    // digit group (leaving "10-"), and failing to remove the ISO date.
+    // Handle this format first with a targeted prefix-strip.
+    if (/^10-\d{4,}/.test(trimmed)) {
+      const koTitle = trimmed
+        // Remove application number (10-YYYY-XXXXXXX) before registered
+        // (10-XXXXXXX) so the longer form is matched first.
+        .replace(/^10-\d{4}-\d{7}\s*/, '')
+        .replace(/^10-\d{4,}\s*/, '')
+        // Remove separator: hyphen, figure dash, en-dash, em-dash
+        .replace(/^[-\u2012\u2013\u2014]+\s*/, '')
+        // Remove ISO date YYYY-MM-DD
+        .replace(/^\d{4}-\d{2}-\d{2}\s*/, '')
+        // Remove any leftover leading dashes/whitespace
+        .replace(/^[-\u2012\u2013\u2014\s]+/, '')
+        .trim();
+      if (koTitle.length > 10) {
+        patent.title = koTitle;
+      }
+    }
+  }
+
+  if (!patent.title) {
     // Remove patent number and status info, use remaining as title
     const title = trimmed
       .replace(/(?:US\s*)?(?:Patent\s*(?:No\.?)?\s*)?\d{1,3}[,.]?\d{3}[,.]?\d{3}(?:[A-Z]\d)?/gi, '')

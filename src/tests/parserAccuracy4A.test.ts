@@ -390,3 +390,90 @@ describe('Fake-changes test fixture detection', () => {
     expect(summarySection?.content).toMatch(/MMMMMM/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// G. Phase 4D — Korean single-line title extraction
+// ---------------------------------------------------------------------------
+
+describe('Korean single-line title extraction (Phase 4D)', () => {
+  /**
+   * Fixture format (real DOCX 2025 style):
+   *   10-2828547 – 2025-06-27 Fake spatial-temporal distribution...
+   *   10-2025-0097451 – 2025-07-18 Fake methods and apparatus...
+   *
+   * Before fix: fallback strips only the digit portion of the number,
+   * leaving "10- – 2025-06-27 Fake spatial-temporal…" as the title.
+   * After fix: the entire "10-XXXX – YYYY-MM-DD " prefix is stripped.
+   */
+
+  function getPatentsFromFixture() {
+    const raw = readFixture('patents-korean-singleline.txt');
+    const body = raw.replace(/^Patents \(\d+.*?\)\n/m, '').trim();
+    return parsePatents(body).data;
+  }
+
+  it('registered Korean entry: title does not contain the patent number', () => {
+    const patents = getPatentsFromFixture();
+    const p = patents.find((x) => x.number?.includes('2828547'));
+    expect(p).toBeDefined();
+    expect(p?.title).not.toMatch(/10-2828547/);
+    expect(p?.title).not.toMatch(/10-\d{4,}/);
+  });
+
+  it('registered Korean entry: title does not contain the ISO date prefix', () => {
+    const patents = getPatentsFromFixture();
+    const p = patents.find((x) => x.number?.includes('2828547'));
+    expect(p).toBeDefined();
+    expect(p?.title).not.toMatch(/2025-06-27/);
+    expect(p?.title).not.toMatch(/^\d{4}-\d{2}-\d{2}/);
+  });
+
+  it('registered Korean entry: title does not start with a bare dash or en-dash', () => {
+    const patents = getPatentsFromFixture();
+    const p = patents.find((x) => x.number?.includes('2828547'));
+    expect(p).toBeDefined();
+    expect(p?.title).not.toMatch(/^[-\u2012\u2013\u2014]/);
+  });
+
+  it('registered Korean entry: title matches expected clean text', () => {
+    const patents = getPatentsFromFixture();
+    const p = patents.find((x) => x.number?.includes('2828547'));
+    expect(p).toBeDefined();
+    expect(p?.title).toBe(
+      'Fake spatial-temporal distribution analysis method and apparatus',
+    );
+  });
+
+  it('application format entry (10-YYYY-XXXXXXX): title is clean', () => {
+    const patents = getPatentsFromFixture();
+    const p = patents.find((x) => x.number?.includes('2025-0097451'));
+    expect(p).toBeDefined();
+    expect(p?.title).not.toMatch(/10-2025-0097451/);
+    expect(p?.title).not.toMatch(/2025-07-18/);
+    expect(p?.title).not.toMatch(/^[-\u2012\u2013\u2014]/);
+    expect(p?.title).toBe(
+      'Fake methods and apparatus for spatiotemporal modeling of urban resilience',
+    );
+  });
+
+  it('US patent titles are unchanged', () => {
+    const patents = getPatentsFromFixture();
+    const us = patents.filter((x) => x.country === 'US');
+    expect(us.length).toBeGreaterThanOrEqual(3);
+    for (const p of us) {
+      expect(p.title).toBeTruthy();
+      expect(p.title.length).toBeGreaterThan(10);
+    }
+  });
+
+  it('all Korean entries have clean titles (no leading number/date noise)', () => {
+    const patents = getPatentsFromFixture();
+    const korean = patents.filter((x) => x.country === 'Korea');
+    expect(korean.length).toBeGreaterThanOrEqual(20);
+    for (const p of korean) {
+      expect(p.title).not.toMatch(/^10-\d/);
+      expect(p.title).not.toMatch(/^[-\u2012\u2013\u2014]/);
+      expect(p.title).not.toMatch(/^\d{4}-\d{2}-\d{2}/);
+    }
+  });
+});
