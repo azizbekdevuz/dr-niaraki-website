@@ -181,6 +181,19 @@ export async function buildImportReviewPayload(
       importedChars: mergedForMergePolicySlice.aboutProfessionalSummaryText.length,
       baselineChars: mergeBaselineSlice.aboutProfessionalSummaryText.length,
     },
+    qualityHints: {
+      journeyCollapse: {
+        importedCount: parsed.about.education.length,
+        baselineCount: mergeBaseline.about.journey.length,
+        hasGiantRows: parsed.about.education.some(
+          (e) => (e.details?.length ?? 0) > 400 || (e.raw?.length ?? 0) > 400,
+        ),
+      },
+      experienceQuality: {
+        unknownOrgCount: parsed.about.positions.filter((p) => p.institution === 'Unknown Organization').length,
+        totalCount: parsed.about.positions.length,
+      },
+    },
   });
 
   const mergedCandidate = mergeCvDetailsIntoSiteContent(parsed, baseline);

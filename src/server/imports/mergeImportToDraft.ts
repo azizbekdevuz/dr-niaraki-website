@@ -124,6 +124,19 @@ export async function mergeImportCandidateToWorkingDraft(input: {
       importedChars: mergedFullSlice.aboutProfessionalSummaryText.length,
       baselineChars: baselineSlice.aboutProfessionalSummaryText.length,
     },
+    qualityHints: {
+      journeyCollapse: {
+        importedCount: details.about.education.length,
+        baselineCount: baselineData.about.journey.length,
+        hasGiantRows: details.about.education.some(
+          (e) => (e.details?.length ?? 0) > 400 || (e.raw?.length ?? 0) > 400,
+        ),
+      },
+      experienceQuality: {
+        unknownOrgCount: details.about.positions.filter((p) => p.institution === 'Unknown Organization').length,
+        totalCount: details.about.positions.length,
+      },
+    },
   });
 
   const mergeMode = input.mergeMode ?? 'safe_update';

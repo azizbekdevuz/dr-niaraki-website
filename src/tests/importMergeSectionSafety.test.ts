@@ -202,4 +202,92 @@ describe('importMergeSectionSafety', () => {
     const summary = report.sections.find((s) => s.id === 'summary');
     expect(summary?.includeInSafeMerge).toBe(true);
   });
+
+  it('journey quality warning: collapse — imported count much lower than baseline', () => {
+    const report = evaluateImportMergeSectionSafety({
+      reviewBlocks: [],
+      candidateReview: candidateReview(),
+      qualityHints: {
+        journeyCollapse: { importedCount: 2, baselineCount: 8, hasGiantRows: false },
+      },
+    });
+    const journey = report.sections.find((s) => s.id === 'journey');
+    expect(journey?.risk).toBe('needs_review');
+    expect(journey?.includeInSafeMerge).toBe(false);
+    expect(journey?.reasons.some((r) => r.includes('parser collapse'))).toBe(true);
+    expect(report.fullReplaceRequiresAck).toBe(true);
+  });
+
+  it('journey quality warning: giant rows (concatenated details)', () => {
+    const report = evaluateImportMergeSectionSafety({
+      reviewBlocks: [],
+      candidateReview: candidateReview(),
+      qualityHints: {
+        journeyCollapse: { importedCount: 6, baselineCount: 7, hasGiantRows: true },
+      },
+    });
+    const journey = report.sections.find((s) => s.id === 'journey');
+    expect(journey?.includeInSafeMerge).toBe(false);
+    expect(journey?.reasons.some((r) => r.includes('concatenated rows'))).toBe(true);
+  });
+
+  it('journey quality warning: no warning when counts are reasonable and no giant rows', () => {
+    const report = evaluateImportMergeSectionSafety({
+      reviewBlocks: [],
+      candidateReview: candidateReview(),
+      qualityHints: {
+        journeyCollapse: { importedCount: 6, baselineCount: 8, hasGiantRows: false },
+      },
+    });
+    const journey = report.sections.find((s) => s.id === 'journey');
+    // No quality warning — falls back to churn-based logic; no churn means safe_to_merge
+    expect(journey?.risk).toBe('safe_to_merge');
+    expect(journey?.includeInSafeMerge).toBe(true);
+  });
+
+  it('experience quality warning: many Unknown Organization rows trigger needs_review', () => {
+    const report = evaluateImportMergeSectionSafety({
+      reviewBlocks: [],
+      candidateReview: candidateReview(),
+      qualityHints: {
+        experienceQuality: { unknownOrgCount: 4, totalCount: 8 },
+      },
+    });
+    const exp = report.sections.find((s) => s.id === 'experiences');
+    expect(exp?.risk).toBe('needs_review');
+    expect(exp?.includeInSafeMerge).toBe(false);
+    expect(exp?.reasons.some((r) => r.includes('unknown organization'))).toBe(true);
+    expect(report.fullReplaceRequiresAck).toBe(true);
+  });
+
+  it('experience quality warning: no warning when unknown org ratio is low', () => {
+    const report = evaluateImportMergeSectionSafety({
+      reviewBlocks: [],
+      candidateReview: candidateReview(),
+      qualityHints: {
+        experienceQuality: { unknownOrgCount: 1, totalCount: 10 },
+      },
+    });
+    const exp = report.sections.find((s) => s.id === 'experiences');
+    // Only 10% unknown — no quality warning; churn is 0, so safe_to_merge
+    expect(exp?.risk).toBe('safe_to_merge');
+    expect(exp?.includeInSafeMerge).toBe(true);
+  });
+
+  it('safe_update excludes risky sections but is not blocked when quality warnings present', () => {
+    const report = evaluateImportMergeSectionSafety({
+      reviewBlocks: [],
+      candidateReview: candidateReview(),
+      qualityHints: {
+        journeyCollapse: { importedCount: 1, baselineCount: 9, hasGiantRows: false },
+        experienceQuality: { unknownOrgCount: 5, totalCount: 6 },
+      },
+    });
+    // fullReplaceRequiresAck means safe_update is still available, just journey/exp are frozen
+    expect(report.fullReplaceRequiresAck).toBe(true);
+    expect(report.defaultMergeMode).toBe('safe_update');
+    const frozen = freezeKeysFromSafetyReport(report);
+    expect(frozen.has('journey')).toBe(true);
+    expect(frozen.has('experiences')).toBe(true);
+  });
 });

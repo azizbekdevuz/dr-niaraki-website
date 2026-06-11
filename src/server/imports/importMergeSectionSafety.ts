@@ -66,6 +66,49 @@ function maxRisk(a: ImportMergeSectionRiskLabel, b: ImportMergeSectionRiskLabel)
  * Heuristic section-level safety for DOCX import → working draft merge.
  * Drives `safe_update` (default) freezes and `full_replace` acknowledgement requirements.
  */
+function applyJourneyQualityWarning(
+  section: ImportMergeSectionSafety,
+  hint: NonNullable<ImportQualityHints['journeyCollapse']>,
+): ImportMergeSectionSafety {
+  const collapse = hint.baselineCount >= 3 && hint.importedCount < hint.baselineCount * 0.5;
+  if (!collapse && !hint.hasGiantRows) {
+    return section;
+  }
+  const qualityReasons: string[] = [];
+  if (collapse) {
+    qualityReasons.push(
+      `Imported journey has only ${hint.importedCount} entries vs ${hint.baselineCount} in baseline — possible parser collapse.`,
+    );
+  }
+  if (hint.hasGiantRows) {
+    qualityReasons.push('Some imported journey entries have very long detail fields — possible concatenated rows.');
+  }
+  return {
+    ...section,
+    risk: maxRisk(section.risk, 'needs_review'),
+    includeInSafeMerge: false,
+    reasons: [...section.reasons, ...qualityReasons],
+  };
+}
+
+function applyExperienceQualityWarning(
+  section: ImportMergeSectionSafety,
+  hint: NonNullable<ImportQualityHints['experienceQuality']>,
+): ImportMergeSectionSafety {
+  if (hint.totalCount < 3 || hint.unknownOrgCount / hint.totalCount < 0.3) {
+    return section;
+  }
+  return {
+    ...section,
+    risk: maxRisk(section.risk, 'needs_review'),
+    includeInSafeMerge: false,
+    reasons: [
+      ...section.reasons,
+      `${hint.unknownOrgCount} of ${hint.totalCount} imported experience rows have unknown organization — parser may have split entries incorrectly.`,
+    ],
+  };
+}
+
 function reviewBlockShowsCvNarImports(block: ImportReviewBlock | undefined): boolean {
   if (!block) {
     return false;
@@ -107,12 +150,40 @@ function assessCvNarrativeSiteList(
   return assessList(id, title, { heavyRemoved: 4, heavyChurn: 14 });
 }
 
+/**
+ * Optional data-quality signals derived from imported Details vs SiteContent baseline.
+ * Used to surface additional warnings for sections that may have parser-quality issues
+ * even when churn-based thresholds alone don't flag them.
+ */
+export type ImportQualityHints = {
+  /**
+   * Journey count comparison + giant-row detector.
+   * Populated from Details.about.education (imported) vs SiteContent.about.journey (baseline).
+   */
+  journeyCollapse?: {
+    importedCount: number;
+    baselineCount: number;
+    /** True when any imported education entry has details/raw > 400 chars (suggests concatenated rows). */
+    hasGiantRows: boolean;
+  };
+  /**
+   * Experience row quality: positions with institution === 'Unknown Organization'.
+   * Populated from Details.about.positions.
+   */
+  experienceQuality?: {
+    unknownOrgCount: number;
+    totalCount: number;
+  };
+};
+
 export function evaluateImportMergeSectionSafety(input: {
   reviewBlocks: readonly ImportReviewBlock[];
   candidateReview: ImportCandidateReviewMetadataDto | null;
   cvNarrativeSections?: readonly CvNarrativeSection[];
   /** Optional summary character counts — used to surface a non-blocking large-summary warning. */
   summarySizeHint?: { importedChars: number; baselineChars: number };
+  /** Optional data-quality signals for journey and experience sections. */
+  qualityHints?: ImportQualityHints;
 }): ImportMergeSafetyReport {
   const notes: string[] = [];
   const bm = blockMap(input.reviewBlocks);
@@ -208,11 +279,20 @@ export function evaluateImportMergeSectionSafety(input: {
     reasons: summaryReasons,
   });
 
-  sections.push(
-    assessList('journey', 'Academic journey', { heavyRemoved: 4, heavyChurn: 8 }),
-    assessList('experiences', 'Professional experience', { heavyRemoved: 4, heavyChurn: 22 }),
-    assessList('awards', 'Awards', { heavyRemoved: 4, heavyChurn: 12 }),
-  );
+  const jq = input.qualityHints?.journeyCollapse;
+  const journey = jq
+    ? applyJourneyQualityWarning(assessList('journey', 'Academic journey', { heavyRemoved: 4, heavyChurn: 8 }), jq)
+    : assessList('journey', 'Academic journey', { heavyRemoved: 4, heavyChurn: 8 });
+
+  const eq = input.qualityHints?.experienceQuality;
+  const experiences = eq
+    ? applyExperienceQualityWarning(
+        assessList('experiences', 'Professional experience', { heavyRemoved: 4, heavyChurn: 22 }),
+        eq,
+      )
+    : assessList('experiences', 'Professional experience', { heavyRemoved: 4, heavyChurn: 22 });
+
+  sections.push(journey, experiences, assessList('awards', 'Awards', { heavyRemoved: 4, heavyChurn: 12 }));
 
   let publications = assessList('publications', 'Publications', { heavyRemoved: 6, heavyChurn: 18 });
   if (parserErrors.some((e) => /PUBLICATION|PUB|DOI/i.test(e.code ?? '') || /publication/i.test(e.message))) {
