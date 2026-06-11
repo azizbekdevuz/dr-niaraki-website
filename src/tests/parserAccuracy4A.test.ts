@@ -32,9 +32,16 @@ import path from 'path';
 
 import { describe, expect, it } from 'vitest';
 
-import { splitIntoSections, isSectionHeader, detectSectionType, extractPatentNumber } from '@/parser/parserUtils';
+import { classifyCvSectionBoundary } from '@/parser/cvSectionBoundaries';
+import {
+  splitIntoSections,
+  isSectionHeader,
+  detectSectionType,
+  extractPatentNumber,
+} from '@/parser/parserUtils';
 import { parsePatents } from '@/parser/patentsParser';
 import { parsePublications } from '@/parser/publicationsParser';
+import { isPublicationProseNoiseLine } from '@/parser/publicationsParserApa';
 
 const FIXTURE_DIR = path.join(process.cwd(), 'src', 'tests', 'fixtures', 'cv');
 
@@ -191,10 +198,13 @@ describe('Subsection headers are not section boundaries', () => {
 // ---------------------------------------------------------------------------
 
 describe('Publications — "Books and Book Chapters" section boundary', () => {
-  it('"Books and Book Chapters" (title case) IS a section boundary → type publications', () => {
-    // This is intentional design; the bug is that it absorbs journal entries.
-    expect(isSectionHeader('Books and Book Chapters')).toBe(true);
-    expect(detectSectionType('Books and Book Chapters')).toBe('publications');
+  it('"Books and Book Chapters" (title case) is NOT a section boundary (Phase 4E fix)', () => {
+    // Phase 4E: removed the /^books\s+and\s+book\s+chapters/i rule so this heading
+    // stays inside the parent Publications section rather than spawning its own section.
+    // Previously this was a boundary which caused all journal/conference content to be
+    // absorbed into the "Books and Book Chapters" section instead of "Publications".
+    expect(isSectionHeader('Books and Book Chapters')).toBe(false);
+    expect(detectSectionType('Books and Book Chapters')).toBe('unknown');
   });
 
   it('"BOOKS AND BOOK CHAPTERS" ALL-CAPS is NOT a section boundary (bug A fixed)', () => {
@@ -475,5 +485,125 @@ describe('Korean single-line title extraction (Phase 4D)', () => {
       expect(p.title).not.toMatch(/^[-\u2012\u2013\u2014]/);
       expect(p.title).not.toMatch(/^\d{4}-\d{2}-\d{2}/);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// H. Phase 4E — Publication subsection boundary suppression + prose filtering
+// ---------------------------------------------------------------------------
+
+describe('Publication boundary suppression (Phase 4E)', () => {
+  /**
+   * Fixture shape (publications-boundary-fix.txt):
+   *   Publications
+   *   Publication Summary
+   *   <prose lines>
+   *   Books and Book Chapters
+   *   <book entries>
+   *   Journal Papers
+   *   <journal entries>
+   *   Conference Papers
+   *   <conference entries>
+   *
+   * After Phase 4E fix:
+   *   - "Books and Book Chapters" (title-case) must NOT be a top-level section boundary.
+   *   - The entire block stays under the single "Publications" section.
+   *   - No null-year stubs from summary prose.
+   */
+
+  it('title-case "Books and Book Chapters" is NOT a section boundary (Phase 4E fix)', () => {
+    expect(classifyCvSectionBoundary('Books and Book Chapters')).toBeNull();
+  });
+
+  it('"Books" alone title-case is also NOT a section boundary', () => {
+    expect(classifyCvSectionBoundary('Books')).toBeNull();
+  });
+
+  it('"Journal Publications" still IS a publications section boundary (keep existing rule)', () => {
+    expect(classifyCvSectionBoundary('Journal Publications')).toBe('publications');
+  });
+
+  it('"Publications" still IS a publications section boundary', () => {
+    expect(classifyCvSectionBoundary('Publications')).toBe('publications');
+  });
+
+  it('splitIntoSections produces ONE publications section from fixture (no split at Books subsection)', () => {
+    const raw = readFixture('publications-boundary-fix.txt');
+    const sections = splitIntoSections(raw);
+    const pubSections = sections.filter((s) => s.type === 'publications');
+    expect(pubSections).toHaveLength(1);
+  });
+
+  it('single publications section contains Books and Book Chapters content', () => {
+    const raw = readFixture('publications-boundary-fix.txt');
+    const sections = splitIntoSections(raw);
+    const pubContent = sections.filter((s) => s.type === 'publications').map((s) => s.content).join('\n');
+    expect(pubContent).toContain('Books and Book Chapters');
+    expect(pubContent).toContain('Fake Book Title');
+  });
+
+  it('single publications section contains journal and conference entries', () => {
+    const raw = readFixture('publications-boundary-fix.txt');
+    const sections = splitIntoSections(raw);
+    const pubContent = sections.filter((s) => s.type === 'publications').map((s) => s.content).join('\n');
+    expect(pubContent).toContain('Journal Papers');
+    expect(pubContent).toContain('Conference Papers');
+    expect(pubContent).toContain('Fake journal article');
+    expect(pubContent).toContain('Fake conference paper');
+  });
+});
+
+describe('Publication prose noise filtering (Phase 4E)', () => {
+  it('"Publication Summary" is recognised as prose noise', () => {
+    expect(isPublicationProseNoiseLine('Publication Summary')).toBe(true);
+  });
+
+  it('bullet-point quantitative summary lines are recognised as prose noise', () => {
+    expect(isPublicationProseNoiseLine('• Over 120 SCI/SCIE/SSCI-indexed journal articles indexed in major databases.')).toBe(true);
+    expect(isPublicationProseNoiseLine('• More than 30 conference papers presented at international venues.')).toBe(true);
+  });
+
+  it('"Publications in high-impact journals including:" is prose noise', () => {
+    expect(isPublicationProseNoiseLine('Publications in high-impact journals including:')).toBe(true);
+    expect(isPublicationProseNoiseLine('• Publications in high-impact journals including Fake Journal A and Fake Journal B.')).toBe(true);
+  });
+
+  it('"Research contributions in:" is prose noise', () => {
+    expect(isPublicationProseNoiseLine('Research contributions in:')).toBe(true);
+  });
+
+  it('subsection journal-name lines (– Fake Journal) are prose noise', () => {
+    expect(isPublicationProseNoiseLine(' – Fake Research Area One and Spatial Intelligence')).toBe(true);
+    expect(isPublicationProseNoiseLine('– Information Fusion')).toBe(true);
+  });
+
+  it('real APA publication entries are NOT filtered as prose noise', () => {
+    const realEntry = 'Fake Author, A., & Co-Author, B. (2023). Fake journal article about spatial analysis. Fake Journal, 15(4), 100-200.';
+    expect(isPublicationProseNoiseLine(realEntry)).toBe(false);
+  });
+
+  it('no null-year stubs produced from fixture summary prose', () => {
+    const raw = readFixture('publications-boundary-fix.txt');
+    const sections = splitIntoSections(raw);
+    const pubContent = sections
+      .filter((s) => s.type === 'publications')
+      .map((s) => s.content)
+      .join('\n');
+    const result = parsePublications(pubContent);
+    const nullYearStubs = result.data.filter((p) => p.year === null);
+    expect(nullYearStubs).toHaveLength(0);
+  });
+
+  it('real publication entries are still extracted after prose filtering', () => {
+    const raw = readFixture('publications-boundary-fix.txt');
+    const sections = splitIntoSections(raw);
+    const pubContent = sections
+      .filter((s) => s.type === 'publications')
+      .map((s) => s.content)
+      .join('\n');
+    const result = parsePublications(pubContent);
+    expect(result.data.length).toBeGreaterThanOrEqual(3);
+    const withYear = result.data.filter((p) => p.year !== null);
+    expect(withYear.length).toBeGreaterThanOrEqual(3);
   });
 });

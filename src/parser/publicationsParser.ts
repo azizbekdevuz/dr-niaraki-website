@@ -14,7 +14,7 @@ import {
   splitEntries,
 } from './parserUtils';
 import { parsePublicationEntry } from './publicationEntryParser';
-import { splitPublicationApaBlocks } from './publicationsParserApa';
+import { isPublicationProseNoiseLine, splitPublicationApaBlocks } from './publicationsParserApa';
 
 /**
  * Parses publications section text into structured data
@@ -33,6 +33,12 @@ export function parsePublications(text: string): ParseResult<Publication[]> {
   const keys = new Set(apa.map((s) => s.slice(0, 96).replace(/\s+/g, ' ')));
   for (const e of legacy) {
     if (e.length < 55) {
+      continue;
+    }
+    // Skip entries whose first line is prose summary noise — these come through the
+    // legacy splitEntries path which doesn't call isPublicationProseNoiseLine.
+    const firstLine = e.split('\n')[0]?.trim() ?? '';
+    if (isPublicationProseNoiseLine(firstLine)) {
       continue;
     }
     const k = e.slice(0, 96).replace(/\s+/g, ' ');
