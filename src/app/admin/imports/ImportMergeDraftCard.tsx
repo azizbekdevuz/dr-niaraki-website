@@ -2,6 +2,8 @@
 
 import React, { useMemo, useState } from 'react';
 
+import { PARSER_VERSION } from '@/parser/parserVersion';
+
 import type {
   ImportDetailModel,
   ImportMergeSafetyModel,
@@ -145,14 +147,36 @@ function MergeModeControls({
         {mergeMode === 'full_replace' && needsAck ? (
           <label className="ml-6 flex items-start gap-2 rounded border border-warning/35 bg-warning/5 p-2 text-foreground">
             <input type="checkbox" checked={acknowledgeHighRisk} onChange={(e) => setAcknowledgeHighRisk(e.target.checked)} />
-            <span>I understand this can overwrite curated lists (publications, patents, experience, etc.) and may remove site content.</span>
+            <span>
+              I understand this will overwrite curated lists — including academic journey, professional experience, 
+              awards, research projects, teaching, supervision, service, publications, and patents — and may replace 
+              carefully edited site content with raw parser output.
+            </span>
           </label>
         ) : null}
         {fullReplaceBlocked ? (
-          <p className="text-warning">Choose acknowledgement to enable full replace, or stay on safe update.</p>
+          <p className="text-warning">Check the acknowledgement above to enable full replace, or switch back to safe update.</p>
         ) : null}
       </div>
     </div>
+  );
+}
+
+function DraftStatusNote({ hasDraft, isMerged }: { hasDraft: boolean; isMerged: boolean }) {
+  if (!hasDraft && isMerged) {
+    return (
+      <p className="text-xs text-muted">
+        This import was previously merged but the draft was discarded — you can create a new draft from it.
+      </p>
+    );
+  }
+  if (!hasDraft) {
+    return <p className="text-xs text-muted">No working draft yet — use &quot;Create&quot; first.</p>;
+  }
+  return (
+    <p className="text-xs text-muted">
+      A draft exists — &quot;Replace&quot; reapplies this import using the selected merge mode (still not published).
+    </p>
   );
 }
 
@@ -165,6 +189,9 @@ export function ImportMergeDraftCard({ imp, review, hasDraft, merging, onMerge }
   const needsAck = Boolean(safety?.fullReplaceRequiresAck);
   const fullReplaceBlocked = mergeMode === 'full_replace' && needsAck && !acknowledgeHighRisk;
 
+  const candidateParserVersion = imp.candidateReview?.parserVersion;
+  const isStaleParser = Boolean(candidateParserVersion && candidateParserVersion !== PARSER_VERSION);
+
   const mergeOpts = useMemo(
     () => ({ mergeMode, acknowledgeHighRisk: mergeMode === 'full_replace' && acknowledgeHighRisk }),
     [mergeMode, acknowledgeHighRisk],
@@ -172,6 +199,13 @@ export function ImportMergeDraftCard({ imp, review, hasDraft, merging, onMerge }
 
   return (
     <div className="card p-4 space-y-3">
+      {isStaleParser ? (
+        <div className="rounded border border-warning/40 bg-warning/8 px-3 py-2 text-xs text-foreground">
+          <strong className="text-warning">Older parser version:</strong> This import was parsed with{' '}
+          <code className="font-mono">{candidateParserVersion}</code> — current parser is{' '}
+          <code className="font-mono">{PARSER_VERSION}</code>. Re-upload the DOCX to get up-to-date results.
+        </div>
+      ) : null}
       <ReviewHintBanner hint={hint} />
 
       {safety ? (
@@ -194,7 +228,7 @@ export function ImportMergeDraftCard({ imp, review, hasDraft, merging, onMerge }
       <div className="flex flex-wrap gap-3">
         <button
           type="button"
-          disabled={merging || hasDraft || imp.status === 'MERGED' || fullReplaceBlocked}
+          disabled={merging || hasDraft || fullReplaceBlocked}
           onClick={() => onMerge('create', mergeOpts)}
           className="btn-primary px-4 py-2 text-sm disabled:opacity-40"
         >
@@ -202,20 +236,14 @@ export function ImportMergeDraftCard({ imp, review, hasDraft, merging, onMerge }
         </button>
         <button
           type="button"
-          disabled={merging || !hasDraft || imp.status === 'MERGED' || fullReplaceBlocked}
+          disabled={merging || !hasDraft || fullReplaceBlocked}
           onClick={() => onMerge('replace', mergeOpts)}
           className="btn-secondary px-4 py-2 text-sm disabled:opacity-40"
         >
           Replace current draft
         </button>
       </div>
-      {!hasDraft ? (
-        <p className="text-xs text-muted">No working draft yet — use &quot;Create&quot; first.</p>
-      ) : (
-        <p className="text-xs text-muted">
-          A draft exists — &quot;Replace&quot; reapplies this import using the selected merge mode (still not published).
-        </p>
-      )}
+      <DraftStatusNote hasDraft={hasDraft} isMerged={imp.status === 'MERGED'} />
     </div>
   );
 }

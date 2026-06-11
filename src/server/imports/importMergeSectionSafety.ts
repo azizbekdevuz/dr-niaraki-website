@@ -111,6 +111,8 @@ export function evaluateImportMergeSectionSafety(input: {
   reviewBlocks: readonly ImportReviewBlock[];
   candidateReview: ImportCandidateReviewMetadataDto | null;
   cvNarrativeSections?: readonly CvNarrativeSection[];
+  /** Optional summary character counts — used to surface a non-blocking large-summary warning. */
+  summarySizeHint?: { importedChars: number; baselineChars: number };
 }): ImportMergeSafetyReport {
   const notes: string[] = [];
   const bm = blockMap(input.reviewBlocks);
@@ -184,12 +186,26 @@ export function evaluateImportMergeSectionSafety(input: {
     includeInSafeMerge: parserErrors.length === 0,
     reasons: parserErrors.length ? ['Parser errors present — contact merge skipped by default.'] : ['Contact scalars merged when present.'],
   });
+  const summaryReasons = ['Narrative summary text is merged with split/qualifications policy — review diff in structured review.'];
+  const sh = input.summarySizeHint;
+  if (sh && sh.baselineChars > 0) {
+    const ratio = sh.importedChars / sh.baselineChars;
+    const gap = sh.importedChars - sh.baselineChars;
+    if (ratio >= 2.5 || gap >= 800) {
+      summaryReasons.push(
+        `Imported summary is much longer than current site summary (${sh.importedChars} chars vs ${sh.baselineChars} chars) — review before publishing.`,
+      );
+      notes.push(
+        `Professional summary import is significantly longer than current (${sh.importedChars} vs ${sh.baselineChars} chars) — safe update will merge it, but review before publishing.`,
+      );
+    }
+  }
   sections.push({
     id: 'summary',
     title: 'Professional summary',
     risk: 'safe_to_merge',
     includeInSafeMerge: true,
-    reasons: ['Narrative summary text is merged with split/qualifications policy — review diff in structured review.'],
+    reasons: summaryReasons,
   });
 
   sections.push(

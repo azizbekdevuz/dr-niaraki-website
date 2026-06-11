@@ -2,6 +2,7 @@ import 'server-only';
 
 import { SITE_CONTENT_RAW } from '@/content/defaults';
 import { assertSiteContent, validateSiteContent } from '@/content/validators';
+import { extractEditorSliceFromSiteContent } from '@/lib/draftEditorSlice';
 import { getLatestPublishedVersion, getWorkingDraft } from '@/server/content/contentWorkflowCore';
 import { getDetailsFromCandidatePayload, parseImportCandidatePayload } from '@/server/imports/candidatePayload/schema';
 import { mergeCvDetailsIntoSiteContent } from '@/server/imports/detailsToSiteContentMerge';
@@ -170,10 +171,16 @@ export async function buildImportReviewPayload(
     mergeBaselineRes.success && mergeBaselineRes.data ? mergeBaselineRes.data : assertSiteContent(SITE_CONTENT_RAW);
   const mergedForMergePolicy = mergeCvDetailsIntoSiteContent(parsed, mergeBaseline);
   const mergeSafetyBlocks = buildStructuredReviewBlocks(mergeBaseline, mergedForMergePolicy, provenance);
+  const mergeBaselineSlice = extractEditorSliceFromSiteContent(mergeBaseline);
+  const mergedForMergePolicySlice = extractEditorSliceFromSiteContent(mergedForMergePolicy);
   const mergeSafety = evaluateImportMergeSectionSafety({
     reviewBlocks: mergeSafetyBlocks,
     candidateReview: buildImportCandidateReviewMetadata(row.candidatePayload),
     cvNarrativeSections: parsed.about.cvNarrativeSections,
+    summarySizeHint: {
+      importedChars: mergedForMergePolicySlice.aboutProfessionalSummaryText.length,
+      baselineChars: mergeBaselineSlice.aboutProfessionalSummaryText.length,
+    },
   });
 
   const mergedCandidate = mergeCvDetailsIntoSiteContent(parsed, baseline);

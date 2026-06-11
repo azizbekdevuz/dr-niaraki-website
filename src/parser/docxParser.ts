@@ -35,9 +35,9 @@ import {
   generateStableId,
   createWarning,
 } from './parserUtils';
+import { PARSER_VERSION } from './parserVersion';
 
-// Parser version - update when making significant changes
-export const PARSER_VERSION = 'v1.3.0';
+export { PARSER_VERSION };
 
 /** Mammoth text + split sections — used for `candidatePayload` v2 raw preservation. */
 export type DocxParseArtifacts = {

@@ -4,6 +4,7 @@ import type { ContentVersion, Prisma } from '@prisma/client';
 
 import { SITE_CONTENT_RAW } from '@/content/defaults';
 import { validateSiteContent } from '@/content/validators';
+import { extractEditorSliceFromSiteContent } from '@/lib/draftEditorSlice';
 import { recordContentEvent } from '@/server/content/contentEvents';
 import {
   ContentWorkflowError,
@@ -89,17 +90,7 @@ export async function mergeImportCandidateToWorkingDraft(input: {
     if (working) {
       return { version: working, alreadyMerged: true };
     }
-    const anyVersion = await prisma.contentVersion.findFirst({
-      where: { importId: input.importId },
-      orderBy: { updatedAt: 'desc' },
-    });
-    if (anyVersion) {
-      return { version: anyVersion, alreadyMerged: true };
-    }
-    throw new ImportMergeError(
-      'NO_CANDIDATE',
-      'This import was merged but no linked content version was found.',
-    );
+    // Draft was discarded (or replaced by a different import) — fall through to re-merge.
   }
 
   const { importRow, details } = await loadDetailsFromImportRow(quick);
@@ -123,10 +114,16 @@ export async function mergeImportCandidateToWorkingDraft(input: {
 
   const mergedFull = mergeCvDetailsIntoSiteContent(details, baselineData);
   const safetyBlocks = buildStructuredReviewBlocks(baselineData, mergedFull, provenance);
+  const baselineSlice = extractEditorSliceFromSiteContent(baselineData);
+  const mergedFullSlice = extractEditorSliceFromSiteContent(mergedFull);
   const safety = evaluateImportMergeSectionSafety({
     reviewBlocks: safetyBlocks,
     candidateReview: buildImportCandidateReviewMetadata(importRow.candidatePayload),
     cvNarrativeSections: details.about.cvNarrativeSections,
+    summarySizeHint: {
+      importedChars: mergedFullSlice.aboutProfessionalSummaryText.length,
+      baselineChars: baselineSlice.aboutProfessionalSummaryText.length,
+    },
   });
 
   const mergeMode = input.mergeMode ?? 'safe_update';

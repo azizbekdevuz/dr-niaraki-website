@@ -79,7 +79,7 @@ describe('mergeImportCandidateToWorkingDraft', () => {
     expect(prisma.contentVersion.create).not.toHaveBeenCalled();
   });
 
-  it('throws when merged import has no linked version row', async () => {
+  it('throws INVALID_CANDIDATE when status is MERGED, no active draft, and payload is invalid', async () => {
     vi.mocked(getContentImportDetail).mockResolvedValue({
       id: 'imp',
       status: 'MERGED',
@@ -88,11 +88,55 @@ describe('mergeImportCandidateToWorkingDraft', () => {
       uploadedFileId: 'uf',
       versions: [],
     } as never);
-    vi.mocked(prisma.contentVersion.findFirst).mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+    vi.mocked(prisma.contentVersion.findFirst).mockResolvedValueOnce(null);
+    vi.mocked(getWorkingDraft).mockResolvedValue(null);
 
-    await expect(mergeImportCandidateToWorkingDraft({ importId: 'imp', action: 'create' })).rejects.toBeInstanceOf(
-      ImportMergeError,
-    );
+    const err = await mergeImportCandidateToWorkingDraft({ importId: 'imp', action: 'create' }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ImportMergeError);
+    expect((err as ImportMergeError).code).toBe('INVALID_CANDIDATE');
+  });
+
+  it('re-merges successfully when status is MERGED but working draft was discarded', async () => {
+    const details = minimalImportDetails({
+      profile: { ...minimalImportDetails().profile, name: 'Re-merge Name' },
+    });
+    const envelope = buildImportCandidatePayload({
+      rawDocumentText: 'body',
+      parserVersion: 't',
+      details,
+      sections: [],
+      importWarnings: [],
+    });
+    vi.mocked(getContentImportDetail).mockResolvedValue({
+      id: 'imp-remerge',
+      status: 'MERGED',
+      candidatePayload: envelope,
+      uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
+      createdAt: new Date(),
+      versions: [],
+    } as never);
+    vi.mocked(prisma.contentVersion.findFirst).mockResolvedValueOnce(null);
+    vi.mocked(getWorkingDraft).mockResolvedValue(null);
+    vi.mocked(prisma.contentVersion.create).mockResolvedValue({
+      id: 'cv-remerge',
+      status: 'DRAFT',
+      draftSlot: 'main',
+      importId: 'imp-remerge',
+      payload: {},
+      label: null,
+      changeSummary: null,
+      createdBy: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      publishedAt: null,
+      publishSequence: null,
+    } as never);
+
+    const r = await mergeImportCandidateToWorkingDraft({ importId: 'imp-remerge', action: 'create' });
+    expect(r.alreadyMerged).toBe(false);
+    expect(r.version.id).toBe('cv-remerge');
+    expect(prisma.contentVersion.create).toHaveBeenCalled();
+    expect(updateImportStatus).toHaveBeenCalledWith('imp-remerge', 'MERGED');
   });
 
   it('safe_update keeps canonical patent items when PATENT_COUNT_MISMATCH is present', async () => {

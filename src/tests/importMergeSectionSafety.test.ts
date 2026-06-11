@@ -147,4 +147,59 @@ describe('importMergeSectionSafety', () => {
     expect(pubs?.includeInSafeMerge).toBe(false);
     expect(pubs?.risk).toBe('review_only_default');
   });
+
+  it('adds a non-blocking note when imported summary is significantly longer than baseline (ratio >= 2.5)', () => {
+    const report = evaluateImportMergeSectionSafety({
+      reviewBlocks: [],
+      candidateReview: candidateReview(),
+      summarySizeHint: { importedChars: 2500, baselineChars: 800 },
+    });
+    const summary = report.sections.find((s) => s.id === 'summary');
+    expect(summary?.risk).toBe('safe_to_merge');
+    expect(summary?.includeInSafeMerge).toBe(true);
+    expect(summary?.reasons.some((r) => r.includes('much longer'))).toBe(true);
+    expect(report.notes.some((n) => n.includes('longer'))).toBe(true);
+  });
+
+  it('adds a non-blocking note when imported summary is more than 800 chars longer than baseline', () => {
+    const report = evaluateImportMergeSectionSafety({
+      reviewBlocks: [],
+      candidateReview: candidateReview(),
+      summarySizeHint: { importedChars: 1600, baselineChars: 700 },
+    });
+    const summary = report.sections.find((s) => s.id === 'summary');
+    expect(summary?.risk).toBe('safe_to_merge');
+    expect(summary?.reasons.some((r) => r.includes('much longer'))).toBe(true);
+  });
+
+  it('does not add summary size note when imported summary is only moderately longer', () => {
+    const report = evaluateImportMergeSectionSafety({
+      reviewBlocks: [],
+      candidateReview: candidateReview(),
+      summarySizeHint: { importedChars: 900, baselineChars: 700 },
+    });
+    const summary = report.sections.find((s) => s.id === 'summary');
+    expect(summary?.reasons.some((r) => r.includes('much longer'))).toBe(false);
+    expect(report.notes.some((n) => n.includes('longer'))).toBe(false);
+  });
+
+  it('does not add summary size note when summarySizeHint is not provided', () => {
+    const report = evaluateImportMergeSectionSafety({
+      reviewBlocks: [],
+      candidateReview: candidateReview(),
+    });
+    const summary = report.sections.find((s) => s.id === 'summary');
+    expect(summary?.reasons.some((r) => r.includes('much longer'))).toBe(false);
+  });
+
+  it('safe_update summary remains safe_to_merge even with large summary warning', () => {
+    const report = evaluateImportMergeSectionSafety({
+      reviewBlocks: [],
+      candidateReview: candidateReview(),
+      summarySizeHint: { importedChars: 5000, baselineChars: 500 },
+    });
+    expect(report.fullReplaceRequiresAck).toBe(false);
+    const summary = report.sections.find((s) => s.id === 'summary');
+    expect(summary?.includeInSafeMerge).toBe(true);
+  });
 });
