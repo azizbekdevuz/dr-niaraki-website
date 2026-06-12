@@ -14,38 +14,110 @@ import {
 } from './parserUtils';
 
 /**
+ * Anchored regex that matches the start of an education/postdoc entry line.
+ * Checked against the trimmed first line of each candidate entry.
+ */
+const EDUCATION_ENTRY_START_RE =
+  /^(?:Post-?Doc(?:toral)?(?:\s+Fellowship)?|Ph\.?\s*D\.?|Doctor(?:ate)?|M\.?\s*Sc\.?|Master(?:'?s)?(?:\s+of\s+\w+)?|B\.?\s*Sc\.?|Bachelor(?:'?s)?(?:\s+of\s+\w+)?|B\.?\s*Eng\.?|M\.?\s*Eng\.?)/i;
+
+/**
+ * Extracts year-range or single year from a text fragment.
+ * Handles "YYYY - YYYY", "YYYY – YYYY", "Month YYYY - Month YYYY", "YYYY - Present".
+ */
+function extractPeriodFromText(text: string): { period: string; year: string } | null {
+  // Direct: YYYY - YYYY
+  const direct = text.match(/\b(\d{4})\s*[-–]\s*(\d{4})\b/);
+  if (direct) {
+    return { period: `${direct[1]} - ${direct[2]}`, year: direct[2]! };
+  }
+
+  // Direct: YYYY - Present
+  const withPresent = text.match(/\b(\d{4})\s*[-–]\s*Present\b/i);
+  if (withPresent) {
+    return { period: `${withPresent[1]} - Present`, year: withPresent[1]! };
+  }
+
+  // Month YYYY - Month YYYY  (e.g. "Oct 2008 - Sept 2009")
+  const yearMatches = [...text.matchAll(/\b(1\d{3}|20\d{2})\b/g)].map((m) => m[1]!);
+  const hasPresent = /\bPresent\b/i.test(text);
+  if (yearMatches.length >= 2) {
+    const last = yearMatches[yearMatches.length - 1] ?? '';
+    return { period: `${yearMatches[0] ?? ''} - ${last}`, year: last };
+  }
+  if (yearMatches.length === 1 && hasPresent) {
+    return { period: `${yearMatches[0] ?? ''} - Present`, year: yearMatches[0] ?? '' };
+  }
+
+  return null;
+}
+
+/**
+ * Education-aware entry splitter.
+ *
+ * Splits on lines that begin a new degree/fellowship entry (matched by EDUCATION_ENTRY_START_RE).
+ * Pre-degree lines (recognition banners, etc.) accumulate into a header block that parseEducationEntry
+ * will reject via the honor-banner filter.
+ * Falls back to the generic splitEntries when no education-keyword boundaries are found.
+ */
+function splitEducationEntries(text: string): string[] {
+  const lines = text.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
+  const entries: string[] = [];
+  let current: string[] = [];
+
+  for (const line of lines) {
+    if (EDUCATION_ENTRY_START_RE.test(line) && current.length > 0) {
+      const joined = current.join('\n').trim();
+      if (joined.length >= 20) {
+        entries.push(joined);
+      }
+      current = [line];
+    } else {
+      current.push(line);
+    }
+  }
+
+  if (current.length > 0) {
+    const joined = current.join('\n').trim();
+    if (joined.length >= 20) {
+      entries.push(joined);
+    }
+  }
+
+  return entries.length > 1 ? entries : splitEntries(text);
+}
+
+/**
  * Parses education section text into structured data
  */
 export function parseEducation(text: string): ParseResult<Education[]> {
   const warnings: ParseWarning[] = [];
   const education: Education[] = [];
-  
-  const entries = splitEntries(text);
-  
+
+  const entries = splitEducationEntries(text);
+
   entries.forEach((entry, index) => {
     const edu = parseEducationEntry(entry, index, warnings);
     if (edu) {
       education.push(edu);
     }
   });
-  
+
   return { data: education, warnings };
 }
 
 /**
- * Parses a single education entry
+ * Parses a single education entry.
+ *
+ * Handles two first-line formats:
+ *   1. Pipe-separated:  "Ph.D. in Geo-Informatics Engineering | INHA University | South Korea | 2002 - 2006"
+ *   2. Multi-line:      "Ph.D. in Geomatics Engineering\nUniversity of Melbourne | Australia | 2008"
  */
-function parseEducationEntry(
-  text: string,
-  index: number,
-  warnings: ParseWarning[]
-): Education | null {
+function parseEducationEntry(text: string, index: number, warnings: ParseWarning[]): Education | null {
   const trimmed = text.trim();
-  
   if (trimmed.length < 20) {
     return null;
   }
-  
+
   const edu: MutableEducation = {
     id: generateStableId(trimmed, index),
     degree: '',
@@ -58,114 +130,125 @@ function parseEducationEntry(
     details: null,
     raw: trimmed,
   };
-  
-  // Extract degree type
+
   const firstLine = trimmed.split('\n')[0]?.trim() ?? '';
+
+  // Skip recognition / honour banners (e.g. "Top 2% researcher...")
   const looksLikeHonorBanner =
-    /^(?:top\s+\d|fellow\s*\||recognized for|contributing to|developing |collaborating |research focus)/i.test(
-      firstLine,
-    );
+    /^(?:top\s+\d|fellow\s*\||recognized for|contributing to|developing |collaborating |research focus)/i.test(firstLine);
   const hasStructuredDegree =
-    /(Ph\.?\s*D|Doctorate|M\.?\s*Sc|B\.?\s*Sc|Post-?Doctoral|Post-?Doc|Master|Bachelor)/i.test(trimmed);
+    /(?:Ph\.?\s*D|Post-?Doc|Doctor(?:ate)?|M\.?\s*Sc|B\.?\s*Sc|Master|Bachelor)/i.test(trimmed);
   if (looksLikeHonorBanner && !hasStructuredDegree) {
     return null;
   }
 
+  // ── Degree type ─────────────────────────────────────────────────────────────
+  // Checked against first line only. Post-Doctoral MUST come before Ph.D. because
+  // "Doctoral" contains the substring "Doctor" which the Ph.D. pattern would match.
   const degreePatterns = [
-    { pattern: /Ph\.?D\.?|Doctor(?:ate)?/i, type: 'Ph.D.' },
-    { pattern: /Post-?Doc(?:toral)?|Post-?Doctoral Fellowship/i, type: 'Post-Doctoral' },
-    { pattern: /M\.?Sc\.?|Master(?:'?s)?/i, type: 'M.Sc.' },
-    { pattern: /B\.?Sc\.?|Bachelor(?:'?s)?/i, type: 'B.Sc.' },
+    { pattern: /^Post-?Doc(?:toral)?(?:\s+Fellowship)?/i, type: 'Post-Doctoral Fellowship' },
+    { pattern: /\bPh\.?\s*D\.?\b/i, type: 'Ph.D.' },
+    { pattern: /\bDoctor(?:ate)?\b/i, type: 'Ph.D.' },
+    { pattern: /\bM\.?\s*Sc\.?\b|Master(?:'?s)?(?:\s+of)?/i, type: 'M.Sc.' },
+    { pattern: /\bB\.?\s*Sc\.?\b|Bachelor(?:'?s)?(?:\s+of)?/i, type: 'B.Sc.' },
   ];
-  
   for (const { pattern, type } of degreePatterns) {
-    if (pattern.test(trimmed)) {
+    if (pattern.test(firstLine)) {
       edu.degree = type;
       break;
     }
   }
-  
   if (!edu.degree) {
-    // Use first line as degree description
-    const head = trimmed.split('\n')[0];
-    if (head && head.length > 100) {
-      edu.degree = head.slice(0, 100);
-    } else {
-      edu.degree = head ?? '';
-    }
+    edu.degree = firstLine.length > 100 ? firstLine.slice(0, 100) : firstLine;
     warnings.push(createWarning('education', `Education ${index + 1}: degree type unclear`, 'info', index));
   }
-  
-  // Extract field of study
-  const fieldMatch = trimmed.match(/(?:in|of)\s+([A-Za-z\-]+(?:\s+[A-Za-z\-]+){0,3}\s+(?:Engineering|Science|Studies|Technology))/i);
-  if (fieldMatch) {
-    edu.degree = `${edu.degree} in ${fieldMatch[1]}`;
+
+  // ── Field of study ("in X Engineering/Science") from first line ─────────────
+  // Allow en-dash (U+2013) and em-dash (U+2014) inside field names.
+  const fieldMatch = firstLine.match(
+    /\bin\s+([A-Za-z\u2013\u2014\-]+(?:\s+[A-Za-z\u2013\u2014\-]+){0,4}\s+(?:Engineering|Science|Studies|Technology))/i,
+  );
+  if (fieldMatch?.[1]) {
+    edu.degree = `${edu.degree} in ${fieldMatch[1].trim()}`;
   }
-  
-  // Extract institution
-  const institutionPatterns = [
-    /(?:University|Institute|College|School)[^,\n]*/i,
-    /(?:INHA|KNTU|Sejong)[^,\n]*/i,
-    /\|?\s*([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\s+University)/,
-  ];
-  
-  for (const pattern of institutionPatterns) {
-    const match = trimmed.match(pattern);
-    if (match) {
-      edu.institution = match[0].replace(/^\|?\s*/, '').trim();
-      break;
+
+  // ── Parse pipe-separated first line: Degree | Institution | Location | Period ─
+  const pipes = firstLine.split('|').map((p) => p.trim());
+  if (pipes.length >= 2 && pipes[1] && pipes[1].length > 3) {
+    edu.institution = pipes[1];
+  }
+  if (!edu.location && pipes.length >= 3 && pipes[2]) {
+    edu.location = pipes[2] || null;
+  }
+  if (!edu.period && pipes.length >= 4 && pipes[3]) {
+    const p = extractPeriodFromText(pipes[3]);
+    if (p) {
+      edu.period = p.period;
+      edu.year = p.year;
     }
   }
-  
+
+  // ── Institution fallback ─────────────────────────────────────────────────────
+  if (!edu.institution) {
+    const institutionPatterns = [
+      /(?:University|Institute|College|School)[^,\n|]*/i,
+      /(?:INHA|KNTU|Sejong|Toosi)[^,\n|]*/i,
+      /\|?\s*([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\s+University)/,
+    ];
+    for (const pattern of institutionPatterns) {
+      const match = trimmed.match(pattern);
+      if (match) {
+        edu.institution = match[0].replace(/^\|?\s*/, '').trim();
+        break;
+      }
+    }
+  }
   if (!edu.institution) {
     warnings.push(createWarning('education', `Education ${index + 1}: institution not found`, 'warning', index));
     edu.institution = 'Unknown Institution';
   }
-  
-  // Extract location
-  const locationPatterns = [
-    /(South Korea|Korea|Australia|Iran|USA|United States)/i,
-    /,\s*([A-Za-z]+)$/,
-  ];
-  
-  for (const pattern of locationPatterns) {
-    const match = trimmed.match(pattern);
-    if (match) {
-      edu.location = match[1];
-      break;
+
+  // ── Location fallback ────────────────────────────────────────────────────────
+  if (!edu.location) {
+    const locationMatch = trimmed.match(/(South Korea|Korea|Australia|Iran|USA|United States)/i);
+    if (locationMatch) {
+      edu.location = locationMatch[1] ?? null;
     }
   }
-  
-  // Extract year/period
-  const periodMatch = trimmed.match(/(\d{4})\s*[-–]\s*(\d{4}|\bPresent\b)/i);
-  if (periodMatch) {
-    edu.period = `${periodMatch[1]} - ${periodMatch[2]}`;
-    edu.year = periodMatch[2] === 'Present' ? periodMatch[1] : periodMatch[2];
-  } else {
-    const year = extractYear(trimmed);
-    if (year) {
-      edu.year = year.toString();
+
+  // ── Period / year fallback ───────────────────────────────────────────────────
+  if (!edu.period) {
+    const p = extractPeriodFromText(trimmed);
+    if (p) {
+      edu.period = p.period;
+      edu.year = p.year;
+    } else {
+      const y = extractYear(trimmed);
+      if (y) {
+        edu.year = y.toString();
+      }
     }
   }
-  
-  // Extract thesis
+
+  // ── Thesis / Dissertation ────────────────────────────────────────────────────
   const thesisMatch = trimmed.match(/(?:Thesis|Dissertation)[:\s]+[""]?([^"""\n]+)[""]?/i);
   if (thesisMatch) {
-    edu.thesis = thesisMatch[1]?.trim() ?? '';
+    edu.thesis = thesisMatch[1]?.trim() ?? null;
   }
-  
-  // Extract supervisor
+
+  // ── Supervisor ───────────────────────────────────────────────────────────────
   const supervisorMatch = trimmed.match(/Supervisor[s]?[:\s]+(?:Prof\.?\s*)?([^\n]+)/i);
   if (supervisorMatch) {
-    edu.supervisor = supervisorMatch[1]?.trim() ?? '';
+    edu.supervisor = supervisorMatch[1]?.trim() ?? null;
   }
-  
-  // Extract details (remaining text)
-  const lines = trimmed.split('\n').slice(1);
-  if (lines.length > 0) {
-    edu.details = lines.join('\n').trim();
+
+  // ── Details (all lines after the first) ─────────────────────────────────────
+  const detailLines = trimmed.split('\n').slice(1);
+  if (detailLines.length > 0) {
+    const det = detailLines.join('\n').trim();
+    edu.details = det || null;
   }
-  
+
   return edu as Education;
 }
 
