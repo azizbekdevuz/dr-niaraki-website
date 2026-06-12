@@ -103,6 +103,11 @@ export function extractUrls(text: string): string[] {
  */
 export function extractPatentNumber(text: string): string | null {
   const patterns = [
+    // US publication/application (e.g. US 2025/0166525 A1)
+    /\bUS\s*(\d{4}\/\d{7}\s*A\d)\b/i,
+    /\b(\d{4}\/\d{7}\s*A\d)\b/i,
+    // US application serial (e.g. 19/326,960 or Application No. 18/821,509)
+    /\b(\d{2}\/\d{3},\d{3})\b/,
     /US\s*(?:Patent\s*(?:No\.?)?\s*)?(\d{1,3}[,.]?\d{3}[,.]?\d{3}(?:[A-Z]\d)?)/i,
     /(?:Patent\s*No\.?\s*)(10-\d{6,9})\b/i,
     /\b(10-\d{4}-\d{7})\b/,
