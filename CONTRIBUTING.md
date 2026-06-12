@@ -20,7 +20,7 @@ npm run dev
 Quality gates used in CI-style workflows:
 
 ```bash
-npm run type-check
+npm run tsc
 npm run lint
 npm run test:run
 npm run build
@@ -29,8 +29,8 @@ npm run build
 ## Change guidelines
 
 * **Public behavior & visuals**: avoid unintended UX or copy changes unless agreed.
-* **Content model**: updates to `SiteContent` require `src/content/schema.ts`, seeds under `src/content/seed/`, and passing `src/tests/siteContent.test.ts`.
-* **Admin / APIs**: preserve sessiaon, device, and upload semantics documented in `project.mdc`.
+* **Content model**: updates to `SiteContent` require `src/content/schema.ts`, seeds under `src/content/seed/`, and passing `src/tests/content/siteContent.test.ts`.
+* **Admin / APIs**: preserve session, device, and upload semantics documented in `project.mdc`.
 * **Admin content page UI**: prefer adding focused components under `src/app/admin/content/workflow/` and keeping `workflowSections.tsx` as a thin composer.
 * **Admin CV upload UI**: keep `src/app/admin/upload/page.tsx` thin; add pieces under `src/app/admin/upload/components/` or `hooks/` instead of growing a single mega-file.
 * **Parser / imports**: conservative changes only; extend tests in `src/tests/` when behavior shifts.

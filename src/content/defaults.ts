@@ -1,7 +1,7 @@
 /**
  * Canonical default site content (matches pre-refactor public UI copy and lists).
  *
- * Runtime shape is asserted via TypeScript. Zod validation runs in tests (`siteContent.test.ts`)
+ * Runtime shape is asserted via TypeScript. Zod validation runs in tests (`src/tests/content/siteContent.test.ts`)
  * so client bundles do not pay for `SiteContentSchema.safeParse` on every import.
  */
 

@@ -343,6 +343,6 @@ Parser version `v1.3.0` (constant `PARSER_VERSION` in `src/parser/docxParser.ts`
 - Candidate storage uses **`candidatePayload` envelope** (`schemaVersion`, `sourceTextHash`, `countValidation`, `sectionMappingReport`, `details`, …).
 - Merge implementation: `mergeImportCandidateToWorkingDraft`, `evaluateImportMergeSectionSafety`, `mergeCvDetailsIntoSiteContent` with optional `freeze` keys.
 - CV narrative policy: `cvNarrativeToSimpleLists.ts` (`cv-nar-` item prefix).
-- Tests: `importMergeSectionSafety.test.ts`, `mergeImportToDraft.test.ts`, `importReviewSemantics.test.ts`, `phase3aImportPayload.test.ts`.
+- Tests: `src/tests/imports/importMergeSectionSafety.test.ts`, `src/tests/imports/mergeImportToDraft.test.ts`, `src/tests/imports/importReviewSemantics.test.ts`, `src/tests/imports/phase3aImportPayload.test.ts`, `src/tests/imports/importReviewCompare.test.ts`.
 
 For architecture context see [README.md](../README.md).

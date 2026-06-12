@@ -12,12 +12,12 @@
 
 ## Checklist
 
-- [ ] `npm run type-check`
+- [ ] `npm run tsc`
 - [ ] `npm run lint` (or note intentional exceptions)
 - [ ] `npm run test:run`
 - [ ] `npm run build` (if touching routes, server, or build config)
 - [ ] No secrets / credentials committed
-- [ ] If `SiteContent` shape changed: schema + seeds + `siteContent` test updated
+- [ ] If `SiteContent` shape changed: schema + seeds + `src/tests/content/siteContent.test.ts` updated
 
 ## Notes for reviewers
 
