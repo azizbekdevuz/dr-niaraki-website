@@ -5,6 +5,7 @@ import { assertSiteContent, validateSiteContent } from '@/content/validators';
 import { extractEditorSliceFromSiteContent } from '@/lib/draftEditorSlice';
 import { getLatestPublishedVersion, getWorkingDraft } from '@/server/content/contentWorkflowCore';
 import { getDetailsFromCandidatePayload, parseImportCandidatePayload } from '@/server/imports/candidatePayload/schema';
+import { deriveImportQualityHints } from '@/server/imports/deriveImportQualityHints';
 import { mergeCvDetailsIntoSiteContent } from '@/server/imports/detailsToSiteContentMerge';
 import {
   evaluateImportMergeSectionSafety,
@@ -189,19 +190,7 @@ export async function buildImportReviewPayload(
       importedChars: mergedForMergePolicySlice.aboutProfessionalSummaryText.length,
       baselineChars: mergeBaselineSlice.aboutProfessionalSummaryText.length,
     },
-    qualityHints: {
-      journeyCollapse: {
-        importedCount: parsed.about.education.length,
-        baselineCount: mergeBaseline.about.journey.length,
-        hasGiantRows: parsed.about.education.some(
-          (e) => (e.details?.length ?? 0) > 400 || (e.raw?.length ?? 0) > 400,
-        ),
-      },
-      experienceQuality: {
-        unknownOrgCount: parsed.about.positions.filter((p) => p.institution === 'Unknown Organization').length,
-        totalCount: parsed.about.positions.length,
-      },
-    },
+    qualityHints: deriveImportQualityHints(parsed, mergeBaseline),
     summaryTrimNotes,
   });
 
