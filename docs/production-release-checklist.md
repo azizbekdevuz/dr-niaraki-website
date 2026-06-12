@@ -56,7 +56,7 @@ Other optional vars (`ADMIN_UPLOAD_HISTORY_PRISMA_TAKE`, `NEXT_PUBLIC_ENABLE_CUS
 | `AI_PROVIDER` | `none` (default), `ollama`, `openrouter`, `groq`, or `openai` |
 | `AI_IMPORT_REVIEW_TIMEOUT_MS` | Server timeout for provider calls (default 15000) |
 | `AI_IMPORT_REVIEW_MAX_INPUT_CHARS` | Cap on minimized review context size |
-| `AI_IMPORT_REVIEW_RATE_LIMIT_PER_HOUR` | Per-admin-session rate limit (default 10) |
+| `AI_IMPORT_REVIEW_RATE_LIMIT_PER_HOUR` | Per-admin-session rate limit (default 10); best-effort in-memory only, not shared across serverless instances |
 | `OLLAMA_*` | Self-hosted Ollama base URL, model, allowlist |
 | `OPENROUTER_*` / `GROQ_*` / `OPENAI_*` | Hosted provider API keys and allowlisted models (server-only) |
 

@@ -19,17 +19,55 @@ const LlmJsonSchema = z.object({
     .optional(),
 });
 
-export function parseLlmJsonContent(raw: string): { summary: string; sectionNotes?: AiReviewSectionNote[] } | null {
-  const trimmed = raw.trim();
-  const jsonText = trimmed.startsWith('```')
-    ? trimmed.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
-    : trimmed;
+type ParsedLlmJson = { summary: string; sectionNotes?: AiReviewSectionNote[] };
+
+function tryParseCandidate(jsonText: string): ParsedLlmJson | null {
   try {
-    const parsed = LlmJsonSchema.parse(JSON.parse(jsonText));
-    return parsed;
+    return LlmJsonSchema.parse(JSON.parse(jsonText));
   } catch {
     return null;
   }
+}
+
+function extractJsonCandidates(raw: string): string[] {
+  const candidates: string[] = [];
+  const trimmed = raw.trim();
+  if (trimmed) {
+    candidates.push(trimmed);
+  }
+
+  const fenceRe = /```(?:json)?\s*([\s\S]*?)```/gi;
+  let match = fenceRe.exec(raw);
+  while (match) {
+    const block = match[1]?.trim();
+    if (block) {
+      candidates.push(block);
+    }
+    match = fenceRe.exec(raw);
+  }
+
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start >= 0 && end > start) {
+    candidates.push(raw.slice(start, end + 1).trim());
+  }
+
+  return candidates;
+}
+
+export function parseLlmJsonContent(raw: string): ParsedLlmJson | null {
+  const seen = new Set<string>();
+  for (const candidate of extractJsonCandidates(raw)) {
+    if (!candidate || seen.has(candidate)) {
+      continue;
+    }
+    seen.add(candidate);
+    const parsed = tryParseCandidate(candidate);
+    if (parsed) {
+      return parsed;
+    }
+  }
+  return null;
 }
 
 export function advisoryErrorResult(

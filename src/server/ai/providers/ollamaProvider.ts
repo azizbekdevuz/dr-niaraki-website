@@ -1,15 +1,17 @@
 import 'server-only';
 
 import { getAiReviewRuntimeConfig } from '@/server/ai/aiReviewConfig';
-import { fetchWithTimeout } from '@/server/ai/aiReviewFetch';
-import { advisoryErrorResult, parseLlmJsonContent } from '@/server/ai/aiReviewParse';
-import { AI_REVIEW_SYSTEM_PROMPT, buildAiReviewUserPrompt } from '@/server/ai/aiReviewPrompt';
-import type { AiReviewProvider, AiReviewInput, AiReviewSuggestionResult } from '@/server/ai/aiReviewTypes';
-import { AI_REVIEW_DISCLAIMERS } from '@/server/ai/aiReviewTypes';
-import { misconfiguredResult, resolveProviderModel } from '@/server/ai/providers/llmProviderShared';
+import { fetchWithTimeout, type ChatMessage } from '@/server/ai/aiReviewFetch';
+import type { AiReviewProvider, AiReviewSuggestionResult } from '@/server/ai/aiReviewTypes';
+import { misconfiguredResult, resolveProviderModel, runLlmAiReview } from '@/server/ai/providers/llmProviderShared';
 
-async function ollamaChat(baseUrl: string, model: string, input: AiReviewInput, timeoutMs: number): Promise<string> {
-  const res = await fetchWithTimeout(
+async function ollamaChat(
+  baseUrl: string,
+  model: string,
+  messages: ChatMessage[],
+  timeoutMs: number,
+): Promise<string> {
+  return fetchWithTimeout(
     `${baseUrl}/api/chat`,
     {
       method: 'POST',
@@ -18,24 +20,23 @@ async function ollamaChat(baseUrl: string, model: string, input: AiReviewInput, 
         model,
         stream: false,
         format: 'json',
-        messages: [
-          { role: 'system', content: AI_REVIEW_SYSTEM_PROMPT },
-          { role: 'user', content: buildAiReviewUserPrompt(input) },
-        ],
+        messages,
       }),
     },
     timeoutMs,
+    async (res) => {
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`Ollama HTTP ${res.status}: ${text.slice(0, 300)}`);
+      }
+      const data = (await res.json()) as { message?: { content?: string } };
+      const content = data.message?.content;
+      if (!content) {
+        throw new Error('Ollama returned empty response');
+      }
+      return content;
+    },
   );
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`Ollama HTTP ${res.status}: ${text.slice(0, 300)}`);
-  }
-  const data = (await res.json()) as { message?: { content?: string } };
-  const content = data.message?.content;
-  if (!content) {
-    throw new Error('Ollama returned empty response');
-  }
-  return content;
 }
 
 export const ollamaAiReviewProvider: AiReviewProvider = {
@@ -47,41 +48,13 @@ export const ollamaAiReviewProvider: AiReviewProvider = {
       return modelOrErr;
     }
 
-    try {
-      const content = await ollamaChat(cfg.ollama.baseUrl, modelOrErr, input, cfg.timeoutMs);
-      const parsed = parseLlmJsonContent(content);
-      if (!parsed) {
-        return advisoryErrorResult({
-          provider: 'ollama',
-          model: modelOrErr,
-          inputHash,
-          status: 'error',
-          error: 'Ollama returned malformed JSON',
-        });
-      }
-      return {
-        advisory: true,
-        enabled: true,
-        provider: 'ollama',
-        model: modelOrErr,
-        status: 'ok',
-        generatedAt: new Date().toISOString(),
-        inputHash,
-        summary: parsed.summary,
-        sectionNotes: parsed.sectionNotes,
-        disclaimers: [...AI_REVIEW_DISCLAIMERS],
-      };
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      const isTimeout = msg.includes('abort');
-      return advisoryErrorResult({
-        provider: 'ollama',
-        model: modelOrErr,
-        inputHash,
-        status: isTimeout ? 'timeout' : 'error',
-        error: msg,
-      });
-    }
+    return runLlmAiReview({
+      provider: 'ollama',
+      model: modelOrErr,
+      input,
+      inputHash,
+      call: (messages) => ollamaChat(cfg.ollama.baseUrl, modelOrErr, messages, cfg.timeoutMs),
+    });
   },
 };
 

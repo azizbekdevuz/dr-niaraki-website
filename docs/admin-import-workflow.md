@@ -91,6 +91,7 @@ On the import detail page, **AI review assistant** appears after parser warnings
   - **OpenAI** - optional paid hosted inference.
 - API keys and base URLs stay in **server env only**. Active provider/model are set via `AI_PROVIDER` and provider env vars (redeploy to switch).
 - AI failure or rate limits do **not** block import review, merge, draft, or publish.
+- Rate limiting is **best-effort** and stored in memory per server instance (not shared across serverless cold starts).
 
 `POST /api/admin/imports/[id]/ai-review` (admin session + registered device required).
 

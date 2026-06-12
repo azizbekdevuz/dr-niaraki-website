@@ -6,6 +6,18 @@ import { AI_REVIEW_SYSTEM_PROMPT, buildAiReviewUserPrompt } from '@/server/ai/ai
 import type { AiProviderId, AiReviewInput, AiReviewSuggestionResult } from '@/server/ai/aiReviewTypes';
 import { AI_REVIEW_DISCLAIMERS } from '@/server/ai/aiReviewTypes';
 
+export function isAiProviderTimeoutError(error: unknown): boolean {
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    return true;
+  }
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+    return msg.includes('abort') || msg.includes('timeout');
+  }
+  const msg = String(error).toLowerCase();
+  return msg.includes('abort') || msg.includes('timeout');
+}
+
 export async function runLlmAiReview(opts: {
   provider: AiProviderId;
   model: string;
@@ -42,12 +54,11 @@ export async function runLlmAiReview(opts: {
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    const isTimeout = msg.includes('abort') || msg.toLowerCase().includes('timeout');
     return advisoryErrorResult({
       provider: opts.provider,
       model: opts.model,
       inputHash: opts.inputHash,
-      status: isTimeout ? 'timeout' : 'error',
+      status: isAiProviderTimeoutError(e) ? 'timeout' : 'error',
       error: msg,
     });
   }

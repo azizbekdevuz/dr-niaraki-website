@@ -63,6 +63,11 @@ export async function runImportAiReview(
     return { ok: true, result: disabledAiReviewResult() };
   }
 
+  const built = await buildAiReviewInput(importId, baseline);
+  if (!built) {
+    return { ok: false, notFound: true };
+  }
+
   const cookieStore = await cookies();
   const sessionKey = aiReviewRateLimitKey(cookieStore.get('admin_session')?.value);
   const limit = checkAiReviewRateLimit(sessionKey, cfg.rateLimitPerHour);
@@ -82,11 +87,6 @@ export async function runImportAiReview(
         error: 'AI review rate limit exceeded. Try again later.',
       },
     };
-  }
-
-  const built = await buildAiReviewInput(importId, baseline);
-  if (!built) {
-    return { ok: false, notFound: true };
   }
 
   const provider = getAiReviewProvider(cfg.provider);

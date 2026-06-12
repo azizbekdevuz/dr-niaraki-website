@@ -49,6 +49,35 @@ function sampleLinesFromBlock(block: ImportReviewBlock, risky: boolean): string[
   return lines.length > 0 ? lines : undefined;
 }
 
+function fitBlockSummaries(
+  input: AiReviewInput,
+  blockSummaries: AiReviewInput['blockSummaries'],
+  count: number,
+): AiReviewInput {
+  return { ...input, blockSummaries: blockSummaries.slice(0, count) };
+}
+
+function binarySearchBlockFit(
+  input: AiReviewInput,
+  blockSummaries: AiReviewInput['blockSummaries'],
+  maxChars: number,
+): AiReviewInput {
+  let lo = 0;
+  let hi = blockSummaries.length;
+  let best = fitBlockSummaries(input, blockSummaries, 0);
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    const candidate = fitBlockSummaries(input, blockSummaries, mid);
+    if (stableStringify(candidate).length <= maxChars) {
+      best = candidate;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return best;
+}
+
 function trimInputToCap(input: AiReviewInput, maxChars: number): AiReviewInput {
   let current: AiReviewInput = input;
   if (stableStringify(current).length <= maxChars) {
@@ -63,19 +92,10 @@ function trimInputToCap(input: AiReviewInput, maxChars: number): AiReviewInput {
     return current;
   }
 
-  current = {
-    ...current,
-    blockSummaries: current.blockSummaries.filter((b) =>
-      current.mergeSafety.sections.some((s) => s.id === b.id && RISKY_RISKS.has(s.risk)),
-    ),
-  };
-  if (stableStringify(current).length <= maxChars) {
-    return current;
-  }
-
-  while (current.blockSummaries.length > 0 && stableStringify(current).length > maxChars) {
-    current = { ...current, blockSummaries: current.blockSummaries.slice(0, -1) };
-  }
+  const riskyBlocks = current.blockSummaries.filter((b) =>
+    current.mergeSafety.sections.some((s) => s.id === b.id && RISKY_RISKS.has(s.risk)),
+  );
+  current = binarySearchBlockFit(current, riskyBlocks, maxChars);
   if (stableStringify(current).length <= maxChars) {
     return current;
   }
@@ -167,7 +187,7 @@ export async function buildAiReviewInput(
     baselineLabel: review.baselineLabel,
     reviewHint: candidateReview?.reviewHint ?? null,
     countValidation:
-      candidateReview?.countValidation.entries.map((e) => ({
+      candidateReview?.countValidation?.entries?.map((e) => ({
         code: e.code,
         domain: e.domain,
         severity: e.severity,
@@ -175,13 +195,13 @@ export async function buildAiReviewInput(
         extractedCount: e.extractedCount,
       })) ?? [],
     parserWarnings:
-      candidateReview?.parserWarnings.map((w) => ({
+      candidateReview?.parserWarnings?.map((w) => ({
         code: w.code,
         message: redactSensitiveText(w.message),
         severity: w.severity,
       })) ?? [],
     unmappedSections:
-      candidateReview?.unmappedSections.map((u) => ({
+      candidateReview?.unmappedSections?.map((u) => ({
         sectionId: u.sectionId,
         title: u.title,
         reason: redactSensitiveText(u.reason),

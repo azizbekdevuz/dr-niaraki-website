@@ -289,7 +289,22 @@ describe('import AI review', () => {
       const provider = getAiReviewProvider('openai');
       const result = await provider.generateSuggestions(built!.input, built!.inputHash);
       expect(result.advisory).toBe(true);
-      expect(['timeout', 'error']).toContain(result.status);
+      expect(result.status).toBe('timeout');
+    });
+  });
+
+  describe('rate limit ordering', () => {
+    it('does not consume rate limit when import is not found', async () => {
+      process.env.AI_PROVIDER = 'openai';
+      process.env.OPENAI_API_KEY = 'sk-test';
+      process.env.OPENAI_MODEL = 'gpt-4o-mini';
+      process.env.OPENAI_ALLOWED_MODELS = 'gpt-4o-mini';
+      vi.mocked(getContentImportDetail).mockResolvedValue(null);
+      const rateLimitSpy = vi.spyOn(aiReviewRateLimit, 'checkAiReviewRateLimit');
+      const outcome = await runImportAiReview('missing-import', 'auto');
+      expect(outcome).toEqual({ ok: false, notFound: true });
+      expect(rateLimitSpy).not.toHaveBeenCalled();
+      rateLimitSpy.mockRestore();
     });
   });
 
@@ -371,7 +386,8 @@ describe('import AI review', () => {
   });
 
   describe('audit logging', () => {
-    it('records minimal AI_IMPORT_REVIEW event for enabled provider without prompt text', async () => {
+    it('records minimal AI_IMPORT_REVIEW event without private raw text sentinel', async () => {
+      const PRIVATE_SENTINEL = 'SENTINEL_RAW_9f3c_private_audit_leak_test';
       process.env.AI_PROVIDER = 'openai';
       process.env.OPENAI_API_KEY = 'sk-test';
       process.env.OPENAI_MODEL = 'gpt-4o-mini';
@@ -385,20 +401,18 @@ describe('import AI review', () => {
         ),
       );
       const details = minimalImportDetails();
-      mockImportRow(envelopeFromDetails(details, 'cv'));
+      mockImportRow(envelopeFromDetails(details, PRIVATE_SENTINEL));
       await runImportAiReview(IMPORT_ID, 'auto');
-      expect(recordContentEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          eventType: 'SYSTEM_NOTE',
-          payload: expect.objectContaining({
-            kind: 'AI_IMPORT_REVIEW',
-            importId: IMPORT_ID,
-            provider: 'openai',
-          }),
-        }),
-      );
-      const call = vi.mocked(recordContentEvent).mock.calls[0]?.[0];
-      expect(JSON.stringify(call)).not.toContain('cv');
+      const aiEvent = vi
+        .mocked(recordContentEvent)
+        .mock.calls.map((call) => call[0])
+        .find(
+          (event) =>
+            event.eventType === 'SYSTEM_NOTE' &&
+            (event.payload as { kind?: string }).kind === 'AI_IMPORT_REVIEW',
+        );
+      expect(aiEvent).toBeDefined();
+      expect(JSON.stringify(aiEvent)).not.toContain(PRIVATE_SENTINEL);
     });
   });
 

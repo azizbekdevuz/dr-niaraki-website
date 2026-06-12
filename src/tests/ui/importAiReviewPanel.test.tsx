@@ -51,6 +51,20 @@ describe('ImportAiReviewAssistantPanel', () => {
     expect(screen.queryByRole('button', { name: /apply/i })).toBeNull();
   });
 
+  it('shows provider settings unavailable message on settings load failure', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ ok: false, message: 'server error' }),
+    });
+    render(<ImportAiReviewAssistantPanel importId="imp1" baselineMode="auto" />);
+    await waitFor(() => {
+      expect(screen.getByTestId('ai-provider-settings-error')).toBeTruthy();
+    });
+    expect(screen.getByText('Provider status is currently unavailable.')).toBeTruthy();
+    expect(screen.queryByTestId('ai-disabled-message')).toBeNull();
+    expect(screen.queryByTestId('ai-generate-button')).toBeNull();
+  });
+
   it('shows manual generate button and advisory results when enabled', async () => {
     fetchMock
       .mockResolvedValueOnce({

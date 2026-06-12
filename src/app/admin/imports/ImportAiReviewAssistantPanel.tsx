@@ -26,9 +26,27 @@ function severityClass(sev: string): string {
   return 'border-primary/20 bg-surface-secondary/60 text-foreground';
 }
 
-function ProviderStatusBanner({ settings, loading }: { settings: AiProviderSettingsModel | null; loading: boolean }) {
+function ProviderStatusBanner({
+  settings,
+  loading,
+  providerSettingsError,
+}: {
+  settings: AiProviderSettingsModel | null;
+  loading: boolean;
+  providerSettingsError: string | null;
+}) {
   if (loading) {
     return <p className="mt-3 text-xs text-muted">Loading provider status...</p>;
+  }
+  if (providerSettingsError) {
+    return (
+      <div
+        className="mt-3 rounded-md border border-warning/35 bg-warning/10 px-3 py-2 text-xs text-foreground"
+        data-testid="ai-provider-settings-error"
+      >
+        {providerSettingsError}
+      </div>
+    );
   }
   const activeProvider = settings?.providers.find((p) => p.active);
   return (
@@ -72,23 +90,77 @@ function AiReviewResults({ result }: { result: AiReviewSuggestionModel }) {
   );
 }
 
+function GenerateAction({
+  aiEnabled,
+  providerSettingsError,
+  loadingSettings,
+  generating,
+  onGenerate,
+}: {
+  aiEnabled: boolean;
+  providerSettingsError: string | null;
+  loadingSettings: boolean;
+  generating: boolean;
+  onGenerate: () => void;
+}) {
+  if (aiEnabled) {
+    return (
+      <button
+        type="button"
+        className="btn-primary text-sm disabled:opacity-50"
+        disabled={generating}
+        onClick={onGenerate}
+        data-testid="ai-generate-button"
+      >
+        {generating ? (
+          <>
+            <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+            Generating...
+          </>
+        ) : (
+          'Generate AI suggestions'
+        )}
+      </button>
+    );
+  }
+  if (providerSettingsError || loadingSettings) {
+    return null;
+  }
+  return (
+    <p className="text-xs text-muted" data-testid="ai-disabled-message">
+      AI is disabled or misconfigured. Set <code className="font-mono">AI_PROVIDER</code> and provider env vars, then
+      redeploy. See{' '}
+      <Link href="/admin/ai" className="text-accent-primary hover:underline">
+        provider settings
+      </Link>
+      .
+    </p>
+  );
+}
+
 export function ImportAiReviewAssistantPanel({ importId, baselineMode }: Props) {
   const [settings, setSettings] = useState<AiProviderSettingsModel | null>(null);
   const [loadingSettings, setLoadingSettings] = useState(true);
+  const [providerSettingsError, setProviderSettingsError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<AiReviewSuggestionModel | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadSettings = useCallback(async () => {
     setLoadingSettings(true);
+    setProviderSettingsError(null);
     try {
       const res = await fetch('/api/admin/ai/settings', { credentials: 'include' });
       const data = await res.json();
       if (res.ok && data.ok) {
         setSettings(data.settings as AiProviderSettingsModel);
+      } else {
+        setSettings(null);
+        setProviderSettingsError('Provider status is currently unavailable.');
       }
     } catch {
-      /* non-blocking */
+      setSettings(null);
+      setProviderSettingsError('Provider status is currently unavailable.');
     } finally {
       setLoadingSettings(false);
     }
@@ -125,7 +197,11 @@ export function ImportAiReviewAssistantPanel({ importId, baselineMode }: Props) 
   };
 
   const activeProvider = settings?.providers.find((p) => p.active);
-  const aiEnabled = settings?.activeProvider !== 'none' && activeProvider?.status === 'configured';
+  const aiEnabled =
+    !providerSettingsError &&
+    !loadingSettings &&
+    settings?.activeProvider !== 'none' &&
+    activeProvider?.status === 'configured';
   const disclaimers = result?.disclaimers ?? settings?.disclaimers ?? [];
 
   return (
@@ -145,36 +221,20 @@ export function ImportAiReviewAssistantPanel({ importId, baselineMode }: Props) 
         </Link>
       </div>
 
-      <ProviderStatusBanner settings={settings} loading={loadingSettings} />
+      <ProviderStatusBanner
+        settings={settings}
+        loading={loadingSettings}
+        providerSettingsError={providerSettingsError}
+      />
 
       <div className="mt-4">
-        {aiEnabled ? (
-          <button
-            type="button"
-            className="btn-primary text-sm disabled:opacity-50"
-            disabled={generating}
-            onClick={() => void generate()}
-            data-testid="ai-generate-button"
-          >
-            {generating ? (
-              <>
-                <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              'Generate AI suggestions'
-            )}
-          </button>
-        ) : (
-          <p className="text-xs text-muted" data-testid="ai-disabled-message">
-            AI is disabled or misconfigured. Set <code className="font-mono">AI_PROVIDER</code> and provider env vars,
-            then redeploy. See{' '}
-            <Link href="/admin/ai" className="text-accent-primary hover:underline">
-              provider settings
-            </Link>
-            .
-          </p>
-        )}
+        <GenerateAction
+          aiEnabled={aiEnabled}
+          providerSettingsError={providerSettingsError}
+          loadingSettings={loadingSettings}
+          generating={generating}
+          onGenerate={() => void generate()}
+        />
       </div>
 
       {error ? (
