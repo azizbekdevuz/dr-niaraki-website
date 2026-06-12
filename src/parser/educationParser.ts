@@ -14,11 +14,25 @@ import {
 } from './parserUtils';
 
 /**
- * Anchored regex that matches the start of an education/postdoc entry line.
- * Checked against the trimmed first line of each candidate entry.
+ * Thesis/supervisor detail lines — attach to current entry, never start a new one.
+ * Covers optional degree prefixes seen in real CVs (e.g. "PhD Supervisor:", "MSc. Supervisors:").
+ */
+const EDUCATION_DETAIL_PREFIX_RE =
+  /^(?:(?:PhD|Ph\.?\s*D\.?|M\.?Sc\.?|B\.?Sc\.?)\s+)?(?:Supervisor[s]?|Dissertation|Thesis|Advisor[s]?)\s*:/i;
+
+/**
+ * Anchored regex for true education/postdoc entry-start lines.
+ * Requires pipe-separated format or "in <field>" — excludes "PhD Supervisor:" / "MSc. Supervisors:".
  */
 const EDUCATION_ENTRY_START_RE =
-  /^(?:Post-?Doc(?:toral)?(?:\s+Fellowship)?|Ph\.?\s*D\.?|Doctor(?:ate)?|M\.?\s*Sc\.?|Master(?:'?s)?(?:\s+of\s+\w+)?|B\.?\s*Sc\.?|Bachelor(?:'?s)?(?:\s+of\s+\w+)?|B\.?\s*Eng\.?|M\.?\s*Eng\.?)/i;
+  /^(?:Post-?Doc(?:toral)?(?:\s+Fellowship)?(?:\s*\||\s*$)|(?:Ph\.?\s*D\.?|Doctor(?:ate)?|M\.?\s*Sc\.?|Master(?:'?s)?(?:\s+of\s+\w+)?|B\.?\s*Sc\.?|Bachelor(?:'?s)?(?:\s+of\s+\w+)?|B\.?\s*Eng\.?|M\.?\s*Eng\.?)(?:\s+in\s+|\s*\|))/i;
+
+function isEducationEntryStartLine(line: string): boolean {
+  if (EDUCATION_DETAIL_PREFIX_RE.test(line)) {
+    return false;
+  }
+  return EDUCATION_ENTRY_START_RE.test(line);
+}
 
 /**
  * Extracts year-range or single year from a text fragment.
@@ -65,7 +79,7 @@ function splitEducationEntries(text: string): string[] {
   let current: string[] = [];
 
   for (const line of lines) {
-    if (EDUCATION_ENTRY_START_RE.test(line) && current.length > 0) {
+    if (isEducationEntryStartLine(line) && current.length > 0) {
       const joined = current.join('\n').trim();
       if (joined.length >= 20) {
         entries.push(joined);
@@ -132,6 +146,10 @@ function parseEducationEntry(text: string, index: number, warnings: ParseWarning
   };
 
   const firstLine = trimmed.split('\n')[0]?.trim() ?? '';
+
+  if (EDUCATION_DETAIL_PREFIX_RE.test(firstLine)) {
+    return null;
+  }
 
   // Skip recognition / honour banners (e.g. "Top 2% researcher...")
   const looksLikeHonorBanner =

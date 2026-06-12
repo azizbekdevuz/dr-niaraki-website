@@ -362,6 +362,44 @@ B.Sc. in Geomatics-Civil Engineering | K.N. Toosi University of Technology | Ira
     expect(topPercent).toBeUndefined();
   });
 
+  // Production smoke: supervisor lines with PhD/MSc in professor titles must not split.
+  const PRODUCTION_EDUCATION_FIXTURE = `Top 2% researcher worldwide (ESI - Clarivate Analytics, Web of Science, Nov. 2023)
+Post-Doctoral Fellowship | The Department of Infrastructure Engineering, University of Melbourne, Australia
+May 2012 - October 2012
+Australian Endeavour Program recipient
+Post-Doctoral Fellowship | INHA University, South Korea
+September 2008 - February 2009
+Department of Geo-Informatic Engineering
+Ph.D. in Geo-Informatics Engineering | INHA University, South Korea
+March 2005 - August 2008
+Dissertation: "Ontology based geospatial model for personalized route finding"
+PhD Supervisor: Prof. Kyehyun Kim (Renowned as the "Father of GIS" in Korea)
+M.Sc. in GIS Engineering | K.N. Toosi University of Technology (KNTU)
+February 2000 - November 2002
+Thesis: "Defining Cost Model for Iranian Road Network in GIS"
+MSc. Supervisors: Prof. Masoud Varshosaz, Prof. Ali Asghar Alesheikh
+B.Sc. in Geomatics-Civil Engineering | KNTU
+September 1995 - December 1999`;
+
+  it('does not split supervisor lines containing PhD or MSc into separate rows', () => {
+    const result = parseEducation(PRODUCTION_EDUCATION_FIXTURE);
+    expect(result.data).toHaveLength(5);
+    const supervisorOnly = result.data.filter(
+      (e) => e.degree === 'Ph.D.' || e.degree === 'M.Sc.' || /^Supervisor/i.test(e.degree),
+    );
+    expect(supervisorOnly).toHaveLength(0);
+  });
+
+  it('attaches PhD Supervisor and MSc. Supervisors lines to parent degree entries', () => {
+    const result = parseEducation(PRODUCTION_EDUCATION_FIXTURE);
+    const phd = result.data.find((e) => e.degree.includes('Ph.D.'));
+    const msc = result.data.find((e) => e.degree.startsWith('M.Sc.'));
+    expect(phd?.supervisor).toMatch(/Kyehyun Kim/);
+    expect(msc?.supervisor ?? msc?.details).toMatch(/Masoud Varshosaz/);
+    const instWarnings = result.warnings.filter((w) => w.message.includes('institution not found'));
+    expect(instWarnings).toHaveLength(0);
+  });
+
   it('parses 3-part pipe line with institution+location combined and recovers period', () => {
     // Format: "Degree | Institution, Location | Month YYYY - Month YYYY" (3 pipes, no separate location slot)
     const line = 'Ph.D. in Geo-Informatics Engineering | INHA University, South Korea | March 2005 - August 2008';
