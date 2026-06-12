@@ -64,6 +64,13 @@ Targets **Vercel** (zero-config for Next.js). Set the environment variables from
 
 For non-Vercel hosts, run `npm run build && npm start` behind a reverse proxy with TLS.
 
+### Production deployment
+
+Before first production deploy or go-live, follow the operator checklist:
+
+- **[Production release checklist](./docs/production-release-checklist.md)** — env vars, `prisma migrate deploy`, admin device setup, first publish, DOCX smoke test, merge safety, rollback
+- **[Admin DOCX import workflow](./docs/admin-import-workflow.md)** — upload, review, `safe_update` vs `full_replace`, publish vs discard
+
 ## Community
 
 - **Contributing**: see [CONTRIBUTING.md](./CONTRIBUTING.md)
