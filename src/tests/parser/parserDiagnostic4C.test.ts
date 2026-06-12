@@ -5,7 +5,7 @@
  * verification.  Skips automatically when the file is absent (CI safe).
  *
  * Run manually:
- *   npx vitest run src/tests/parserDiagnostic4C.test.ts --reporter=verbose
+ *   npx vitest run src/tests/parser/parserDiagnostic4C.test.ts --reporter=verbose
  *
  * The file is gitignored; never commit it.
  */
