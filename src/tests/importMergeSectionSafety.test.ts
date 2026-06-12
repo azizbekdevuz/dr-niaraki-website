@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
+import { CV_NARRATIVE_LIST_ITEM_PREFIX } from '@/server/imports/cvNarrativeToSimpleLists';
 import {
   evaluateImportMergeSectionSafety,
   freezeKeysFromSafetyReport,
@@ -287,6 +288,27 @@ describe('importMergeSectionSafety', () => {
     expect(report.notes.some((n) => n.includes('Home intro trimmed'))).toBe(true);
     // Non-blocking: does not require ack on its own
     expect(report.fullReplaceRequiresAck).toBe(false);
+  });
+
+  it('marks teaching review-only when structured diff shows cv-nar- list churn', () => {
+    const cvNarLine = `[added] CV row (id: ${CV_NARRATIVE_LIST_ITEM_PREFIX}nar-1)`;
+    const report = evaluateImportMergeSectionSafety({
+      reviewBlocks: [
+        reviewBlock({
+          id: 'teaching',
+          title: 'Teaching',
+          added: [cvNarLine],
+          removed: [],
+          changed: [],
+        }),
+      ],
+      candidateReview: candidateReview(),
+    });
+    const teaching = report.sections.find((s) => s.id === 'teaching');
+    expect(teaching?.risk).toBe('review_only_default');
+    expect(teaching?.includeInSafeMerge).toBe(false);
+    expect(teaching?.reasons.some((r) => r.includes('cv-nar-'))).toBe(true);
+    expect(freezeKeysFromSafetyReport(report).has('cvNarrative')).toBe(true);
   });
 
   it('safe_update excludes risky sections but is not blocked when quality warnings present', () => {
