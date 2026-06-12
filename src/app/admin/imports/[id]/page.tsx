@@ -194,6 +194,7 @@ export default function AdminImportDetailPage() {
       <ImportDetailBody
         imp={imp}
         review={review}
+        baselineMode={baselineMode}
         hasDraft={hasDraft}
         merging={merging}
         mergeMsg={mergeMsg}

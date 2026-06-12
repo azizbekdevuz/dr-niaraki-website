@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import React from 'react';
 
+import { ImportAiReviewAssistantPanel } from './ImportAiReviewAssistantPanel';
 import { ImportCandidateReviewPanels } from './ImportCandidateReviewPanels';
 import { ImportCandidateSummaryCard } from './ImportCandidateSummaryCard';
-import type { ImportDetailModel, ReviewPayloadModel } from './importDetailTypes';
+import type { ImportDetailModel, ReviewBaselineQuery, ReviewPayloadModel } from './importDetailTypes';
 import { ImportMergeDraftCard } from './ImportMergeDraftCard';
 import { ImportProvenanceCard } from './ImportProvenanceCard';
 import { ImportReviewWarningsPanel } from './ImportReviewWarningsPanel';
@@ -14,6 +15,7 @@ import { ImportStructuredReviewBlocks } from './ImportStructuredReviewBlocks';
 type Props = {
   imp: ImportDetailModel;
   review: ReviewPayloadModel | null;
+  baselineMode: ReviewBaselineQuery;
   hasDraft: boolean;
   merging: boolean;
   mergeMsg: string | null;
@@ -24,7 +26,16 @@ type Props = {
   ) => void;
 };
 
-export function ImportDetailBody({ imp, review, hasDraft, merging, mergeMsg, error, onMerge }: Props) {
+export function ImportDetailBody({
+  imp,
+  review,
+  baselineMode,
+  hasDraft,
+  merging,
+  mergeMsg,
+  error,
+  onMerge,
+}: Props) {
   return (
     <div className="min-h-[60vh] px-4 py-8">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -55,6 +66,8 @@ export function ImportDetailBody({ imp, review, hasDraft, merging, mergeMsg, err
         <ImportCandidateReviewPanels imp={imp} review={review} />
 
         {review ? <ImportReviewWarningsPanel review={review} /> : null}
+
+        <ImportAiReviewAssistantPanel importId={imp.id} baselineMode={baselineMode} />
 
         <ImportMergeDraftCard
           imp={imp}

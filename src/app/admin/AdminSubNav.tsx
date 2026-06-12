@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 const LINKS = [
   { href: '/admin/content', label: 'Site content' },
   { href: '/admin/imports', label: 'CV imports' },
+  { href: '/admin/ai', label: 'AI review' },
   { href: '/admin/upload', label: 'Upload & legacy commit' },
   { href: '/admin/history', label: 'Upload history' },
   { href: '/admin/devices', label: 'Devices' },

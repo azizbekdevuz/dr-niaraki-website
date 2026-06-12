@@ -49,6 +49,19 @@ Set these in the Vercel project (or your host’s secret manager). Names must ma
 
 Other optional vars (`ADMIN_UPLOAD_HISTORY_PRISMA_TAKE`, `NEXT_PUBLIC_ENABLE_CUSTOM_CURSOR`, GitHub mirror vars) are documented in `.env.example` and are not required for a minimal production deploy.
 
+**Optional — AI import review assistant (disabled by default):**
+
+| Variable | Purpose |
+|----------|---------|
+| `AI_PROVIDER` | `none` (default), `ollama`, `openrouter`, `groq`, or `openai` |
+| `AI_IMPORT_REVIEW_TIMEOUT_MS` | Server timeout for provider calls (default 15000) |
+| `AI_IMPORT_REVIEW_MAX_INPUT_CHARS` | Cap on minimized review context size |
+| `AI_IMPORT_REVIEW_RATE_LIMIT_PER_HOUR` | Per-admin-session rate limit (default 10) |
+| `OLLAMA_*` | Self-hosted Ollama base URL, model, allowlist |
+| `OPENROUTER_*` / `GROQ_*` / `OPENAI_*` | Hosted provider API keys and allowlisted models (server-only) |
+
+Leave `AI_PROVIDER=none` unless the operator explicitly enables advisory AI. External providers receive minimized review context only - not DOCX bytes or full raw document text. Do not enable for private CV data unless you accept provider privacy and logging terms. See [Admin import workflow - AI review](./admin-import-workflow.md#6b-optional---ai-review-assistant-advisory-only).
+
 ---
 
 ## C. Security notes
@@ -201,4 +214,4 @@ Reference: [What `safe_update` protects](./admin-import-workflow.md#what-safe_up
 
 ## After this checklist
 
-When all items pass on staging (and again on production if separate), the non-AI editorial pipeline is ready for live use. Proceed to Phase 10 AI assistant design only after operator sign-off on this checklist.
+When all items pass on staging (and again on production if separate), the editorial pipeline is ready for live use. AI import review remains **optional** and **off by default** - enable only after operator sign-off on data-minimization and provider privacy terms.

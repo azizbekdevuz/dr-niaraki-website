@@ -77,6 +77,23 @@ Structured review blocks show **added / removed / changed** per section (profile
 
 **Merge safety** (separate from compare baseline) always evaluates against **working draft if valid, else canonical** — this drives which sections are included in **safe update**.
 
+### 6b. Optional - AI review assistant (advisory only)
+
+On the import detail page, **AI review assistant** appears after parser warnings and **before** merge controls.
+
+- **Disabled by default** (`AI_PROVIDER=none`). Enable only when you accept provider privacy/logging terms for minimized review context.
+- **Review-only:** suggestions never merge, publish, edit drafts, or change the public site. There is no "Apply suggestion" action.
+- Click **Generate AI suggestions** manually - no automatic call on page load.
+- The server sends **minimized** context (warnings, count validation, merge safety, truncated block summaries). It never sends DOCX bytes, `rawDocumentText`, or full publication/patent bodies.
+- **Provider options** (see `/admin/ai` and `.env.example`):
+  - **Ollama** - best free/open-source option when self-hosted on your VPS or machine.
+  - **OpenRouter / Groq** - hosted; may expose free or low-cost models but are **rate-limited** and subject to provider policies (not unlimited or guaranteed forever-free).
+  - **OpenAI** - optional paid hosted inference.
+- API keys and base URLs stay in **server env only**. Active provider/model are set via `AI_PROVIDER` and provider env vars (redeploy to switch).
+- AI failure or rate limits do **not** block import review, merge, draft, or publish.
+
+`POST /api/admin/imports/[id]/ai-review` (admin session + registered device required).
+
 ### 7. Choose merge mode and create working draft
 
 On **Merge into working draft**:

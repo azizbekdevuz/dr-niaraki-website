@@ -108,3 +108,42 @@ export type ImportMergeSafetyModel = {
   /** Cross-cutting notes (unmapped sections, envelope hints, parser severity, etc.). */
   notes: string[];
 };
+
+export type AiReviewSectionNoteModel = {
+  sectionId: string;
+  severity: 'info' | 'warning' | 'danger';
+  message: string;
+  suggestedAction: 'review_manually' | 'safe_to_proceed' | 'do_not_full_replace' | 'check_counts';
+};
+
+export type AiReviewSuggestionModel = {
+  advisory: true;
+  enabled: boolean;
+  provider: string;
+  model?: string;
+  status: 'ok' | 'disabled' | 'error' | 'timeout' | 'misconfigured';
+  generatedAt: string;
+  inputHash: string;
+  summary?: string;
+  sectionNotes?: AiReviewSectionNoteModel[];
+  disclaimers: string[];
+  error?: string;
+};
+
+export type AiProviderSettingsModel = {
+  activeProvider: string;
+  activeModel: string | null;
+  switchingMode: 'env_only';
+  switchingNote: string;
+  providers: Array<{
+    id: string;
+    label: string;
+    status: string;
+    active: boolean;
+    model: string | null;
+    allowedModels: string[];
+    statusMessage: string;
+    hostedNote?: string;
+  }>;
+  disclaimers: string[];
+};
