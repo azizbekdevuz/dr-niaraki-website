@@ -4,7 +4,9 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { parseEducation, parseExperience, parseAwards } from '@/parser/educationParser';
+import { parseAwards } from '@/parser/awardsParser';
+import { parseEducation } from '@/parser/educationParser';
+import { parseExperience } from '@/parser/experienceParser';
 import { parsePatents } from '@/parser/patentsParser';
 import { parsePublications } from '@/parser/publicationsParser';
 

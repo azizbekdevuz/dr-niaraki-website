@@ -15,11 +15,13 @@ import type {
 } from '@/types/details';
 import type { DetectedSection, ParseWarning } from '@/types/parser';
 
+import { parseAwards } from './awardsParser';
 import { parseContact } from './contactParser';
 import { appendNarrativeFromDetectedSection } from './cvNarrativeExtraction';
 import { parseGrantsSection, parseResearchSection } from './docxParserResearch';
 import { handleUnknownSection } from './docxParserUnknownSection';
-import { parseEducation, parseExperience, parseAwards } from './educationParser';
+import { parseEducation } from './educationParser';
+import { parseExperience } from './experienceParser';
 import { parsePatents } from './patentsParser';
 import { parsePublications } from './publicationsParser';
 

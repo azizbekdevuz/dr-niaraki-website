@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { parseExperience } from '@/parser/educationParser';
+import { parseExperience } from '@/parser/experienceParser';
 
 describe('Experience Parser', () => {
   it('should parse experience entries', () => {
