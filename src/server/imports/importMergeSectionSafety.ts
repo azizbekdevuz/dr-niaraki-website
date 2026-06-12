@@ -184,6 +184,8 @@ export function evaluateImportMergeSectionSafety(input: {
   summarySizeHint?: { importedChars: number; baselineChars: number };
   /** Optional data-quality signals for journey and experience sections. */
   qualityHints?: ImportQualityHints;
+  /** Non-blocking notes from summary trim/dedup (from sanitizeImportedSummary). */
+  summaryTrimNotes?: readonly string[];
 }): ImportMergeSafetyReport {
   const notes: string[] = [];
   const bm = blockMap(input.reviewBlocks);
@@ -269,6 +271,12 @@ export function evaluateImportMergeSectionSafety(input: {
       notes.push(
         `Professional summary import is significantly longer than current (${sh.importedChars} vs ${sh.baselineChars} chars) — safe update will merge it, but review before publishing.`,
       );
+    }
+  }
+  if (input.summaryTrimNotes?.length) {
+    for (const note of input.summaryTrimNotes) {
+      summaryReasons.push(note);
+      notes.push(`Summary sanitization: ${note}`);
     }
   }
   sections.push({

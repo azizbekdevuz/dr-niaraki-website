@@ -24,6 +24,7 @@ import {
 } from '@/server/imports/importReviewStructured';
 import { getContentImportDetail, updateImportStatus } from '@/server/imports/repository';
 import { buildImportCandidateReviewMetadata } from '@/server/imports/serialize';
+import { sanitizeImportedSummary } from '@/server/imports/summarySanitize';
 
 function toJsonPayload(data: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(data)) as Prisma.InputJsonValue;
@@ -116,6 +117,13 @@ export async function mergeImportCandidateToWorkingDraft(input: {
   const safetyBlocks = buildStructuredReviewBlocks(baselineData, mergedFull, provenance);
   const baselineSlice = extractEditorSliceFromSiteContent(baselineData);
   const mergedFullSlice = extractEditorSliceFromSiteContent(mergedFull);
+  const { trimNotes: summaryTrimNotes } = sanitizeImportedSummary({
+    profileSummary: details.profile.summary ?? undefined,
+    brief: details.about.brief ?? undefined,
+    full: details.about.full ?? undefined,
+    profileTitle: details.profile.title ?? undefined,
+    cvSummaryMergePolicy: details.meta?.cvSummaryMergePolicy ?? undefined,
+  });
   const safety = evaluateImportMergeSectionSafety({
     reviewBlocks: safetyBlocks,
     candidateReview: buildImportCandidateReviewMetadata(importRow.candidatePayload),
@@ -137,6 +145,7 @@ export async function mergeImportCandidateToWorkingDraft(input: {
         totalCount: details.about.positions.length,
       },
     },
+    summaryTrimNotes,
   });
 
   const mergeMode = input.mergeMode ?? 'safe_update';

@@ -274,6 +274,21 @@ describe('importMergeSectionSafety', () => {
     expect(exp?.includeInSafeMerge).toBe(true);
   });
 
+  it('summaryTrimNotes appear as non-blocking reasons and top-level notes on summary section', () => {
+    const report = evaluateImportMergeSectionSafety({
+      reviewBlocks: [],
+      candidateReview: candidateReview(),
+      summaryTrimNotes: ['Home intro trimmed from 900 to 598 chars to fit display limit (600).'],
+    });
+    const summary = report.sections.find((s) => s.id === 'summary');
+    expect(summary?.risk).toBe('safe_to_merge');
+    expect(summary?.includeInSafeMerge).toBe(true);
+    expect(summary?.reasons.some((r) => r.includes('Home intro trimmed'))).toBe(true);
+    expect(report.notes.some((n) => n.includes('Home intro trimmed'))).toBe(true);
+    // Non-blocking: does not require ack on its own
+    expect(report.fullReplaceRequiresAck).toBe(false);
+  });
+
   it('safe_update excludes risky sections but is not blocked when quality warnings present', () => {
     const report = evaluateImportMergeSectionSafety({
       reviewBlocks: [],

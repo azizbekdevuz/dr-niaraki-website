@@ -24,6 +24,7 @@ import {
   type ReviewBaselineMode,
 } from '@/server/imports/reviewBaseline';
 import { buildImportCandidateReviewMetadata } from '@/server/imports/serialize';
+import { sanitizeImportedSummary } from '@/server/imports/summarySanitize';
 export type { ImportReviewBlock } from '@/server/imports/importReviewStructured';
 
 export type ImportReviewPayload = {
@@ -173,6 +174,13 @@ export async function buildImportReviewPayload(
   const mergeSafetyBlocks = buildStructuredReviewBlocks(mergeBaseline, mergedForMergePolicy, provenance);
   const mergeBaselineSlice = extractEditorSliceFromSiteContent(mergeBaseline);
   const mergedForMergePolicySlice = extractEditorSliceFromSiteContent(mergedForMergePolicy);
+  const { trimNotes: summaryTrimNotes } = sanitizeImportedSummary({
+    profileSummary: parsed.profile.summary ?? undefined,
+    brief: parsed.about.brief ?? undefined,
+    full: parsed.about.full ?? undefined,
+    profileTitle: parsed.profile.title ?? undefined,
+    cvSummaryMergePolicy: parsed.meta?.cvSummaryMergePolicy ?? undefined,
+  });
   const mergeSafety = evaluateImportMergeSectionSafety({
     reviewBlocks: mergeSafetyBlocks,
     candidateReview: buildImportCandidateReviewMetadata(row.candidatePayload),
@@ -194,6 +202,7 @@ export async function buildImportReviewPayload(
         totalCount: parsed.about.positions.length,
       },
     },
+    summaryTrimNotes,
   });
 
   const mergedCandidate = mergeCvDetailsIntoSiteContent(parsed, baseline);

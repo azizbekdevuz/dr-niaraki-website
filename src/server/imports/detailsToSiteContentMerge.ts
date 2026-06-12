@@ -2,7 +2,6 @@ import type { ResearchProjectItem, SiteContent } from '@/content/schema';
 import { applyCvNarrativeSectionsToSiteContent } from '@/server/imports/cvNarrativeToSimpleLists';
 import {
   awardImpactFrom,
-  nonEmptyLines,
   normalizedPublicationYear,
   patentStatus,
   patentType,
@@ -10,6 +9,7 @@ import {
 } from '@/server/imports/detailsMergeNormalize';
 import { mergeResearchInterestsFromDetails } from '@/server/imports/detailsMergeResearchInterests';
 import type { CvDetailsMergeFreezeKey } from '@/server/imports/importMergeSectionSafety';
+import { sanitizeImportedSummary } from '@/server/imports/summarySanitize';
 import type { DetailsSchemaType } from '@/validators/detailsSchema';
 
 function mapDetailsResearchProjectToSite(p: DetailsSchemaType['research']['projects'][number]): ResearchProjectItem {
@@ -49,30 +49,21 @@ export function mergeCvDetailsIntoSiteContent(
   }
 
   if (!fr.has('summary')) {
-    const split = details.meta?.cvSummaryMergePolicy === 'split_v1';
+    const sanitized = sanitizeImportedSummary({
+      profileSummary: details.profile.summary ?? undefined,
+      brief: details.about.brief ?? undefined,
+      full: details.about.full ?? undefined,
+      profileTitle: details.profile.title ?? undefined,
+      cvSummaryMergePolicy: details.meta?.cvSummaryMergePolicy ?? undefined,
+    });
 
-    const summaryBits = split
-      ? [
-          ...nonEmptyLines(details.profile.summary ?? undefined),
-          ...nonEmptyLines(details.about.brief ?? undefined),
-        ]
-      : [
-          ...nonEmptyLines(details.profile.summary ?? undefined),
-          ...nonEmptyLines(details.about.brief ?? undefined),
-          ...nonEmptyLines(details.about.full ?? undefined),
-        ];
-    const paras = summaryBits.length > 0 ? summaryBits : next.about.page.professionalSummaryParagraphs;
+    const paras =
+      sanitized.professionalSummaryParagraphs.length > 0
+        ? sanitized.professionalSummaryParagraphs
+        : next.about.page.professionalSummaryParagraphs;
     next.about.page.professionalSummaryParagraphs = paras;
-    next.profile.homeAboutIntro =
-      (details.profile.summary ?? details.about.brief ?? next.profile.homeAboutIntro).trim().slice(0, 1200) ||
-      next.profile.homeAboutIntro;
-    next.profile.aboutIntroTagline = (
-      details.about.brief ??
-      details.profile.title ??
-      next.profile.aboutIntroTagline
-    )
-      .trim()
-      .slice(0, 800);
+    next.profile.homeAboutIntro = sanitized.homeAboutIntro || next.profile.homeAboutIntro;
+    next.profile.aboutIntroTagline = sanitized.aboutIntroTagline || next.profile.aboutIntroTagline;
   }
 
   if (!fr.has('journey')) {
