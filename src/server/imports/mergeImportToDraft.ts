@@ -4,7 +4,6 @@ import type { ContentVersion, Prisma } from '@prisma/client';
 
 import { SITE_CONTENT_RAW } from '@/content/defaults';
 import { validateSiteContent } from '@/content/validators';
-import { extractEditorSliceFromSiteContent } from '@/lib/draftEditorSlice';
 import { recordContentEvent } from '@/server/content/contentEvents';
 import {
   ContentWorkflowError,
@@ -12,20 +11,12 @@ import {
   getWorkingDraft,
 } from '@/server/content/contentWorkflowCore';
 import { prisma } from '@/server/db/prisma';
+import { buildImportMergeSafetyReport } from '@/server/imports/buildImportMergeSafetyReport';
 import { getDetailsFromCandidatePayload } from '@/server/imports/candidatePayload/schema';
-import { deriveImportQualityHints } from '@/server/imports/deriveImportQualityHints';
 import { mergeCvDetailsIntoSiteContent } from '@/server/imports/detailsToSiteContentMerge';
-import {
-  evaluateImportMergeSectionSafety,
-  freezeKeysFromSafetyReport,
-} from '@/server/imports/importMergeSectionSafety';
-import {
-  buildStructuredReviewBlocks,
-  type ImportReviewProvenance,
-} from '@/server/imports/importReviewStructured';
+import { freezeKeysFromSafetyReport } from '@/server/imports/importMergeSectionSafety';
+import { type ImportReviewProvenance } from '@/server/imports/importReviewStructured';
 import { getContentImportDetail, updateImportStatus } from '@/server/imports/repository';
-import { buildImportCandidateReviewMetadata } from '@/server/imports/serialize';
-import { sanitizeImportedSummary } from '@/server/imports/summarySanitize';
 
 function toJsonPayload(data: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(data)) as Prisma.InputJsonValue;
@@ -114,27 +105,11 @@ export async function mergeImportCandidateToWorkingDraft(input: {
     uploadedFileId: importRow.uploadedFile.id,
   };
 
-  const mergedFull = mergeCvDetailsIntoSiteContent(details, baselineData);
-  const safetyBlocks = buildStructuredReviewBlocks(baselineData, mergedFull, provenance);
-  const baselineSlice = extractEditorSliceFromSiteContent(baselineData);
-  const mergedFullSlice = extractEditorSliceFromSiteContent(mergedFull);
-  const { trimNotes: summaryTrimNotes } = sanitizeImportedSummary({
-    profileSummary: details.profile.summary ?? undefined,
-    brief: details.about.brief ?? undefined,
-    full: details.about.full ?? undefined,
-    profileTitle: details.profile.title ?? undefined,
-    cvSummaryMergePolicy: details.meta?.cvSummaryMergePolicy ?? undefined,
-  });
-  const safety = evaluateImportMergeSectionSafety({
-    reviewBlocks: safetyBlocks,
-    candidateReview: buildImportCandidateReviewMetadata(importRow.candidatePayload),
-    cvNarrativeSections: details.about.cvNarrativeSections,
-    summarySizeHint: {
-      importedChars: mergedFullSlice.aboutProfessionalSummaryText.length,
-      baselineChars: baselineSlice.aboutProfessionalSummaryText.length,
-    },
-    qualityHints: deriveImportQualityHints(details, baselineData),
-    summaryTrimNotes,
+  const { mergeSafety: safety } = buildImportMergeSafetyReport({
+    details,
+    mergeBaseline: baselineData,
+    candidatePayload: importRow.candidatePayload,
+    provenance,
   });
 
   const mergeMode = input.mergeMode ?? 'safe_update';

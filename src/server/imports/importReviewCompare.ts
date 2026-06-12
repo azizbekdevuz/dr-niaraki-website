@@ -2,15 +2,11 @@ import 'server-only';
 
 import { SITE_CONTENT_RAW } from '@/content/defaults';
 import { assertSiteContent, validateSiteContent } from '@/content/validators';
-import { extractEditorSliceFromSiteContent } from '@/lib/draftEditorSlice';
 import { getLatestPublishedVersion, getWorkingDraft } from '@/server/content/contentWorkflowCore';
+import { buildImportMergeSafetyReport } from '@/server/imports/buildImportMergeSafetyReport';
 import { getDetailsFromCandidatePayload, parseImportCandidatePayload } from '@/server/imports/candidatePayload/schema';
-import { deriveImportQualityHints } from '@/server/imports/deriveImportQualityHints';
 import { mergeCvDetailsIntoSiteContent } from '@/server/imports/detailsToSiteContentMerge';
-import {
-  evaluateImportMergeSectionSafety,
-  type ImportMergeSafetyReport,
-} from '@/server/imports/importMergeSectionSafety';
+import { type ImportMergeSafetyReport } from '@/server/imports/importMergeSectionSafety';
 import {
   buildStructuredReviewBlocks,
   LEGACY_UPLOADS_META_NOTE,
@@ -24,8 +20,6 @@ import {
   type ReviewBaselineCapabilities,
   type ReviewBaselineMode,
 } from '@/server/imports/reviewBaseline';
-import { buildImportCandidateReviewMetadata } from '@/server/imports/serialize';
-import { sanitizeImportedSummary } from '@/server/imports/summarySanitize';
 export type { ImportReviewBlock } from '@/server/imports/importReviewStructured';
 
 export type ImportReviewPayload = {
@@ -171,27 +165,11 @@ export async function buildImportReviewPayload(
     : validateSiteContent(SITE_CONTENT_RAW);
   const mergeBaseline =
     mergeBaselineRes.success && mergeBaselineRes.data ? mergeBaselineRes.data : assertSiteContent(SITE_CONTENT_RAW);
-  const mergedForMergePolicy = mergeCvDetailsIntoSiteContent(parsed, mergeBaseline);
-  const mergeSafetyBlocks = buildStructuredReviewBlocks(mergeBaseline, mergedForMergePolicy, provenance);
-  const mergeBaselineSlice = extractEditorSliceFromSiteContent(mergeBaseline);
-  const mergedForMergePolicySlice = extractEditorSliceFromSiteContent(mergedForMergePolicy);
-  const { trimNotes: summaryTrimNotes } = sanitizeImportedSummary({
-    profileSummary: parsed.profile.summary ?? undefined,
-    brief: parsed.about.brief ?? undefined,
-    full: parsed.about.full ?? undefined,
-    profileTitle: parsed.profile.title ?? undefined,
-    cvSummaryMergePolicy: parsed.meta?.cvSummaryMergePolicy ?? undefined,
-  });
-  const mergeSafety = evaluateImportMergeSectionSafety({
-    reviewBlocks: mergeSafetyBlocks,
-    candidateReview: buildImportCandidateReviewMetadata(row.candidatePayload),
-    cvNarrativeSections: parsed.about.cvNarrativeSections,
-    summarySizeHint: {
-      importedChars: mergedForMergePolicySlice.aboutProfessionalSummaryText.length,
-      baselineChars: mergeBaselineSlice.aboutProfessionalSummaryText.length,
-    },
-    qualityHints: deriveImportQualityHints(parsed, mergeBaseline),
-    summaryTrimNotes,
+  const { mergeSafety } = buildImportMergeSafetyReport({
+    details: parsed,
+    mergeBaseline,
+    candidatePayload: row.candidatePayload,
+    provenance,
   });
 
   const mergedCandidate = mergeCvDetailsIntoSiteContent(parsed, baseline);

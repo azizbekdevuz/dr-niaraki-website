@@ -19,23 +19,16 @@ vi.mock('@/server/content/contentWorkflowCore', async () => {
 import { SITE_CONTENT_RAW } from '@/content/defaults';
 import type { SiteContent } from '@/content/schema';
 import { assertSiteContent } from '@/content/validators';
-import { extractEditorSliceFromSiteContent } from '@/lib/draftEditorSlice';
 import { getLatestPublishedVersion, getWorkingDraft } from '@/server/content/contentWorkflowCore';
+import { buildImportMergeSafetyReport } from '@/server/imports/buildImportMergeSafetyReport';
 import { buildImportCandidatePayload } from '@/server/imports/candidatePayload/builder';
-import { mergeCvDetailsIntoSiteContent } from '@/server/imports/detailsToSiteContentMerge';
 import {
-  evaluateImportMergeSectionSafety,
   freezeKeysFromSafetyReport,
   type ImportMergeSafetyReport,
 } from '@/server/imports/importMergeSectionSafety';
 import { buildImportReviewPayload } from '@/server/imports/importReviewCompare';
-import {
-  buildStructuredReviewBlocks,
-  type ImportReviewProvenance,
-} from '@/server/imports/importReviewStructured';
+import { type ImportReviewProvenance } from '@/server/imports/importReviewStructured';
 import { getContentImportDetail, getPriorImportSourceTextHash } from '@/server/imports/repository';
-import { buildImportCandidateReviewMetadata } from '@/server/imports/serialize';
-import { sanitizeImportedSummary } from '@/server/imports/summarySanitize';
 import { minimalImportDetails } from '@/tests/fixtures/minimalImportDetails';
 import type { DetailsSchemaType } from '@/validators/detailsSchema';
 
@@ -52,49 +45,18 @@ function safetySection(report: ImportMergeSafetyReport, id: string) {
   return row!;
 }
 
-/** Mirrors merge-safety evaluation in `buildImportReviewPayload` / `mergeImportToDraft` (pure path). */
 function computeMergeSafetyReport(input: {
   details: DetailsSchemaType;
   mergeBaseline: SiteContent;
   candidatePayload: unknown;
   provenance?: ImportReviewProvenance;
 }): ImportMergeSafetyReport {
-  const provenance = input.provenance ?? PROVENANCE;
-  const mergedFull = mergeCvDetailsIntoSiteContent(input.details, input.mergeBaseline);
-  const safetyBlocks = buildStructuredReviewBlocks(input.mergeBaseline, mergedFull, provenance);
-  const mergeBaselineSlice = extractEditorSliceFromSiteContent(input.mergeBaseline);
-  const mergedFullSlice = extractEditorSliceFromSiteContent(mergedFull);
-  const { trimNotes: summaryTrimNotes } = sanitizeImportedSummary({
-    profileSummary: input.details.profile.summary ?? undefined,
-    brief: input.details.about.brief ?? undefined,
-    full: input.details.about.full ?? undefined,
-    profileTitle: input.details.profile.title ?? undefined,
-    cvSummaryMergePolicy: input.details.meta?.cvSummaryMergePolicy ?? undefined,
-  });
-  return evaluateImportMergeSectionSafety({
-    reviewBlocks: safetyBlocks,
-    candidateReview: buildImportCandidateReviewMetadata(input.candidatePayload),
-    cvNarrativeSections: input.details.about.cvNarrativeSections,
-    summarySizeHint: {
-      importedChars: mergedFullSlice.aboutProfessionalSummaryText.length,
-      baselineChars: mergeBaselineSlice.aboutProfessionalSummaryText.length,
-    },
-    qualityHints: {
-      journeyCollapse: {
-        importedCount: input.details.about.education.length,
-        baselineCount: input.mergeBaseline.about.journey.length,
-        hasGiantRows: input.details.about.education.some(
-          (e) => (e.details?.length ?? 0) > 400 || (e.raw?.length ?? 0) > 400,
-        ),
-      },
-      experienceQuality: {
-        unknownOrgCount: input.details.about.positions.filter((p) => p.institution === 'Unknown Organization')
-          .length,
-        totalCount: input.details.about.positions.length,
-      },
-    },
-    summaryTrimNotes,
-  });
+  return buildImportMergeSafetyReport({
+    details: input.details,
+    mergeBaseline: input.mergeBaseline,
+    candidatePayload: input.candidatePayload,
+    provenance: input.provenance ?? PROVENANCE,
+  }).mergeSafety;
 }
 
 function envelopeFromDetails(
