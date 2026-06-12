@@ -1,10 +1,9 @@
 {
   "meta": {
-    "parsedAt": "2026-06-12T14:04:14.466Z",
+    "parsedAt": "2026-06-12T14:47:07.016Z",
     "uploader": "admin",
     "warnings": [
-      "unknown_section: Unrecognized section: \"Preamble\" - please review",
-      "education: Education 5: institution not found"
+      "unknown_section: Unrecognized section: \"Preamble\" - please review"
     ],
     "commitSha": null,
     "parserVersion": "v1.3.0",
@@ -153,79 +152,43 @@
     ],
     "education": [
       {
-        "id": "post-doctoral-fellowship-the-d-108a2ed6",
-        "raw": "Post-Doctoral Fellowship | The Department of Infrastructure Engineering, University of Melbourne, Australia\nMay 2012 - October 2012\nAustralian Endeavour Program recipient\nResearch focus on spatial data infrastructure (SDI)",
-        "year": "2012",
+        "id": "post-doctoral-fellowship-the-d-6fb0d45d",
+        "raw": "Post-Doctoral Fellowship | The Department of Infrastructure Engineering, University of Melbourne, Australia\nMay 2012 - October 2012\nAustralian Endeavour Program recipient\nResearch focus on spatial data infrastructure (SDI)\nPost-Doctoral Fellow | INHA University, South Korea\nSeptember 2008 - February 2009\nDepartment of Geo-Informatic Engineering",
+        "year": "2009",
         "degree": "Post-Doctoral Fellowship",
-        "period": "2012 - 2012",
+        "period": "2012 - 2009",
         "thesis": null,
-        "details": "May 2012 - October 2012\nAustralian Endeavour Program recipient\nResearch focus on spatial data infrastructure (SDI)",
+        "details": "May 2012 - October 2012\nAustralian Endeavour Program recipient\nResearch focus on spatial data infrastructure (SDI)\nPost-Doctoral Fellow | INHA University, South Korea\nSeptember 2008 - February 2009\nDepartment of Geo-Informatic Engineering",
         "location": "Australia",
         "supervisor": null,
         "institution": "The Department of Infrastructure Engineering, University of Melbourne, Australia"
       },
       {
-        "id": "post-doctoral-fellow-inha-univ-c0637cc5",
-        "raw": "Post-Doctoral Fellow | INHA University, South Korea\nSeptember 2008 - February 2009\nDepartment of Geo-Informatic Engineering",
-        "year": "2009",
-        "degree": "Post-Doctoral Fellowship",
-        "period": "2008 - 2009",
-        "thesis": null,
-        "details": "September 2008 - February 2009\nDepartment of Geo-Informatic Engineering",
-        "location": "South Korea",
-        "supervisor": null,
-        "institution": "INHA University, South Korea"
-      },
-      {
-        "id": "ph-d-in-geo-informatics-engine-ddb7c2ab",
-        "raw": "Ph.D. in Geo-Informatics Engineering | INHA University, South Korea\nMarch 2005 - August 2008\nDissertation: \"Ontology based geospatial model for personalized route finding\"",
+        "id": "ph-d-in-geo-informatics-engine-e441dbb2",
+        "raw": "Ph.D. in Geo-Informatics Engineering | INHA University, South Korea\nMarch 2005 - August 2008\nDissertation: \"Ontology based geospatial model for personalized route finding\"\nPhD Supervisor: Prof. Kyehyun Kim (Renowned as the \"Father of GIS\" in Korea)",
         "year": "2008",
         "degree": "Ph.D. in Geo-Informatics Engineering",
         "period": "2005 - 2008",
         "thesis": "Ontology based geospatial model for personalized route finding",
-        "details": "March 2005 - August 2008\nDissertation: \"Ontology based geospatial model for personalized route finding\"",
+        "details": "March 2005 - August 2008\nDissertation: \"Ontology based geospatial model for personalized route finding\"\nPhD Supervisor: Prof. Kyehyun Kim (Renowned as the \"Father of GIS\" in Korea)",
         "location": "South Korea",
-        "supervisor": null,
+        "supervisor": "Kyehyun Kim (Renowned as the \"Father of GIS\" in Korea)",
         "institution": "INHA University, South Korea"
       },
       {
-        "id": "phd-supervisor-prof-kyehyun-ki-f8185c0b",
-        "raw": "PhD Supervisor: Prof. Kyehyun Kim (Renowned as the \"Father of GIS\" in Korea)",
-        "year": null,
-        "degree": "Ph.D.",
-        "period": null,
-        "thesis": null,
-        "details": null,
-        "location": "Korea",
-        "supervisor": "Kyehyun Kim (Renowned as the \"Father of GIS\" in Korea)",
-        "institution": "Unknown Institution"
-      },
-      {
-        "id": "m-sc-in-gis-engineering-k-n-to-6eec2c7e",
-        "raw": "M.Sc. in GIS Engineering | K.N. Toosi University of Technology (KNTU)\nFebruary 2000 - November 2002\nThesis: \"Defining Cost Model for Iranian Road Network in GIS\"",
+        "id": "m-sc-in-gis-engineering-k-n-to-636a301d",
+        "raw": "M.Sc. in GIS Engineering | K.N. Toosi University of Technology (KNTU)\nFebruary 2000 - November 2002\nThesis: \"Defining Cost Model for Iranian Road Network in GIS\"\nMSc. Supervisors: Prof. Masoud Varshosaz (Supervisor; a UCL-educated scholar from University College London, consistently ranked among the world’s top universities in QS rankings) and Prof. Ali Asghar Alesheikh (Advisor; University of Calgary, also ranked among the world’s top universities in QS rankings).",
         "year": "2002",
         "degree": "M.Sc. in GIS Engineering",
         "period": "2000 - 2002",
         "thesis": "Defining Cost Model for Iranian Road Network in GIS",
-        "details": "February 2000 - November 2002\nThesis: \"Defining Cost Model for Iranian Road Network in GIS\"",
+        "details": "February 2000 - November 2002\nThesis: \"Defining Cost Model for Iranian Road Network in GIS\"\nMSc. Supervisors: Prof. Masoud Varshosaz (Supervisor; a UCL-educated scholar from University College London, consistently ranked among the world’s top universities in QS rankings) and Prof. Ali Asghar Alesheikh (Advisor; University of Calgary, also ranked among the world’s top universities in QS rankings).",
         "location": "Iran",
-        "supervisor": null,
+        "supervisor": "Masoud Varshosaz (Supervisor; a UCL-educated scholar from University College London, consistently ranked among the world’s top universities in QS rankings) and Prof. Ali Asghar Alesheikh (Advisor; University of Calgary, also ranked among the world’s top universities in QS rankings).",
         "institution": "K.N. Toosi University of Technology (KNTU)"
       },
       {
-        "id": "msc-supervisors-prof-masoud-va-45969120",
-        "raw": "MSc. Supervisors: Prof. Masoud Varshosaz (Supervisor; a UCL-educated scholar from University College London, consistently ranked among the world’s top universities in QS rankings) and Prof. Ali Asghar Alesheikh (Advisor; University of Calgary, also ranked among the world’s top universities in QS rankings).",
-        "year": null,
-        "degree": "M.Sc.",
-        "period": null,
-        "thesis": null,
-        "details": null,
-        "location": null,
-        "supervisor": "Masoud Varshosaz (Supervisor; a UCL-educated scholar from University College London, consistently ranked among the world’s top universities in QS rankings) and Prof. Ali Asghar Alesheikh (Advisor; University of Calgary, also ranked among the world’s top universities in QS rankings).",
-        "institution": "University College London"
-      },
-      {
-        "id": "b-sc-in-geomatics-civil-engine-86059bbf",
+        "id": "b-sc-in-geomatics-civil-engine-87f3f426",
         "raw": "B.Sc. in Geomatics-Civil Engineering | KNTU\nSeptember 1995 - December 1999\nAt the undergraduate level, our program did not include a formal thesis; instead, we completed a two-month intensive field training program with a strong emphasis on hands-on and practical experience.",
         "year": "1999",
         "degree": "B.Sc. in Geomatics-Civil Engineering",
