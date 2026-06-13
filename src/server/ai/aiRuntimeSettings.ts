@@ -391,13 +391,12 @@ function resolveAuditPreviousSnapshot(
       model: existing.model,
     };
   }
+
   const env = getEnvEffectiveSelection();
+
   return {
     enabled: env.enabled,
-    provider:
-      env.provider !== 'none' && isSelectableProviderId(env.provider)
-        ? env.provider
-        : resolveDefaultSelectableProvider(),
+    provider: env.provider,
     model: env.model,
   };
 }

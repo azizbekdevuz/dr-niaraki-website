@@ -142,15 +142,38 @@ function GenerateAction({
   if (providerSettingsError || loadingSettings) {
     return null;
   }
+  const displayMessage = message ?? 'AI review is currently unavailable. Check';
   return (
     <p className="text-xs text-muted" data-testid="ai-disabled-message">
-      {message}{' '}
+      {displayMessage}{' '}
       <Link href="/admin/ai" className="text-accent-primary hover:underline">
         AI settings
       </Link>
       .
     </p>
   );
+}
+
+function resolveDisabledMessage(
+  settings: AiProviderSettingsModel | null,
+  aiEnabled: boolean,
+  providerSettingsError: string | null,
+  loadingSettings: boolean,
+  activeProvider: AiProviderSettingsModel['providers'][number] | undefined,
+): string | null {
+  if (aiEnabled || providerSettingsError || loadingSettings) {
+    return null;
+  }
+  if (!settings) {
+    return 'AI review is currently unavailable. Check';
+  }
+  if (!settings.enabled) {
+    return 'AI review is turned off. You can enable it in';
+  }
+  if (activeProvider?.status === 'misconfigured' || settings.activeProvider === 'none') {
+    return 'The selected AI provider is currently unavailable. Check';
+  }
+  return 'AI review is not available. Check';
 }
 
 export function ImportAiReviewAssistantPanel({ importId, baselineMode }: Props) {
@@ -168,7 +191,11 @@ export function ImportAiReviewAssistantPanel({ importId, baselineMode }: Props) 
       const res = await fetch('/api/admin/ai/settings', { credentials: 'include' });
       const data = await res.json();
       if (res.ok && data.ok) {
-        const next = data.settings as AiProviderSettingsModel;
+        const next = data.settings as AiProviderSettingsModel | undefined;
+        if (!next) {
+          setSettings(null);
+          return;
+        }
         if (next.settingsUnavailable) {
           setSettings(null);
           setProviderSettingsError('Provider status is currently unavailable.');
@@ -226,16 +253,13 @@ export function ImportAiReviewAssistantPanel({ importId, baselineMode }: Props) 
     settings?.activeProvider !== 'none' &&
     activeProvider?.status === 'configured';
 
-  let disabledMessage: string | null = null;
-  if (!aiEnabled && !providerSettingsError && !loadingSettings && settings) {
-    if (!settings.enabled) {
-      disabledMessage = 'AI review is turned off. You can enable it in';
-    } else if (activeProvider?.status === 'misconfigured' || settings.activeProvider === 'none') {
-      disabledMessage = 'The selected AI provider is currently unavailable. Check';
-    } else {
-      disabledMessage = 'AI review is not available. Check';
-    }
-  }
+  const disabledMessage = resolveDisabledMessage(
+    settings,
+    aiEnabled,
+    providerSettingsError,
+    loadingSettings,
+    activeProvider,
+  );
 
   const disclaimers = result?.disclaimers ?? settings?.disclaimers ?? [];
 

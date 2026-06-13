@@ -273,6 +273,128 @@ describe('aiRuntimeSettings', () => {
   });
 
   describe('saveAiRuntimeSettings', () => {
+    it('records env-none previous state on first save when AI_PROVIDER=none', async () => {
+      process.env.GROQ_API_KEY = 'gsk';
+      process.env.GROQ_MODEL = 'llama-3.1-8b-instant';
+      process.env.GROQ_ALLOWED_MODELS = 'llama-3.1-8b-instant';
+      vi.mocked(prisma.aiRuntimeSetting.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+        const tx = {
+          aiRuntimeSetting: {
+            findUnique: vi
+              .fn()
+              .mockResolvedValueOnce(null)
+              .mockResolvedValue({
+                id: AI_RUNTIME_SETTING_ID,
+                enabled: true,
+                provider: 'groq',
+                model: 'llama-3.1-8b-instant',
+                revision: 1,
+                updatedBy: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              }),
+            create: vi.fn().mockResolvedValue({
+              id: AI_RUNTIME_SETTING_ID,
+              enabled: true,
+              provider: 'groq',
+              model: 'llama-3.1-8b-instant',
+              revision: 1,
+              updatedBy: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }),
+            updateMany: vi.fn(),
+          },
+        };
+        return fn(tx as never);
+      });
+
+      await saveAiRuntimeSettings({
+        enabled: true,
+        provider: 'groq',
+        model: 'llama-3.1-8b-instant',
+        expectedRevision: null,
+        updatedBy: null,
+      });
+
+      expect(recordContentEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventType: 'SYSTEM_NOTE',
+          payload: expect.objectContaining({
+            kind: 'AI_RUNTIME_SETTINGS_UPDATED',
+            previousEnabled: false,
+            previousProvider: 'none',
+            previousModel: null,
+            nextEnabled: true,
+            nextProvider: 'groq',
+            nextModel: 'llama-3.1-8b-instant',
+          }),
+        }),
+      );
+    });
+
+    it('records configured env provider/model on first save when AI_PROVIDER is set', async () => {
+      process.env.AI_PROVIDER = 'groq';
+      process.env.GROQ_API_KEY = 'gsk';
+      process.env.GROQ_MODEL = 'llama-3.1-8b-instant';
+      process.env.GROQ_ALLOWED_MODELS = 'llama-3.1-8b-instant';
+      vi.mocked(prisma.aiRuntimeSetting.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+        const tx = {
+          aiRuntimeSetting: {
+            findUnique: vi
+              .fn()
+              .mockResolvedValueOnce(null)
+              .mockResolvedValue({
+                id: AI_RUNTIME_SETTING_ID,
+                enabled: false,
+                provider: 'groq',
+                model: null,
+                revision: 1,
+                updatedBy: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              }),
+            create: vi.fn().mockResolvedValue({
+              id: AI_RUNTIME_SETTING_ID,
+              enabled: false,
+              provider: 'groq',
+              model: null,
+              revision: 1,
+              updatedBy: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }),
+            updateMany: vi.fn(),
+          },
+        };
+        return fn(tx as never);
+      });
+
+      await saveAiRuntimeSettings({
+        enabled: false,
+        provider: 'groq',
+        model: null,
+        expectedRevision: null,
+        updatedBy: null,
+      });
+
+      expect(recordContentEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventType: 'SYSTEM_NOTE',
+          payload: expect.objectContaining({
+            kind: 'AI_RUNTIME_SETTINGS_UPDATED',
+            previousEnabled: true,
+            previousProvider: 'groq',
+            previousModel: 'llama-3.1-8b-instant',
+            nextEnabled: false,
+            nextModel: null,
+          }),
+        }),
+      );
+    });
+
     it('creates singleton row when expectedRevision is null', async () => {
       process.env.GROQ_API_KEY = 'gsk';
       process.env.GROQ_MODEL = 'llama-3.1-8b-instant';

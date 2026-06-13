@@ -338,7 +338,7 @@ export default function AdminAiSettingsPage() {
               {showTechnical ? (
                 <ul className="mt-2 list-disc space-y-1 pl-5">
                   <li>Secrets (API keys, Ollama URL) stay in server environment variables only.</li>
-                  <li>Database stores only on/off, provider id, and model name.</li>
+                  <li>Database stores only non-secret runtime settings and audit metadata, including on/off, provider, model, revision, and administrator attribution when available. Credentials remain environment-only.</li>
                   <li>Until the first save here, administrator env defaults apply.</li>
                   <li>Env vars: AI_PROVIDER, provider keys, allowlists — see .env.example.</li>
                 </ul>

@@ -182,6 +182,21 @@ describe('ImportAiReviewAssistantPanel', () => {
     expect(screen.queryByTestId('ai-generate-button')).toBeNull();
   });
 
+  it('shows fallback disabled message when settings payload is absent', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ok: true }),
+    });
+    render(<ImportAiReviewAssistantPanel importId="imp1" baselineMode="auto" />);
+    await waitFor(() => {
+      expect(screen.getByTestId('ai-disabled-message')).toBeTruthy();
+    });
+    expect(screen.getByText(/AI review is currently unavailable/i)).toBeTruthy();
+    expect(screen.queryByTestId('ai-provider-settings-error')).toBeNull();
+    expect(screen.queryByTestId('ai-generate-button')).toBeNull();
+    expect(screen.queryByRole('button', { name: /apply/i })).toBeNull();
+  });
+
   it('shows manual generate button and advisory results when enabled', async () => {
     fetchMock
       .mockResolvedValueOnce({
