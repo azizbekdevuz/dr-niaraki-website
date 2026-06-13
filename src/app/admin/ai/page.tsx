@@ -251,55 +251,59 @@ export default function AdminAiSettingsPage() {
                   aria-checked={formEnabled}
                   aria-label="Enable AI review"
                   data-testid="ai-enabled-switch"
-                  className={`relative h-7 w-12 rounded-full transition-colors ${formEnabled ? 'bg-accent-primary' : 'bg-primary/25'}`}
+                  className="form-switch"
                   onClick={toggleFormEnabled}
                 >
-                  <span
-                    className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${formEnabled ? 'translate-x-5' : 'translate-x-0.5'}`}
-                  />
+                  <span className="form-switch-thumb" aria-hidden />
                 </button>
               </div>
 
               <div>
-                <label htmlFor="ai-provider" className="text-sm font-medium text-foreground">
-                  Provider
+                <label htmlFor="ai-provider" className="block">
+                  <span className="text-xs text-muted block mb-1">Provider</span>
+                  <div className="form-select-wrap">
+                    <select
+                      id="ai-provider"
+                      data-testid="ai-provider-select"
+                      className="form-select"
+                      value={formProvider}
+                      onChange={(e) => onProviderChange(e.target.value)}
+                    >
+                      {settings.providers.map((p) => (
+                        <option key={p.id} value={p.id} disabled={!p.selectable}>
+                          {p.label}
+                          {!p.selectable ? ' — Not available' : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="form-select-icon" aria-hidden />
+                  </div>
                 </label>
-                <select
-                  id="ai-provider"
-                  data-testid="ai-provider-select"
-                  className="mt-1 w-full rounded-md border border-primary/20 bg-surface px-3 py-2 text-sm"
-                  value={formProvider}
-                  onChange={(e) => onProviderChange(e.target.value)}
-                >
-                  {settings.providers.map((p) => (
-                    <option key={p.id} value={p.id} disabled={!p.selectable}>
-                      {p.label}
-                      {!p.selectable ? ' — Not available' : ''}
-                    </option>
-                  ))}
-                </select>
                 {selectedProviderOption && !selectedProviderOption.selectable ? (
                   <p className="mt-1 text-xs text-muted">{selectedProviderOption.statusMessage}</p>
                 ) : null}
               </div>
 
               <div>
-                <label htmlFor="ai-model" className="text-sm font-medium text-foreground">
-                  Model
+                <label htmlFor="ai-model" className="block">
+                  <span className="text-xs text-muted block mb-1">Model</span>
+                  <div className="form-select-wrap">
+                    <select
+                      id="ai-model"
+                      data-testid="ai-model-select"
+                      className="form-select"
+                      value={formModel ?? ''}
+                      onChange={(e) => setFormModel(e.target.value)}
+                    >
+                      {modelOptions.map((m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="form-select-icon" aria-hidden />
+                  </div>
                 </label>
-                <select
-                  id="ai-model"
-                  data-testid="ai-model-select"
-                  className="mt-1 w-full rounded-md border border-primary/20 bg-surface px-3 py-2 text-sm"
-                  value={formModel ?? ''}
-                  onChange={(e) => setFormModel(e.target.value)}
-                >
-                  {modelOptions.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               <button
