@@ -87,7 +87,7 @@ On the import detail page, **AI review assistant** appears after parser warnings
 - The server sends **minimized** context (warnings, count validation, merge safety, truncated block summaries). It never sends DOCX bytes, `rawDocumentText`, or full publication/patent bodies.
 - **Professor controls** (`/admin/ai`): turn AI review on/off and choose provider/model from administrator-configured options. No redeploy is needed to switch providers or models after initial site setup.
 - **Site administrator setup** (one time): configure provider API keys, Ollama URL, and approved model allowlists in server environment variables. Credentials never appear in the browser or database.
-- **Database** stores only non-secret runtime selection (on/off, provider id, model name). Until the first save in `/admin/ai`, administrator env defaults apply unchanged (`AI_PROVIDER=none` keeps AI off).
+- **Database** stores only non-secret runtime selection (on/off, provider id, model name). Until the first save in `/admin/ai`, administrator env defaults apply unchanged (`AI_PROVIDER=none` keeps AI off). If the `AiRuntimeSetting` singleton row is removed from PostgreSQL (operator maintenance only), runtime selection reverts to the configured environment default — absence of the row is the intentional backward-compatible fallback state.
 - **Provider options** (see `/admin/ai`):
   - **Ollama** - best free/open-source option when self-hosted on your VPS or machine.
   - **OpenRouter / Groq** - hosted; may expose free or low-cost models but are **rate-limited** and subject to provider policies (not unlimited or guaranteed forever-free).

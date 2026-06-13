@@ -156,11 +156,16 @@ export default function AdminAiSettingsPage() {
 
   const onProviderChange = (nextProvider: string) => {
     setFormProvider(nextProvider);
+
     const option = settings?.providers.find((p) => p.id === nextProvider);
-    if (option && option.allowedModels.length > 0) {
-      const keepModel = Boolean(formModel && option.allowedModels.includes(formModel));
-      setFormModel(keepModel ? formModel : (option.allowedModels[0] ?? null));
+
+    if (!option || option.allowedModels.length === 0) {
+      setFormModel(null);
+      return;
     }
+
+    const keepModel = Boolean(formModel && option.allowedModels.includes(formModel));
+    setFormModel(keepModel && formModel ? formModel : (option.allowedModels[0] ?? null));
   };
 
   if (loading) {
