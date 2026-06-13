@@ -527,6 +527,27 @@ describe('import AI review', () => {
       expect(vi.mocked(fetch)).not.toHaveBeenCalled();
       rateLimitSpy.mockRestore();
     });
+
+    it('database read failure exits before import load and rate limit without calling groq', async () => {
+      process.env.AI_PROVIDER = 'groq';
+      process.env.GROQ_API_KEY = 'gsk-test';
+      process.env.GROQ_MODEL = 'llama-3.1-8b-instant';
+      process.env.GROQ_ALLOWED_MODELS = 'llama-3.1-8b-instant';
+      vi.mocked(prisma.aiRuntimeSetting.findUnique).mockRejectedValue(new Error('db down'));
+      const rateLimitSpy = vi.spyOn(aiReviewRateLimit, 'checkAiReviewRateLimit');
+      const outcome = await runImportAiReview(IMPORT_ID, 'auto');
+      expect(outcome).toMatchObject({ ok: true });
+      if (!('ok' in outcome) || !outcome.ok) {
+        throw new Error('expected ok');
+      }
+      expect(outcome.result.status).toBe('misconfigured');
+      expect(outcome.result.error).toBe('Provider status is currently unavailable.');
+      expect(outcome.result.provider).toBe('none');
+      expect(getContentImportDetail).not.toHaveBeenCalled();
+      expect(rateLimitSpy).not.toHaveBeenCalled();
+      expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+      rateLimitSpy.mockRestore();
+    });
   });
 
   describe('merge safety unchanged', () => {

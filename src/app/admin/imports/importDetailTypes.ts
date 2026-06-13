@@ -134,8 +134,9 @@ export type AiProviderSettingsModel = {
   enabled: boolean;
   activeProvider: string;
   activeModel: string | null;
-  source: 'database' | 'environment_fallback';
+  source: 'database' | 'environment_fallback' | 'database_error';
   revision: number | null;
+  settingsUnavailable?: boolean;
   savedEnabled: boolean;
   savedProvider: string;
   savedModel: string | null;

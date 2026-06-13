@@ -61,6 +61,18 @@ export async function runImportAiReview(
 ): Promise<RunImportAiReviewResult | { ok: false; notFound: true }> {
   const effective = await resolveEffectiveAiRuntimeSelection();
 
+  if (effective.settingsUnavailable) {
+    return {
+      ok: true,
+      result: advisoryErrorResult({
+        provider: effective.provider,
+        inputHash: '',
+        status: 'misconfigured',
+        error: 'Provider status is currently unavailable.',
+      }),
+    };
+  }
+
   if (!effective.enabled) {
     return { ok: true, result: disabledAiReviewResult() };
   }
@@ -69,7 +81,7 @@ export async function runImportAiReview(
     return {
       ok: true,
       result: advisoryErrorResult({
-        provider: effective.provider === 'none' ? 'openai' : effective.provider,
+        provider: effective.provider,
         inputHash: '',
         status: 'misconfigured',
         error:

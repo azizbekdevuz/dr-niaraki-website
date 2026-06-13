@@ -90,8 +90,9 @@ export type AiProviderSettingsView = {
   enabled: boolean;
   activeProvider: AiProviderId;
   activeModel: string | null;
-  source: 'database' | 'environment_fallback';
+  source: 'database' | 'environment_fallback' | 'database_error';
   revision: number | null;
+  settingsUnavailable?: boolean;
   /** Values shown in the settings form (persisted or env defaults). */
   savedEnabled: boolean;
   savedProvider: AiSelectableProviderId;

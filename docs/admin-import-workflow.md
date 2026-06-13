@@ -81,13 +81,13 @@ Structured review blocks show **added / removed / changed** per section (profile
 
 On the import detail page, **AI review assistant** appears after parser warnings and **before** merge controls.
 
-- **Disabled by default** until turned on in **Admin → AI settings** (`/admin/ai`), or via administrator env default (`AI_PROVIDER=none`). Enable only when you accept provider privacy/logging terms for minimized review context.
+- **Disabled by default** (`AI_PROVIDER=none` disables AI). Turn on in **Admin → AI settings** (`/admin/ai`), or set an administrator env default to a configured provider (`ollama`, `openrouter`, `groq`, or `openai`) before the professor saves runtime preferences. After the first save in `/admin/ai`, database runtime settings control on/off, provider, and model. Enable only when you accept provider privacy/logging terms for minimized review context.
 - **Review-only:** suggestions never merge, publish, edit drafts, or change the public site. There is no "Apply suggestion" action.
 - Click **Generate AI suggestions** manually - no automatic call on page load.
 - The server sends **minimized** context (warnings, count validation, merge safety, truncated block summaries). It never sends DOCX bytes, `rawDocumentText`, or full publication/patent bodies.
 - **Professor controls** (`/admin/ai`): turn AI review on/off and choose provider/model from administrator-configured options. No redeploy is needed to switch providers or models after initial site setup.
 - **Site administrator setup** (one time): configure provider API keys, Ollama URL, and approved model allowlists in server environment variables. Credentials never appear in the browser or database.
-- **Database** stores only non-secret runtime selection (on/off, provider id, model name). Until the first save in `/admin/ai`, administrator env defaults apply unchanged.
+- **Database** stores only non-secret runtime selection (on/off, provider id, model name). Until the first save in `/admin/ai`, administrator env defaults apply unchanged (`AI_PROVIDER=none` keeps AI off).
 - **Provider options** (see `/admin/ai`):
   - **Ollama** - best free/open-source option when self-hosted on your VPS or machine.
   - **OpenRouter / Groq** - hosted; may expose free or low-cost models but are **rate-limited** and subject to provider policies (not unlimited or guaranteed forever-free).

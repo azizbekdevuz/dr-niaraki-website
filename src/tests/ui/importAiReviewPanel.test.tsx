@@ -123,6 +123,49 @@ describe('ImportAiReviewAssistantPanel', () => {
       expect(screen.getByTestId('ai-disabled-message')).toBeTruthy();
     });
     expect(screen.getByText(/currently unavailable/i)).toBeTruthy();
+    expect(screen.queryByTestId('ai-generate-button')).toBeNull();
+    expect(screen.queryByRole('button', { name: /apply/i })).toBeNull();
+  });
+
+  it('shows unavailable label when enabled but no matching provider option', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        settings: {
+          enabled: true,
+          activeProvider: 'none',
+          activeModel: null,
+          source: 'database',
+          revision: 1,
+          savedEnabled: true,
+          savedProvider: 'groq',
+          savedModel: 'llama-3.1-8b-instant',
+          switchingMode: 'runtime_database',
+          switchingNote: 'saved',
+          providers: [
+            {
+              id: 'groq',
+              label: 'Groq - Hosted, fast',
+              status: 'configured',
+              active: false,
+              selectable: true,
+              model: null,
+              allowedModels: ['llama-3.1-8b-instant'],
+              statusMessage: 'Available',
+            },
+          ],
+          disclaimers: ['Advisory only'],
+        },
+      }),
+    });
+    render(<ImportAiReviewAssistantPanel importId="imp1" baselineMode="auto" />);
+    await waitFor(() => {
+      expect(screen.getByText(/Active:/)).toBeTruthy();
+    });
+    expect(screen.getByText(/Unavailable/)).toBeTruthy();
+    expect(screen.queryByText(/^Configured$/)).toBeNull();
+    expect(screen.queryByTestId('ai-generate-button')).toBeNull();
   });
 
   it('shows provider settings unavailable message on settings load failure', async () => {

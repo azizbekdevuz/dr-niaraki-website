@@ -26,7 +26,7 @@ const FRIENDLY_LABELS: Record<AiSelectableProviderId, string> = {
   openai: 'OpenAI - Hosted, paid',
 };
 
-export type AiRuntimeSettingsSource = 'database' | 'environment_fallback';
+export type AiRuntimeSettingsSource = 'database' | 'environment_fallback' | 'database_error';
 
 export type EffectiveAiRuntimeSelection = {
   enabled: boolean;
@@ -36,6 +36,7 @@ export type EffectiveAiRuntimeSelection = {
   revision: number | null;
   misconfigured: boolean;
   misconfiguredMessage?: string;
+  settingsUnavailable?: boolean;
 };
 
 export type SaveAiRuntimeSettingsInput = {
@@ -111,6 +112,19 @@ export function resolveEnvDefaultModel(provider: AiProviderId): string | null {
     return resolveAllowlistedModel(cfg.openai.model, cfg.openai.allowedModels);
   }
   return null;
+}
+
+function getDatabaseErrorEffectiveSelection(): EffectiveAiRuntimeSelection {
+  return {
+    enabled: false,
+    provider: 'none',
+    model: null,
+    source: 'database_error',
+    revision: null,
+    misconfigured: true,
+    settingsUnavailable: true,
+    misconfiguredMessage: 'Provider status is currently unavailable.',
+  };
 }
 
 function getEnvEffectiveSelection(): EffectiveAiRuntimeSelection {
@@ -203,8 +217,8 @@ export async function resolveEffectiveAiRuntimeSelection(): Promise<EffectiveAiR
     }
     return mapPersistedRow(row);
   } catch (e) {
-    console.error('[ai-runtime-settings] read failed; using env fallback', e);
-    return getEnvEffectiveSelection();
+    console.error('[ai-runtime-settings] read failed; disabling AI execution', e);
+    return getDatabaseErrorEffectiveSelection();
   }
 }
 
@@ -283,12 +297,32 @@ function resolveDisplayActiveProvider(
   return effective.provider;
 }
 
+function getSettingsUnavailableView(): AiProviderSettingsView {
+  const providers = SELECTABLE_PROVIDERS.map((id) => buildProviderOption(id, false, null));
+  return {
+    enabled: false,
+    activeProvider: 'none',
+    activeModel: null,
+    source: 'database_error',
+    revision: null,
+    savedEnabled: false,
+    savedProvider: resolveDefaultSelectableProvider(),
+    savedModel: null,
+    switchingMode: 'runtime_database',
+    switchingNote: 'AI settings are temporarily unavailable.',
+    settingsUnavailable: true,
+    providers,
+    disclaimers: [...AI_REVIEW_DISCLAIMERS],
+  };
+}
+
 export async function getAiRuntimeSettingsView(): Promise<AiProviderSettingsView> {
   let row: Awaited<ReturnType<typeof readPersistedRow>> = null;
   try {
     row = await readPersistedRow();
   } catch (e) {
-    console.error('[ai-runtime-settings] view read failed; using env fallback', e);
+    console.error('[ai-runtime-settings] view read failed; settings unavailable', e);
+    return getSettingsUnavailableView();
   }
   const effective = row ? mapPersistedRow(row) : getEnvEffectiveSelection();
   const displayProvider = resolveDisplayActiveProvider(effective, row);

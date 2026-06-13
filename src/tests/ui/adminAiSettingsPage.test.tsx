@@ -91,4 +91,33 @@ describe('Admin AI settings page', () => {
     expect(openAiOption.disabled).toBe(true);
     expect(groqOption.disabled).toBe(false);
   });
+
+  it('shows unavailable message when settings cannot be loaded from database', async () => {
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url === '/api/admin/status') {
+        return { ok: true, json: async () => ({ isLoggedIn: true, hasValidDevice: true }) };
+      }
+      if (url === '/api/admin/ai/settings') {
+        return {
+          ok: true,
+          json: async () => ({
+            ok: true,
+            settings: {
+              ...baseSettings,
+              settingsUnavailable: true,
+              source: 'database_error',
+              switchingNote: 'AI settings are temporarily unavailable.',
+            },
+          }),
+        };
+      }
+      return { ok: false, json: async () => ({ ok: false }) };
+    });
+    render(<AdminAiSettingsPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('ai-settings-unavailable')).toBeTruthy();
+    });
+    expect(screen.getByText('AI settings are temporarily unavailable.')).toBeTruthy();
+    expect(screen.queryByTestId('ai-save-button')).toBeNull();
+  });
 });

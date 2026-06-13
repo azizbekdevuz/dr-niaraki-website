@@ -108,7 +108,7 @@ export default function AdminAiSettingsPage() {
         body: JSON.stringify({
           enabled: formEnabled,
           provider: formProvider,
-          model: formEnabled ? formModel : formModel ?? null,
+          model: formModel,
           expectedRevision: settings.revision,
         }),
       });
@@ -200,7 +200,13 @@ export default function AdminAiSettingsPage() {
           </div>
         ) : null}
 
-        {settings ? (
+        {settings?.settingsUnavailable ? (
+          <div className="card border-warning/40 bg-warning/5 p-4 text-sm text-foreground" data-testid="ai-settings-unavailable">
+            AI settings are temporarily unavailable.
+          </div>
+        ) : null}
+
+        {settings && !settings.settingsUnavailable ? (
           <>
             <div className="card p-4 text-sm" data-testid="ai-current-status">
               <p className="font-medium text-foreground">Currently active</p>
@@ -233,6 +239,7 @@ export default function AdminAiSettingsPage() {
                   type="button"
                   role="switch"
                   aria-checked={formEnabled}
+                  aria-label="Enable AI review"
                   data-testid="ai-enabled-switch"
                   className={`relative h-7 w-12 rounded-full transition-colors ${formEnabled ? 'bg-accent-primary' : 'bg-primary/25'}`}
                   onClick={toggleFormEnabled}

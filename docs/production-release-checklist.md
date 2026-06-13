@@ -60,7 +60,7 @@ Other optional vars (`ADMIN_UPLOAD_HISTORY_PRISMA_TAKE`, `NEXT_PUBLIC_ENABLE_CUS
 | `OLLAMA_*` | Self-hosted Ollama base URL, model, allowlist |
 | `OPENROUTER_*` / `GROQ_*` / `OPENAI_*` | Hosted provider API keys and allowlisted models (server-only) |
 
-Leave `AI_PROVIDER=none` unless the operator explicitly enables advisory AI via env default or the professor later enables it in `/admin/ai`. The database stores only non-secret runtime selection (on/off, provider, model); API keys and URLs remain env-only. Until the first save in `/admin/ai`, env defaults apply unchanged. Changing credentials or model allowlists still requires environment configuration and usually redeployment. External providers receive minimized review context only - not DOCX bytes or full raw document text. Do not enable for private CV data unless you accept provider privacy and logging terms. See [Admin import workflow - AI review](./admin-import-workflow.md#6b-optional---ai-review-assistant-advisory-only).
+Leave `AI_PROVIDER=none` (AI disabled) unless the operator wants advisory AI enabled via a non-`none` env default before the professor saves preferences in `/admin/ai`. After the first save, database runtime settings control on/off, provider, and model. API keys and URLs remain env-only. Changing credentials or model allowlists still requires environment configuration and usually redeployment. External providers receive minimized review context only - not DOCX bytes or full raw document text. Do not enable for private CV data unless you accept provider privacy and logging terms. See [Admin import workflow - AI review](./admin-import-workflow.md#6b-optional---ai-review-assistant-advisory-only).
 
 ---
 

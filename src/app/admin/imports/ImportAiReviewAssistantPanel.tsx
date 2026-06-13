@@ -26,6 +26,23 @@ function severityClass(sev: string): string {
   return 'border-primary/20 bg-surface-secondary/60 text-foreground';
 }
 
+function resolveActiveProviderLabel(settings: AiProviderSettingsModel): string {
+  if (!settings.enabled) {
+    return 'Off';
+  }
+  const activeProvider = settings.providers.find((p) => p.active);
+  if (activeProvider?.label) {
+    return activeProvider.label;
+  }
+  if (activeProvider) {
+    return 'Configured';
+  }
+  if (settings.activeProvider && settings.activeProvider !== 'none') {
+    return settings.activeProvider;
+  }
+  return 'Unavailable';
+}
+
 function ProviderStatusBanner({
   settings,
   loading,
@@ -52,7 +69,7 @@ function ProviderStatusBanner({
   return (
     <div className="mt-3 rounded-md border border-primary/15 bg-surface-secondary/50 px-3 py-2 text-xs text-muted">
       <span className="font-medium text-foreground">Active: </span>
-      {settings?.enabled ? (activeProvider?.label ?? 'Configured') : 'Off'}
+      {settings ? resolveActiveProviderLabel(settings) : 'Unavailable'}
       {settings?.enabled && settings.activeModel ? (
         <span className="ml-1 text-foreground">({settings.activeModel})</span>
       ) : null}
@@ -151,7 +168,13 @@ export function ImportAiReviewAssistantPanel({ importId, baselineMode }: Props) 
       const res = await fetch('/api/admin/ai/settings', { credentials: 'include' });
       const data = await res.json();
       if (res.ok && data.ok) {
-        setSettings(data.settings as AiProviderSettingsModel);
+        const next = data.settings as AiProviderSettingsModel;
+        if (next.settingsUnavailable) {
+          setSettings(null);
+          setProviderSettingsError('Provider status is currently unavailable.');
+        } else {
+          setSettings(next);
+        }
       } else {
         setSettings(null);
         setProviderSettingsError('Provider status is currently unavailable.');
@@ -198,6 +221,7 @@ export function ImportAiReviewAssistantPanel({ importId, baselineMode }: Props) 
   const aiEnabled =
     !providerSettingsError &&
     !loadingSettings &&
+    !settings?.settingsUnavailable &&
     settings?.enabled === true &&
     settings.activeProvider !== 'none' &&
     activeProvider?.status === 'configured';

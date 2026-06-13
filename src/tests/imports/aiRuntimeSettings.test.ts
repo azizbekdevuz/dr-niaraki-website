@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 
 import { Prisma } from '@prisma/client';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
@@ -44,6 +44,10 @@ describe('aiRuntimeSettings', () => {
     vi.mocked(prisma.aiRuntimeSetting.findUnique).mockReset();
     vi.mocked(prisma.$transaction).mockReset();
     vi.mocked(recordContentEvent).mockReset();
+  });
+
+  afterEach(() => {
+    process.env = { ...envBackup };
   });
 
   describe('resolveEffectiveAiRuntimeSelection', () => {
@@ -107,14 +111,19 @@ describe('aiRuntimeSettings', () => {
       expect(effective.provider).toBe('none');
     });
 
-    it('falls back to env when DB read fails', async () => {
-      process.env.AI_PROVIDER = 'none';
+    it('fails closed on DB read failure without env re-enable', async () => {
+      process.env.AI_PROVIDER = 'groq';
+      process.env.GROQ_API_KEY = 'gsk-test';
+      process.env.GROQ_MODEL = 'llama-3.1-8b-instant';
+      process.env.GROQ_ALLOWED_MODELS = 'llama-3.1-8b-instant';
       vi.mocked(prisma.aiRuntimeSetting.findUnique).mockRejectedValue(new Error('db down'));
 
       const effective = await resolveEffectiveAiRuntimeSelection();
-      expect(effective.source).toBe('environment_fallback');
+      expect(effective.source).toBe('database_error');
+      expect(effective.settingsUnavailable).toBe(true);
       expect(effective.enabled).toBe(false);
       expect(effective.provider).toBe('none');
+      expect(effective.misconfigured).toBe(true);
     });
 
     it('invalid persisted provider is misconfigured without alternate provider', async () => {
@@ -474,6 +483,16 @@ describe('aiRuntimeSettings', () => {
       const groq = view.providers.find((p) => p.id === 'groq');
       expect(groq?.selectable).toBe(true);
       expect(groq?.allowedModels).toContain('llama-3.1-8b-instant');
+    });
+
+    it('returns unavailable view when DB read fails', async () => {
+      vi.mocked(prisma.aiRuntimeSetting.findUnique).mockRejectedValue(new Error('db down'));
+
+      const view = await getAiRuntimeSettingsView();
+      expect(view.settingsUnavailable).toBe(true);
+      expect(view.source).toBe('database_error');
+      expect(view.switchingNote).toBe('AI settings are temporarily unavailable.');
+      expect(view.enabled).toBe(false);
     });
   });
 });
