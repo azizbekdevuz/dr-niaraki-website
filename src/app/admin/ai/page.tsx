@@ -31,6 +31,7 @@ export default function AdminAiSettingsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setSaveError(null);
     setSaveSuccess(false);
     try {
       const statusRes = await fetch('/api/admin/status', { credentials: 'include' });

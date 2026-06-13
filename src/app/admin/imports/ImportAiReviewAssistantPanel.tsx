@@ -223,7 +223,7 @@ export function ImportAiReviewAssistantPanel({ importId, baselineMode }: Props) 
     !loadingSettings &&
     !settings?.settingsUnavailable &&
     settings?.enabled === true &&
-    settings.activeProvider !== 'none' &&
+    settings?.activeProvider !== 'none' &&
     activeProvider?.status === 'configured';
 
   let disabledMessage: string | null = null;
