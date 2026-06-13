@@ -1,9 +1,9 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { AiProviderSettingsModel } from '@/app/admin/imports/importDetailTypes';
 import { TW_ACCENT_SOFT_GRADIENT } from '@/lib/ui/chromeClassStrings';
@@ -13,10 +13,25 @@ export default function AdminAiSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<AiProviderSettingsModel | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [showTechnical, setShowTechnical] = useState(false);
+
+  const [formEnabled, setFormEnabled] = useState(false);
+  const [formProvider, setFormProvider] = useState('');
+  const [formModel, setFormModel] = useState<string | null>(null);
+
+  const applySettingsToForm = useCallback((s: AiProviderSettingsModel) => {
+    setFormEnabled(s.savedEnabled);
+    setFormProvider(s.savedProvider);
+    setFormModel(s.savedModel);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setSaveSuccess(false);
     try {
       const statusRes = await fetch('/api/admin/status', { credentials: 'include' });
       const status = await statusRes.json();
@@ -34,17 +49,119 @@ export default function AdminAiSettingsPage() {
         setError(data.message || 'Failed to load AI settings');
         return;
       }
-      setSettings(data.settings as AiProviderSettingsModel);
+      const next = data.settings as AiProviderSettingsModel;
+      setSettings(next);
+      applySettingsToForm(next);
     } catch {
       setError('Failed to load AI settings');
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [applySettingsToForm, router]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const selectedProviderOption = settings?.providers.find((p) => p.id === formProvider);
+  const modelOptions = selectedProviderOption?.allowedModels ?? [];
+
+  const formDirty = useMemo(() => {
+    if (!settings) {
+      return false;
+    }
+    return (
+      formEnabled !== settings.savedEnabled ||
+      formProvider !== settings.savedProvider ||
+      (formModel ?? null) !== (settings.savedModel ?? null)
+    );
+  }, [formEnabled, formModel, formProvider, settings]);
+
+  const saveDisabledReason = useMemo(() => {
+    if (!settings || saving || !formDirty) {
+      return 'no_changes';
+    }
+    if (formEnabled) {
+      const provider = settings.providers.find((p) => p.id === formProvider);
+      if (!provider?.selectable) {
+        return 'invalid_provider';
+      }
+      if (!formModel || !provider.allowedModels.includes(formModel)) {
+        return 'invalid_model';
+      }
+    }
+    return null;
+  }, [formDirty, formEnabled, formModel, formProvider, saving, settings]);
+
+  const save = async () => {
+    if (!settings || saveDisabledReason) {
+      return;
+    }
+    setSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
+    try {
+      const res = await fetch('/api/admin/ai/settings', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enabled: formEnabled,
+          provider: formProvider,
+          model: formEnabled ? formModel : formModel ?? null,
+          expectedRevision: settings.revision,
+        }),
+      });
+      const data = await res.json();
+      if (res.status === 409) {
+        setSaveError('These settings changed in another session. Reloading the latest settings.');
+        const reloadRes = await fetch('/api/admin/ai/settings', { credentials: 'include' });
+        const reloadData = await reloadRes.json();
+        if (reloadRes.ok && reloadData.ok) {
+          const next = reloadData.settings as AiProviderSettingsModel;
+          setSettings(next);
+          applySettingsToForm(next);
+        }
+        return;
+      }
+      if (!res.ok || !data.ok) {
+        setSaveError(data.message || 'Failed to save AI settings');
+        return;
+      }
+      const next = data.settings as AiProviderSettingsModel;
+      setSettings(next);
+      applySettingsToForm(next);
+      setSaveSuccess(true);
+    } catch {
+      setSaveError('Failed to save AI settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleFormEnabled = () => {
+    const next = !formEnabled;
+    setFormEnabled(next);
+    if (next) {
+      const providerId = formProvider || settings?.savedProvider || '';
+      if (!formProvider && settings?.savedProvider) {
+        setFormProvider(settings.savedProvider);
+      }
+      const option = settings?.providers.find((p) => p.id === providerId);
+      if (option && (!formModel || !option.allowedModels.includes(formModel))) {
+        setFormModel(option.allowedModels[0] ?? formModel);
+      }
+    }
+  };
+
+  const onProviderChange = (nextProvider: string) => {
+    setFormProvider(nextProvider);
+    const option = settings?.providers.find((p) => p.id === nextProvider);
+    if (option && option.allowedModels.length > 0) {
+      const keepModel = Boolean(formModel && option.allowedModels.includes(formModel));
+      setFormModel(keepModel ? formModel : (option.allowedModels[0] ?? null));
+    }
+  };
 
   if (loading) {
     return (
@@ -66,72 +183,155 @@ export default function AdminAiSettingsPage() {
           </Link>
         </div>
 
-        <h1 className="text-2xl font-semibold text-foreground">AI review assistant</h1>
+        <h1 className="text-2xl font-semibold text-foreground">AI Review Assistant</h1>
         <p className="text-sm text-muted">
-          Review-only suggestions for DOCX import review. AI never merges, publishes, or edits site content. Disabled by
-          default (<code className="font-mono">AI_PROVIDER=none</code>).
+          Turn on advisory suggestions during DOCX import review. AI never merges, publishes, or edits site content.
         </p>
 
         {error ? <div className="card border-error/40 bg-error/5 p-4 text-sm text-error">{error}</div> : null}
+        {saveError ? (
+          <div className="card border-warning/40 bg-warning/5 p-4 text-sm text-foreground" data-testid="ai-save-error">
+            {saveError}
+          </div>
+        ) : null}
+        {saveSuccess ? (
+          <div className="card border-success/40 bg-success/5 p-4 text-sm text-foreground" data-testid="ai-save-success">
+            AI settings saved.
+          </div>
+        ) : null}
 
         {settings ? (
           <>
-            <div className="card p-4 text-sm">
-              <p className="font-medium text-foreground">Active provider (env)</p>
+            <div className="card p-4 text-sm" data-testid="ai-current-status">
+              <p className="font-medium text-foreground">Currently active</p>
               <p className="mt-2 text-muted">
-                <span className="font-mono text-foreground">{settings.activeProvider}</span>
-                {settings.activeModel ? (
+                AI review is <span className="font-medium text-foreground">{settings.enabled ? 'on' : 'off'}</span>.
+                {settings.enabled && settings.activeProvider !== 'none' ? (
                   <span>
                     {' '}
-                    - model <span className="font-mono text-foreground">{settings.activeModel}</span>
+                    Using {settings.providers.find((p) => p.active)?.label ?? settings.activeProvider}
+                    {settings.activeModel ? (
+                      <span>
+                        {' '}
+                        with model <span className="text-foreground">{settings.activeModel}</span>
+                      </span>
+                    ) : null}
+                    .
                   </span>
                 ) : null}
               </p>
               <p className="mt-2 text-xs text-muted">{settings.switchingNote}</p>
             </div>
 
-            <div className="space-y-3">
-              {settings.providers.map((p) => (
-                <div
-                  key={p.id}
-                  className={`card p-4 text-sm ${p.active ? 'border-accent-primary/40' : 'border-primary/15'}`}
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-medium text-foreground">
-                      {p.label}
-                      {p.active ? <span className="ml-2 text-xs text-accent-primary">(active)</span> : null}
-                    </p>
-                    <span className="rounded border border-primary/20 px-2 py-0.5 text-[10px] uppercase text-muted">
-                      {p.status}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-xs text-muted">{p.statusMessage}</p>
-                  {p.hostedNote ? <p className="mt-1 text-[11px] text-muted">{p.hostedNote}</p> : null}
-                  {p.allowedModels.length > 0 ? (
-                    <p className="mt-2 text-[11px] text-muted">
-                      Allowlisted models: <span className="font-mono">{p.allowedModels.join(', ')}</span>
-                    </p>
-                  ) : null}
+            <div className="card space-y-5 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-foreground">AI review</p>
+                  <p className="text-xs text-muted">Generate suggestions on import review pages.</p>
                 </div>
-              ))}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={formEnabled}
+                  data-testid="ai-enabled-switch"
+                  className={`relative h-7 w-12 rounded-full transition-colors ${formEnabled ? 'bg-accent-primary' : 'bg-primary/25'}`}
+                  onClick={toggleFormEnabled}
+                >
+                  <span
+                    className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${formEnabled ? 'translate-x-5' : 'translate-x-0.5'}`}
+                  />
+                </button>
+              </div>
+
+              <div>
+                <label htmlFor="ai-provider" className="text-sm font-medium text-foreground">
+                  Provider
+                </label>
+                <select
+                  id="ai-provider"
+                  data-testid="ai-provider-select"
+                  className="mt-1 w-full rounded-md border border-primary/20 bg-surface px-3 py-2 text-sm"
+                  value={formProvider}
+                  onChange={(e) => onProviderChange(e.target.value)}
+                >
+                  {settings.providers.map((p) => (
+                    <option key={p.id} value={p.id} disabled={!p.selectable}>
+                      {p.label}
+                      {!p.selectable ? ' — Not available' : ''}
+                    </option>
+                  ))}
+                </select>
+                {selectedProviderOption && !selectedProviderOption.selectable ? (
+                  <p className="mt-1 text-xs text-muted">{selectedProviderOption.statusMessage}</p>
+                ) : null}
+              </div>
+
+              <div>
+                <label htmlFor="ai-model" className="text-sm font-medium text-foreground">
+                  Model
+                </label>
+                <select
+                  id="ai-model"
+                  data-testid="ai-model-select"
+                  className="mt-1 w-full rounded-md border border-primary/20 bg-surface px-3 py-2 text-sm"
+                  value={formModel ?? ''}
+                  onChange={(e) => setFormModel(e.target.value)}
+                >
+                  {modelOptions.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="button"
+                className="btn-primary text-sm disabled:opacity-50"
+                data-testid="ai-save-button"
+                disabled={Boolean(saveDisabledReason)}
+                onClick={() => void save()}
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save settings'
+                )}
+              </button>
+            </div>
+
+            <div className="card p-4 text-xs text-muted">
+              <p className="font-medium text-foreground">Technical setup</p>
+              <p className="mt-2">
+                Providers must first be configured by the site administrator before they appear as available here.
+                Changing connection credentials or approved models still requires administrator environment
+                configuration.
+              </p>
+              <button
+                type="button"
+                className="mt-3 flex items-center gap-1 text-accent-primary hover:underline"
+                onClick={() => setShowTechnical((v) => !v)}
+              >
+                <ChevronDown className={`h-4 w-4 transition-transform ${showTechnical ? 'rotate-180' : ''}`} />
+                Developer documentation
+              </button>
+              {showTechnical ? (
+                <ul className="mt-2 list-disc space-y-1 pl-5">
+                  <li>Secrets (API keys, Ollama URL) stay in server environment variables only.</li>
+                  <li>Database stores only on/off, provider id, and model name.</li>
+                  <li>Until the first save here, administrator env defaults apply.</li>
+                  <li>Env vars: AI_PROVIDER, provider keys, allowlists — see .env.example.</li>
+                </ul>
+              ) : null}
             </div>
 
             <ul className="list-disc space-y-1 pl-5 text-xs text-muted">
               {settings.disclaimers.map((d) => (
                 <li key={d}>{d}</li>
               ))}
-              <li>
-                Ollama is the best free/open-source option when you self-host on a VPS or local machine.
-              </li>
-              <li>
-                OpenRouter and Groq may offer free or low-cost hosted models, but access is rate-limited and controlled by
-                the provider - not unlimited or guaranteed forever-free.
-              </li>
-              <li>OpenAI is optional paid hosted inference.</li>
-              <li>
-                External providers receive minimized review context only - never DOCX bytes or full raw document text. Do
-                not enable for private CV data unless you accept provider privacy and logging terms.
-              </li>
             </ul>
           </>
         ) : null}

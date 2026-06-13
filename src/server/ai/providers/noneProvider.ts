@@ -1,11 +1,11 @@
 import 'server-only';
 
-import type { AiReviewProvider, AiReviewSuggestionResult } from '@/server/ai/aiReviewTypes';
+import type { AiReviewProvider, AiReviewRuntimeCall, AiReviewSuggestionResult } from '@/server/ai/aiReviewTypes';
 import { AI_REVIEW_DISCLAIMERS } from '@/server/ai/aiReviewTypes';
 
 export const noneAiReviewProvider: AiReviewProvider = {
   id: 'none',
-  async generateSuggestions(_input, inputHash): Promise<AiReviewSuggestionResult> {
+  async generateSuggestions(_input, inputHash, _runtime: AiReviewRuntimeCall): Promise<AiReviewSuggestionResult> {
     return {
       advisory: true,
       enabled: false,

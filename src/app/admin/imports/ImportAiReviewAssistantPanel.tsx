@@ -52,14 +52,11 @@ function ProviderStatusBanner({
   return (
     <div className="mt-3 rounded-md border border-primary/15 bg-surface-secondary/50 px-3 py-2 text-xs text-muted">
       <span className="font-medium text-foreground">Active: </span>
-      {activeProvider?.label ?? 'Disabled'}
-      {settings?.activeModel ? (
-        <span className="ml-1 font-mono text-foreground">({settings.activeModel})</span>
+      {settings?.enabled ? (activeProvider?.label ?? 'Configured') : 'Off'}
+      {settings?.enabled && settings.activeModel ? (
+        <span className="ml-1 text-foreground">({settings.activeModel})</span>
       ) : null}
-      {activeProvider?.statusMessage ? <p className="mt-1">{activeProvider.statusMessage}</p> : null}
-      {settings?.switchingMode === 'env_only' ? (
-        <p className="mt-1 text-[11px]">{settings.switchingNote}</p>
-      ) : null}
+      {activeProvider?.statusMessage && settings?.enabled ? <p className="mt-1">{activeProvider.statusMessage}</p> : null}
     </div>
   );
 }
@@ -91,19 +88,21 @@ function AiReviewResults({ result }: { result: AiReviewSuggestionModel }) {
 }
 
 function GenerateAction({
-  aiEnabled,
+  message,
   providerSettingsError,
   loadingSettings,
   generating,
   onGenerate,
+  showGenerate,
 }: {
-  aiEnabled: boolean;
+  message: string | null;
   providerSettingsError: string | null;
   loadingSettings: boolean;
   generating: boolean;
   onGenerate: () => void;
+  showGenerate: boolean;
 }) {
-  if (aiEnabled) {
+  if (showGenerate) {
     return (
       <button
         type="button"
@@ -128,10 +127,9 @@ function GenerateAction({
   }
   return (
     <p className="text-xs text-muted" data-testid="ai-disabled-message">
-      AI is disabled or misconfigured. Set <code className="font-mono">AI_PROVIDER</code> and provider env vars, then
-      redeploy. See{' '}
+      {message}{' '}
       <Link href="/admin/ai" className="text-accent-primary hover:underline">
-        provider settings
+        AI settings
       </Link>
       .
     </p>
@@ -200,8 +198,21 @@ export function ImportAiReviewAssistantPanel({ importId, baselineMode }: Props) 
   const aiEnabled =
     !providerSettingsError &&
     !loadingSettings &&
-    settings?.activeProvider !== 'none' &&
+    settings?.enabled === true &&
+    settings.activeProvider !== 'none' &&
     activeProvider?.status === 'configured';
+
+  let disabledMessage: string | null = null;
+  if (!aiEnabled && !providerSettingsError && !loadingSettings && settings) {
+    if (!settings.enabled) {
+      disabledMessage = 'AI review is turned off. You can enable it in';
+    } else if (activeProvider?.status === 'misconfigured' || settings.activeProvider === 'none') {
+      disabledMessage = 'The selected AI provider is currently unavailable. Check';
+    } else {
+      disabledMessage = 'AI review is not available. Check';
+    }
+  }
+
   const disclaimers = result?.disclaimers ?? settings?.disclaimers ?? [];
 
   return (
@@ -217,7 +228,7 @@ export function ImportAiReviewAssistantPanel({ importId, baselineMode }: Props) 
           </div>
         </div>
         <Link href="/admin/ai" className="text-xs text-accent-primary hover:underline">
-          Provider settings
+          AI settings
         </Link>
       </div>
 
@@ -229,11 +240,12 @@ export function ImportAiReviewAssistantPanel({ importId, baselineMode }: Props) 
 
       <div className="mt-4">
         <GenerateAction
-          aiEnabled={aiEnabled}
+          message={disabledMessage}
           providerSettingsError={providerSettingsError}
           loadingSettings={loadingSettings}
           generating={generating}
           onGenerate={() => void generate()}
+          showGenerate={aiEnabled}
         />
       </div>
 

@@ -37,6 +37,14 @@ vi.mock('@/server/content/contentEvents', () => ({
   recordContentEvent: vi.fn(),
 }));
 
+vi.mock('@/server/db/prisma', () => ({
+  prisma: {
+    aiRuntimeSetting: {
+      findUnique: vi.fn(async () => null),
+    },
+  },
+}));
+
 import { hasValidAdminAccess } from '@/lib/admin-auth';
 import { requireFullAdminAccessForContent } from '@/server/admin/contentWorkflowAccess';
 import * as aiReviewRateLimit from '@/server/ai/aiReviewRateLimit';
@@ -46,6 +54,7 @@ import { getAiReviewProvider } from '@/server/ai/providerRegistry';
 import { runImportAiReview } from '@/server/ai/runImportAiReview';
 import { recordContentEvent } from '@/server/content/contentEvents';
 import { getLatestPublishedVersion, getWorkingDraft } from '@/server/content/contentWorkflowCore';
+import { prisma } from '@/server/db/prisma';
 import { buildImportCandidatePayload } from '@/server/imports/candidatePayload/builder';
 import { buildImportReviewPayload } from '@/server/imports/importReviewCompare';
 import { getContentImportDetail, getPriorImportSourceTextHash } from '@/server/imports/repository';
@@ -96,6 +105,8 @@ describe('import AI review', () => {
     vi.mocked(getWorkingDraft).mockReset();
     vi.mocked(getLatestPublishedVersion).mockReset();
     vi.mocked(recordContentEvent).mockReset();
+    vi.mocked(prisma.aiRuntimeSetting.findUnique).mockReset();
+    vi.mocked(prisma.aiRuntimeSetting.findUnique).mockResolvedValue(null);
     vi.mocked(getPriorImportSourceTextHash).mockResolvedValue(null);
     vi.mocked(getWorkingDraft).mockResolvedValue(null);
     vi.mocked(getLatestPublishedVersion).mockResolvedValue(null);
@@ -193,7 +204,9 @@ describe('import AI review', () => {
       const built = await buildAiReviewInput(IMPORT_ID, 'auto');
       expect(built).not.toBeNull();
       const provider = getAiReviewProvider('openai');
-      const result = await provider.generateSuggestions(built!.input, built!.inputHash);
+      const result = await provider.generateSuggestions(built!.input, built!.inputHash, {
+        model: 'gpt-4o-mini',
+      });
       expect(result.advisory).toBe(true);
       expect(result.status).toBe('misconfigured');
       expect(vi.mocked(fetch)).not.toHaveBeenCalled();
@@ -201,6 +214,7 @@ describe('import AI review', () => {
 
     it('ollama unavailable returns advisory error without throwing', async () => {
       process.env.AI_PROVIDER = 'ollama';
+      process.env.OLLAMA_BASE_URL = 'http://localhost:11434';
       process.env.OLLAMA_MODEL = 'llama3.1:8b';
       process.env.OLLAMA_ALLOWED_MODELS = 'llama3.1:8b';
       vi.mocked(fetch).mockRejectedValue(new Error('ECONNREFUSED'));
@@ -208,7 +222,9 @@ describe('import AI review', () => {
       mockImportRow(envelopeFromDetails(details, 'cv'));
       const built = await buildAiReviewInput(IMPORT_ID, 'auto');
       const provider = getAiReviewProvider('ollama');
-      const result = await provider.generateSuggestions(built!.input, built!.inputHash);
+      const result = await provider.generateSuggestions(built!.input, built!.inputHash, {
+        model: 'llama3.1:8b',
+      });
       expect(result.advisory).toBe(true);
       expect(result.status).toBe('error');
       expect(result.error).toBeTruthy();
@@ -272,7 +288,9 @@ describe('import AI review', () => {
       mockImportRow(envelopeFromDetails(details, 'cv'));
       const built = await buildAiReviewInput(IMPORT_ID, 'auto');
       const provider = getAiReviewProvider('groq');
-      const result = await provider.generateSuggestions(built!.input, built!.inputHash);
+      const result = await provider.generateSuggestions(built!.input, built!.inputHash, {
+        model: 'llama-3.1-8b-instant',
+      });
       expect(result.status).toBe('error');
       expect(result.error).toContain('malformed');
     });
@@ -287,7 +305,9 @@ describe('import AI review', () => {
       mockImportRow(envelopeFromDetails(details, 'cv'));
       const built = await buildAiReviewInput(IMPORT_ID, 'auto');
       const provider = getAiReviewProvider('openai');
-      const result = await provider.generateSuggestions(built!.input, built!.inputHash);
+      const result = await provider.generateSuggestions(built!.input, built!.inputHash, {
+        model: 'gpt-4o-mini',
+      });
       expect(result.advisory).toBe(true);
       expect(result.status).toBe('timeout');
     });
@@ -413,6 +433,99 @@ describe('import AI review', () => {
         );
       expect(aiEvent).toBeDefined();
       expect(JSON.stringify(aiEvent)).not.toContain(PRIVATE_SENTINEL);
+    });
+  });
+
+  describe('runtime database settings', () => {
+    it('saved disabled setting exits before import load and rate limit', async () => {
+      process.env.AI_PROVIDER = 'openai';
+      process.env.OPENAI_API_KEY = 'sk-test';
+      process.env.OPENAI_MODEL = 'gpt-4o-mini';
+      process.env.OPENAI_ALLOWED_MODELS = 'gpt-4o-mini';
+      vi.mocked(prisma.aiRuntimeSetting.findUnique).mockResolvedValue({
+        id: 'main',
+        enabled: false,
+        provider: 'openai',
+        model: 'gpt-4o-mini',
+        revision: 1,
+        updatedBy: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      const rateLimitSpy = vi.spyOn(aiReviewRateLimit, 'checkAiReviewRateLimit');
+      const outcome = await runImportAiReview(IMPORT_ID, 'auto');
+      expect(outcome).toMatchObject({ ok: true });
+      if (!('ok' in outcome) || !outcome.ok) {
+        throw new Error('expected ok');
+      }
+      expect(outcome.result.status).toBe('disabled');
+      expect(getContentImportDetail).not.toHaveBeenCalled();
+      expect(rateLimitSpy).not.toHaveBeenCalled();
+      expect(recordContentEvent).not.toHaveBeenCalled();
+      rateLimitSpy.mockRestore();
+    });
+
+    it('uses saved provider/model from database row', async () => {
+      process.env.AI_PROVIDER = 'none';
+      process.env.GROQ_API_KEY = 'gsk-test';
+      process.env.GROQ_MODEL = 'llama-3.1-8b-instant';
+      process.env.GROQ_ALLOWED_MODELS = 'llama-3.1-8b-instant';
+      vi.mocked(prisma.aiRuntimeSetting.findUnique).mockResolvedValue({
+        id: 'main',
+        enabled: true,
+        provider: 'groq',
+        model: 'llama-3.1-8b-instant',
+        revision: 1,
+        updatedBy: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      vi.mocked(fetch).mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: JSON.stringify({ summary: 'from groq' }) } }],
+          }),
+          { status: 200 },
+        ),
+      );
+      const details = minimalImportDetails();
+      mockImportRow(envelopeFromDetails(details, 'cv'));
+      const outcome = await runImportAiReview(IMPORT_ID, 'auto');
+      expect(outcome).toMatchObject({ ok: true });
+      if (!('ok' in outcome) || !outcome.ok) {
+        throw new Error('expected ok');
+      }
+      expect(outcome.result.provider).toBe('groq');
+      expect(outcome.result.status).toBe('ok');
+      expect(vi.mocked(fetch)).toHaveBeenCalled();
+    });
+
+    it('misconfigured saved selection does not call provider', async () => {
+      process.env.AI_PROVIDER = 'openai';
+      process.env.OPENAI_API_KEY = 'sk-test';
+      process.env.OPENAI_MODEL = 'gpt-4o-mini';
+      process.env.OPENAI_ALLOWED_MODELS = 'gpt-4o-mini';
+      vi.mocked(prisma.aiRuntimeSetting.findUnique).mockResolvedValue({
+        id: 'main',
+        enabled: true,
+        provider: 'openai',
+        model: 'gpt-4o',
+        revision: 1,
+        updatedBy: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      const rateLimitSpy = vi.spyOn(aiReviewRateLimit, 'checkAiReviewRateLimit');
+      const outcome = await runImportAiReview(IMPORT_ID, 'auto');
+      expect(outcome).toMatchObject({ ok: true });
+      if (!('ok' in outcome) || !outcome.ok) {
+        throw new Error('expected ok');
+      }
+      expect(outcome.result.status).toBe('misconfigured');
+      expect(getContentImportDetail).not.toHaveBeenCalled();
+      expect(rateLimitSpy).not.toHaveBeenCalled();
+      expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+      rateLimitSpy.mockRestore();
     });
   });
 

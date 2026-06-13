@@ -3,8 +3,10 @@ import 'server-only';
 import { cookies } from 'next/headers';
 
 import { getAiReviewRuntimeConfig } from '@/server/ai/aiReviewConfig';
+import { advisoryErrorResult } from '@/server/ai/aiReviewParse';
 import { aiReviewRateLimitKey, checkAiReviewRateLimit } from '@/server/ai/aiReviewRateLimit';
 import { AI_REVIEW_DISCLAIMERS, type AiReviewSuggestionResult } from '@/server/ai/aiReviewTypes';
+import { resolveEffectiveAiRuntimeSelection } from '@/server/ai/aiRuntimeSettings';
 import { buildAiReviewInput } from '@/server/ai/buildAiReviewInput';
 import { getAiReviewProvider } from '@/server/ai/providerRegistry';
 import { recordContentEvent } from '@/server/content/contentEvents';
@@ -23,7 +25,7 @@ function disabledAiReviewResult(): AiReviewSuggestionResult {
     generatedAt: new Date().toISOString(),
     inputHash: '',
     disclaimers: [...AI_REVIEW_DISCLAIMERS],
-    error: 'AI_PROVIDER is none. Set AI_PROVIDER and provider credentials to enable suggestions.',
+    error: 'AI review is turned off. You can enable it in AI settings.',
   };
 }
 
@@ -57,10 +59,40 @@ export async function runImportAiReview(
   importId: string,
   baseline: ReviewBaselineMode,
 ): Promise<RunImportAiReviewResult | { ok: false; notFound: true }> {
-  const cfg = getAiReviewRuntimeConfig();
+  const effective = await resolveEffectiveAiRuntimeSelection();
 
-  if (cfg.provider === 'none') {
+  if (!effective.enabled) {
     return { ok: true, result: disabledAiReviewResult() };
+  }
+
+  if (effective.misconfigured) {
+    return {
+      ok: true,
+      result: advisoryErrorResult({
+        provider: effective.provider === 'none' ? 'openai' : effective.provider,
+        inputHash: '',
+        status: 'misconfigured',
+        error:
+          effective.misconfiguredMessage ??
+          'The selected AI provider is currently unavailable. Check AI settings.',
+      }),
+    };
+  }
+
+  if (effective.provider === 'none') {
+    return { ok: true, result: disabledAiReviewResult() };
+  }
+
+  if (!effective.model) {
+    return {
+      ok: true,
+      result: advisoryErrorResult({
+        provider: effective.provider,
+        inputHash: '',
+        status: 'misconfigured',
+        error: 'The selected AI model is not approved. Check AI settings.',
+      }),
+    };
   }
 
   const built = await buildAiReviewInput(importId, baseline);
@@ -68,6 +100,7 @@ export async function runImportAiReview(
     return { ok: false, notFound: true };
   }
 
+  const cfg = getAiReviewRuntimeConfig();
   const cookieStore = await cookies();
   const sessionKey = aiReviewRateLimitKey(cookieStore.get('admin_session')?.value);
   const limit = checkAiReviewRateLimit(sessionKey, cfg.rateLimitPerHour);
@@ -79,7 +112,7 @@ export async function runImportAiReview(
       result: {
         advisory: true,
         enabled: true,
-        provider: cfg.provider,
+        provider: effective.provider,
         status: 'error',
         generatedAt: new Date().toISOString(),
         inputHash: '',
@@ -89,8 +122,8 @@ export async function runImportAiReview(
     };
   }
 
-  const provider = getAiReviewProvider(cfg.provider);
-  const result = await provider.generateSuggestions(built.input, built.inputHash);
+  const provider = getAiReviewProvider(effective.provider);
+  const result = await provider.generateSuggestions(built.input, built.inputHash, { model: effective.model });
 
   await logAiReviewAttempt({
     importId,

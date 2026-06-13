@@ -77,24 +77,42 @@ export type AiProviderOptionView = {
   label: string;
   status: AiProviderStatus;
   active: boolean;
+  selectable: boolean;
   model: string | null;
   allowedModels: string[];
   statusMessage: string;
   hostedNote?: string;
 };
 
+export type AiSelectableProviderId = 'ollama' | 'openrouter' | 'groq' | 'openai';
+
 export type AiProviderSettingsView = {
+  enabled: boolean;
   activeProvider: AiProviderId;
   activeModel: string | null;
-  switchingMode: 'env_only';
+  source: 'database' | 'environment_fallback';
+  revision: number | null;
+  /** Values shown in the settings form (persisted or env defaults). */
+  savedEnabled: boolean;
+  savedProvider: AiSelectableProviderId;
+  savedModel: string | null;
+  switchingMode: 'runtime_database' | 'env_only';
   switchingNote: string;
   providers: AiProviderOptionView[];
   disclaimers: string[];
 };
 
+export type AiReviewRuntimeCall = {
+  model: string;
+};
+
 export interface AiReviewProvider {
   readonly id: AiProviderId;
-  generateSuggestions(input: AiReviewInput, inputHash: string): Promise<AiReviewSuggestionResult>;
+  generateSuggestions(
+    input: AiReviewInput,
+    inputHash: string,
+    runtime: AiReviewRuntimeCall,
+  ): Promise<AiReviewSuggestionResult>;
 }
 
 export const AI_REVIEW_DISCLAIMERS = [

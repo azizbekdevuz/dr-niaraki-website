@@ -91,42 +91,42 @@ model UploadedFile {
 }
 
 model ContentImport {
-  id             String         @id @default(cuid())
-  uploadedFileId String
-  uploadedFile   UploadedFile   @relation(fields: [uploadedFileId], references: [id], onDelete: Cascade)
-  status         ImportStatus   @default(UPLOADED)
-  parserVersion  String?
-  warnings       Json?
-  rawPreviewPath String?
+  id               String           @id @default(cuid())
+  uploadedFileId   String
+  uploadedFile     UploadedFile     @relation(fields: [uploadedFileId], references: [id], onDelete: Cascade)
+  status           ImportStatus     @default(UPLOADED)
+  parserVersion    String?
+  warnings         Json?
+  rawPreviewPath   String?
   /// Structured parser output before normalization (optional; not live site content).
   rawExtract       Json?
   /// Parsed candidate payload for review — never the published/draft SiteContent until merged in a later phase.
   candidatePayload Json?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  versions       ContentVersion[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  versions         ContentVersion[]
 }
 
 model ContentVersion {
-  id            String               @id @default(cuid())
-  importId      String?
-  contentImport ContentImport?       @relation(fields: [importId], references: [id], onDelete: SetNull)
-  status        ContentVersionStatus @default(DRAFT)
-  label         String?
+  id              String               @id @default(cuid())
+  importId        String?
+  contentImport   ContentImport?       @relation(fields: [importId], references: [id], onDelete: SetNull)
+  status          ContentVersionStatus @default(DRAFT)
+  label           String?
   /// Snapshot of canonical site content (or partial) as JSON until normalized tables exist.
-  payload       Json
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
-  publishedAt   DateTime?
+  payload         Json
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  publishedAt     DateTime?
   /// Human note for this revision (admin UI later).
-  changeSummary String?
+  changeSummary   String?
   /// Future: admin user id or email when auth is wired.
-  createdBy     String?
+  createdBy       String?
   /// Exactly one working draft: `draftSlot = "main"`. Null for published/archived rows.
-  draftSlot     String?              @unique
+  draftSlot       String?              @unique
   /// Monotonic publish ordering for published rows only.
   publishSequence Int?
-  events        ContentEvent[]
+  events          ContentEvent[]
 
   @@index([status])
   @@index([importId])
@@ -134,13 +134,25 @@ model ContentVersion {
 }
 
 model ContentEvent {
-  id        String            @id @default(cuid())
+  id        String           @id @default(cuid())
   versionId String?
-  version   ContentVersion?   @relation(fields: [versionId], references: [id], onDelete: SetNull)
+  version   ContentVersion?  @relation(fields: [versionId], references: [id], onDelete: SetNull)
   eventType ContentEventType
   payload   Json?
-  createdAt DateTime          @default(now())
+  createdAt DateTime         @default(now())
 
   @@index([versionId])
   @@index([eventType])
+}
+
+/// Non-secret professor-selected AI runtime (on/off, provider, model). Secrets stay in env only.
+model AiRuntimeSetting {
+  id        String   @id
+  enabled   Boolean
+  provider  String
+  model     String?
+  revision  Int      @default(1)
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

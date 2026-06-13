@@ -131,15 +131,22 @@ export type AiReviewSuggestionModel = {
 };
 
 export type AiProviderSettingsModel = {
+  enabled: boolean;
   activeProvider: string;
   activeModel: string | null;
-  switchingMode: 'env_only';
+  source: 'database' | 'environment_fallback';
+  revision: number | null;
+  savedEnabled: boolean;
+  savedProvider: string;
+  savedModel: string | null;
+  switchingMode: 'runtime_database' | 'env_only';
   switchingNote: string;
   providers: Array<{
     id: string;
     label: string;
     status: string;
     active: boolean;
+    selectable: boolean;
     model: string | null;
     allowedModels: string[];
     statusMessage: string;

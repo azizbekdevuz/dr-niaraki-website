@@ -6,6 +6,32 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ImportAiReviewAssistantPanel } from '@/app/admin/imports/ImportAiReviewAssistantPanel';
 
+const enabledSettings = {
+  enabled: true,
+  activeProvider: 'ollama',
+  activeModel: 'llama3.1:8b',
+  source: 'database' as const,
+  revision: 1,
+  savedEnabled: true,
+  savedProvider: 'ollama',
+  savedModel: 'llama3.1:8b',
+  switchingMode: 'runtime_database' as const,
+  switchingNote: 'saved',
+  providers: [
+    {
+      id: 'ollama',
+      label: 'Ollama - Private/self-hosted',
+      status: 'configured',
+      active: true,
+      selectable: true,
+      model: 'llama3.1:8b',
+      allowedModels: ['llama3.1:8b'],
+      statusMessage: 'Available',
+    },
+  ],
+  disclaimers: ['Advisory only'],
+};
+
 describe('ImportAiReviewAssistantPanel', () => {
   const fetchMock = vi.fn();
 
@@ -18,25 +44,32 @@ describe('ImportAiReviewAssistantPanel', () => {
     vi.unstubAllGlobals();
   });
 
-  it('renders disabled state when provider is none', async () => {
+  it('renders disabled state when AI review is turned off', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         ok: true,
         settings: {
+          enabled: false,
           activeProvider: 'none',
           activeModel: null,
-          switchingMode: 'env_only',
-          switchingNote: 'env driven',
+          source: 'database',
+          revision: 1,
+          savedEnabled: false,
+          savedProvider: 'groq',
+          savedModel: 'llama-3.1-8b-instant',
+          switchingMode: 'runtime_database',
+          switchingNote: 'saved',
           providers: [
             {
-              id: 'none',
-              label: 'Disabled',
-              status: 'disabled',
-              active: true,
+              id: 'groq',
+              label: 'Groq',
+              status: 'configured',
+              active: false,
+              selectable: true,
               model: null,
-              allowedModels: [],
-              statusMessage: 'off',
+              allowedModels: ['llama-3.1-8b-instant'],
+              statusMessage: 'Available',
             },
           ],
           disclaimers: ['Advisory only'],
@@ -47,8 +80,49 @@ describe('ImportAiReviewAssistantPanel', () => {
     await waitFor(() => {
       expect(screen.getByTestId('ai-disabled-message')).toBeTruthy();
     });
+    expect(screen.getByText(/AI review is turned off/i)).toBeTruthy();
     expect(screen.queryByTestId('ai-generate-button')).toBeNull();
     expect(screen.queryByRole('button', { name: /apply/i })).toBeNull();
+    expect(screen.queryByText(/AI_PROVIDER/)).toBeNull();
+  });
+
+  it('shows misconfigured provider message', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        settings: {
+          enabled: true,
+          activeProvider: 'openai',
+          activeModel: 'gpt-4o-mini',
+          source: 'database',
+          revision: 1,
+          savedEnabled: true,
+          savedProvider: 'openai',
+          savedModel: 'gpt-4o-mini',
+          switchingMode: 'runtime_database',
+          switchingNote: 'saved',
+          providers: [
+            {
+              id: 'openai',
+              label: 'OpenAI',
+              status: 'misconfigured',
+              active: true,
+              selectable: false,
+              model: 'gpt-4o-mini',
+              allowedModels: ['gpt-4o-mini'],
+              statusMessage: 'Not available - setup is incomplete.',
+            },
+          ],
+          disclaimers: ['Advisory only'],
+        },
+      }),
+    });
+    render(<ImportAiReviewAssistantPanel importId="imp1" baselineMode="auto" />);
+    await waitFor(() => {
+      expect(screen.getByTestId('ai-disabled-message')).toBeTruthy();
+    });
+    expect(screen.getByText(/currently unavailable/i)).toBeTruthy();
   });
 
   it('shows provider settings unavailable message on settings load failure', async () => {
@@ -71,24 +145,7 @@ describe('ImportAiReviewAssistantPanel', () => {
         ok: true,
         json: async () => ({
           ok: true,
-          settings: {
-            activeProvider: 'ollama',
-            activeModel: 'llama3.1:8b',
-            switchingMode: 'env_only',
-            switchingNote: 'env driven',
-            providers: [
-              {
-                id: 'ollama',
-                label: 'Ollama',
-                status: 'configured',
-                active: true,
-                model: 'llama3.1:8b',
-                allowedModels: ['llama3.1:8b'],
-                statusMessage: 'ready',
-              },
-            ],
-            disclaimers: ['Advisory only'],
-          },
+          settings: enabledSettings,
         }),
       })
       .mockResolvedValueOnce({

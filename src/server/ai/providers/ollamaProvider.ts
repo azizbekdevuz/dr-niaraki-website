@@ -2,7 +2,7 @@ import 'server-only';
 
 import { getAiReviewRuntimeConfig } from '@/server/ai/aiReviewConfig';
 import { fetchWithTimeout, type ChatMessage } from '@/server/ai/aiReviewFetch';
-import type { AiReviewProvider, AiReviewSuggestionResult } from '@/server/ai/aiReviewTypes';
+import type { AiReviewProvider, AiReviewRuntimeCall, AiReviewSuggestionResult } from '@/server/ai/aiReviewTypes';
 import { misconfiguredResult, resolveProviderModel, runLlmAiReview } from '@/server/ai/providers/llmProviderShared';
 
 async function ollamaChat(
@@ -41,9 +41,9 @@ async function ollamaChat(
 
 export const ollamaAiReviewProvider: AiReviewProvider = {
   id: 'ollama',
-  async generateSuggestions(input, inputHash): Promise<AiReviewSuggestionResult> {
+  async generateSuggestions(input, inputHash, runtime: AiReviewRuntimeCall): Promise<AiReviewSuggestionResult> {
     const cfg = getAiReviewRuntimeConfig();
-    const modelOrErr = resolveProviderModel('ollama', cfg.ollama.model, cfg.ollama.allowedModels, inputHash);
+    const modelOrErr = resolveProviderModel('ollama', runtime.model, cfg.ollama.allowedModels, inputHash);
     if (typeof modelOrErr !== 'string') {
       return modelOrErr;
     }
