@@ -149,8 +149,12 @@ export default function AdminAiSettingsPage() {
         setFormProvider(settings.savedProvider);
       }
       const option = settings?.providers.find((p) => p.id === providerId);
-      if (option && (!formModel || !option.allowedModels.includes(formModel))) {
-        setFormModel(option.allowedModels[0] ?? formModel);
+      if (option) {
+        if (option.allowedModels.length === 0) {
+          setFormModel(null);
+        } else if (!formModel || !option.allowedModels.includes(formModel)) {
+          setFormModel(option.allowedModels[0] ?? null);
+        }
       }
     }
   };
