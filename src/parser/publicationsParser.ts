@@ -13,6 +13,7 @@ import {
   generateStableId,
   splitEntries,
 } from './parserUtils';
+import { isPublicationSubsectionMegaBlob } from './publicationApaStructure';
 import { parsePublicationEntry } from './publicationEntryParser';
 import { isPublicationProseNoiseLine, splitPublicationApaBlocks } from './publicationsParserApa';
 
@@ -79,6 +80,29 @@ export function parsePublications(text: string): ParseResult<Publication[]> {
       finalEntries = potentialEntries;
     }
   }
+
+  if (finalEntries.length === 0) {
+    warnings.push(createWarning('publications', 'No publication entries detected in text', 'info'));
+    return { data: [], warnings };
+  }
+
+  const expandedEntries: string[] = [];
+  for (const entry of finalEntries) {
+    if (isPublicationSubsectionMegaBlob(entry)) {
+      warnings.push(
+        createWarning(
+          'publications',
+          'Skipped aggregate subsection block (individual entries parsed separately)',
+          'info',
+          undefined,
+          entry.slice(0, 120),
+        ),
+      );
+      continue;
+    }
+    expandedEntries.push(entry);
+  }
+  finalEntries = expandedEntries;
 
   if (finalEntries.length === 0) {
     warnings.push(createWarning('publications', 'No publication entries detected in text', 'info'));

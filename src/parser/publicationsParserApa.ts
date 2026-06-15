@@ -40,7 +40,7 @@ export function splitPublicationApaBlocks(text: string): string[] {
     const t = cur.trim();
     if (t.length >= 55) {
       const head = t.split('\n')[0]?.trim() ?? '';
-      if (!isPublicationProseNoiseLine(head)) {
+      if (!isPublicationProseNoiseLine(head) && !/^BOOKS\s+AND\s+BOOK\s+CHAPTERS\b/i.test(head)) {
         out.push(t);
       }
     }

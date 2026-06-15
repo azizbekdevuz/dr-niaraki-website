@@ -13,7 +13,9 @@ import {
   extractJournalName,
   extractYear,
 } from './parserUtils';
+import { parseApaCitationParts } from './publicationApaStructure';
 import { applyPublicationVolumeIssuePages } from './publicationEntryMetadata';
+import { isMalformedPublicationVenue } from './publicationVenueQuality';
 
 export function applyPublicationCoreMetadata(
   trimmed: string,
@@ -56,6 +58,24 @@ export function applyPublicationCoreMetadata(
 }
 
 export function fillPublicationTitleFromCitation(trimmed: string, pub: MutablePublication): void {
+  const apaParts = parseApaCitationParts(trimmed);
+  if (apaParts?.title) {
+    pub.title = apaParts.title;
+    if (!pub.authors) {
+      pub.authors = apaParts.authors;
+    }
+    if (!pub.year) {
+      pub.year = apaParts.year;
+    }
+    const venueFromBody = extractJournalName(
+      `${apaParts.authors} (${apaParts.year}). ${apaParts.title}. ${apaParts.body}`,
+    );
+    if (venueFromBody) {
+      pub.journal = venueFromBody;
+    }
+    return;
+  }
+
   const quoted = trimmed.match(/"([^"]{8,})"/);
   if (quoted?.[1]) {
     pub.title = quoted[1].trim();
@@ -116,6 +136,20 @@ export function finalizePublicationEntry(
 ): void {
   fillPublicationTitleFromCitation(trimmed, pub);
   applyPublicationVolumeIssuePages(trimmed, pub);
+
+  if (pub.journal && pub.title && isMalformedPublicationVenue(pub.title, pub.journal)) {
+    warnings.push(
+      createWarning(
+        'publications',
+        `Publication ${index + 1}: venue may be incorrect — please review`,
+        'warning',
+        index,
+        `${pub.title.slice(0, 60)} | journal: ${pub.journal}`,
+      ),
+    );
+    pub.journal = null;
+  }
+
   if (!pub.title || pub.title.length < 10) {
     warnings.push(
       createWarning(

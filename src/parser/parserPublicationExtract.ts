@@ -2,6 +2,8 @@
  * APA-style venue/journal extraction from citation text.
  */
 
+import { parseApaCitationParts } from './publicationApaStructure';
+
 const MONTH_IN_YEAR = /\(\d{4}(?:,\s*[A-Za-z]+)?\)/;
 
 /**
@@ -116,6 +118,14 @@ export function determinePublicationType(text: string): 'journal' | 'conference'
  * Extracts authors from citation text
  */
 export function extractAuthors(text: string): string | null {
+  const parts = parseApaCitationParts(text);
+  if (parts?.authors) {
+    const authors = parts.authors.trim();
+    if (authors.includes(',') || authors.includes('&') || authors.includes('and')) {
+      return authors;
+    }
+  }
+
   const pattern = /^([^(]+?)(?:\s*\(?\d{4}(?:,\s*[A-Za-z]+)?\)?)/;
   const match = text.match(pattern);
 
