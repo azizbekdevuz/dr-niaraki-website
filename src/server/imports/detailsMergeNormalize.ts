@@ -10,14 +10,23 @@ export function nonEmptyLines(text: string | null | undefined): string[] {
     .filter((p) => p.length > 0);
 }
 
-export function publicationType(t: string | null | undefined): 'journal' | 'conference' | 'book' {
-  if (t === 'chapter') {
+export type PublicationSiteType = 'journal' | 'conference' | 'book' | 'other';
+
+/**
+ * Maps parser publication types to public site types.
+ * Unknown/null/`other` stay `other` — never promoted to journal or book.
+ */
+export function publicationType(t: string | null | undefined): PublicationSiteType {
+  if (t === 'chapter' || t === 'book') {
     return 'book';
   }
-  if (t === 'conference' || t === 'book') {
-    return t;
+  if (t === 'conference') {
+    return 'conference';
   }
-  return 'journal';
+  if (t === 'journal') {
+    return 'journal';
+  }
+  return 'other';
 }
 
 export function normalizedPublicationYear(year: number | null | undefined, ceilingYear: number): number {
@@ -44,8 +53,35 @@ export function awardImpactFrom(
   return detailsText?.trim().slice(0, 500) || '—';
 }
 
-export function patentStatus(s: string | null | undefined): 'registered' | 'pending' {
-  return s === 'registered' ? 'registered' : 'pending';
+const REGISTRATION_COMPLETED = /\b(?:patent\s+)?registration\s+completed\b/i;
+
+export type PatentSiteStatus = 'registered' | 'pending' | 'unknown' | 'expired';
+
+/**
+ * Maps parser patent status to public site status.
+ * Null/unsupported values stay `unknown` — never promoted to pending.
+ * Legacy `completed` upgrades to registered only when raw proves registration completed.
+ */
+export function patentStatus(
+  s: string | null | undefined,
+  raw?: string | null,
+): PatentSiteStatus {
+  if (s === 'registered') {
+    return 'registered';
+  }
+  if (s === 'pending') {
+    return 'pending';
+  }
+  if (s === 'expired') {
+    return 'expired';
+  }
+  if (s === 'completed') {
+    if (raw && REGISTRATION_COMPLETED.test(raw)) {
+      return 'registered';
+    }
+    return 'unknown';
+  }
+  return 'unknown';
 }
 
 export function patentType(t: string | null | undefined): 'international' | 'korean' {

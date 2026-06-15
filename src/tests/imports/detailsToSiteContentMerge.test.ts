@@ -229,4 +229,104 @@ describe('mergeCvDetailsIntoSiteContent', () => {
     expect(merged.research.interests[0]?.iconName).toBe(base.research.interests[0]?.iconName);
     expect(merged.research.interests[1]?.name).toBe(base.research.interests[1]?.name);
   });
+
+  it('keeps US patent 11,816,804B2 registered after merge when parser emits registered', () => {
+    const base = assertSiteContent(SITE_CONTENT_RAW);
+    const details = sampleDetails();
+    details.patents = [
+      {
+        id: 'us-international-patent-us11-8-3c7806e6',
+        title: 'Method and system of recommending accommodation for tourists',
+        inventors: 'Abolghasem Sadeghi-Niaraki, Soo-Mi Choi, Somaieh Rokhsaritalemi',
+        number: '11,816,804B2',
+        country: 'US',
+        date: 'Nov 14, 2023',
+        status: 'registered',
+        type: 'international',
+        raw: 'Status: Registration completed',
+      },
+    ];
+    const merged = mergeCvDetailsIntoSiteContent(details, base);
+    const p = merged.patents.items.find((x) => x.number === '11,816,804B2');
+    expect(p?.status).toBe('registered');
+  });
+
+  it('maps legacy completed patent status using raw registration proof', () => {
+    const base = assertSiteContent(SITE_CONTENT_RAW);
+    const details = sampleDetails();
+    details.patents[0]!.status = 'completed';
+    details.patents[0]!.raw = 'Status: Registration completed';
+    const merged = mergeCvDetailsIntoSiteContent(details, base);
+    expect(merged.patents.items[0]?.status).toBe('registered');
+  });
+
+  it('maps legacy completed without raw proof as unknown for review', () => {
+    const base = assertSiteContent(SITE_CONTENT_RAW);
+    const details = sampleDetails();
+    details.patents[0]!.status = 'completed';
+    details.patents[0]!.raw = 'Status: Application completed';
+    const merged = mergeCvDetailsIntoSiteContent(details, base);
+    expect(merged.patents.items[0]?.status).toBe('unknown');
+  });
+
+  it('maps null patent status to unknown not pending', () => {
+    const base = assertSiteContent(SITE_CONTENT_RAW);
+    const details = sampleDetails();
+    details.patents[0]!.status = null;
+    const merged = mergeCvDetailsIntoSiteContent(details, base);
+    expect(merged.patents.items[0]?.status).toBe('unknown');
+  });
+
+  it('maps publication other type to other not journal', () => {
+    const base = assertSiteContent(SITE_CONTENT_RAW);
+    const details = sampleDetails();
+    details.publications = [
+      {
+        id: 'book1',
+        title: 'Ontology-based GIS Modeling',
+        authors: 'A. Author',
+        journal: 'VDM Publisher',
+        year: 2009,
+        volume: null,
+        issue: null,
+        pages: null,
+        doi: null,
+        link: null,
+        type: 'other',
+        impactFactor: null,
+        quartile: null,
+        raw: 'VDM - The Publisher',
+      },
+    ];
+    const merged = mergeCvDetailsIntoSiteContent(details, base);
+    expect(merged.publications.items[0]?.type).toBe('other');
+    expect(merged.publications.stats.others).toBe(1);
+    expect(merged.publications.stats.journals).toBe(0);
+  });
+
+  it('maps parser book type to book and keeps other separate', () => {
+    const base = assertSiteContent(SITE_CONTENT_RAW);
+    const details = sampleDetails();
+    details.publications = [
+      {
+        id: 'book2',
+        title: 'Monograph',
+        authors: 'A',
+        journal: 'VDM',
+        year: 2009,
+        volume: null,
+        issue: null,
+        pages: null,
+        doi: null,
+        link: null,
+        type: 'book',
+        impactFactor: null,
+        quartile: null,
+        raw: null,
+      },
+    ];
+    const merged = mergeCvDetailsIntoSiteContent(details, base);
+    expect(merged.publications.items[0]?.type).toBe('book');
+    expect(merged.publications.stats.books).toBe(1);
+  });
 });

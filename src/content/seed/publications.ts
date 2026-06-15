@@ -9,6 +9,7 @@ export const publicationsSeed = {
     journals: 120,
     conferences: 60,
     books: 5,
+    others: 0,
     phdAdvised: 6,
   },
   items: [

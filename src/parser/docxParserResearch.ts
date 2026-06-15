@@ -5,6 +5,7 @@
 import type { Grant, ResearchProject } from '@/types/details';
 
 import { generateStableId } from './parserUtils';
+import { extractMonthYearPeriod, extractPeriodFromText, resolveResearchProjectStatus } from './periodExtract';
 
 export function parseGrantsSection(text: string): Grant[] {
   const grantsResult: Grant[] = [];
@@ -33,6 +34,24 @@ export function parseGrantsSection(text: string): Grant[] {
   return grantsResult;
 }
 
+function extractFundingAmount(text: string): string | null {
+  const dollar = text.match(/(?:approx\.?\s*)?(?:\$|USD)\s*([\d,]+(?:\.\d+)?)\s*([MKmk])?/i);
+  if (dollar?.[1]) {
+    return `$${dollar[1]}${dollar[2] ?? ''}`;
+  }
+
+  const contextual = text.match(
+    /(?:funding|budget|grant|approx\.?|total|R&D|multi-million-dollar)[^.!\n]{0,100}?([\d,]+(?:\.\d+)?)\s*([MKmk])\b/i,
+  );
+  if (contextual?.[1]) {
+    return `$${contextual[1]}${contextual[2] ?? ''}`;
+  }
+
+  return null;
+}
+
+export { extractFundingAmount };
+
 export function parseResearchSection(text: string): ResearchProject[] {
   const projectsResult: ResearchProject[] = [];
   const entries = text.split(/\n(?=[A-Z][^\n]*\s*\|)/);
@@ -44,21 +63,34 @@ export function parseResearchSection(text: string): ResearchProject[] {
     }
 
     const lines = trimmed.split('\n');
-    const title = lines[0]?.split('|')[0]?.trim() || '';
+    const header = lines[0] ?? '';
+    if (!header.includes('|')) {
+      return;
+    }
+    const pipeParts = header.split('|');
+    const title = pipeParts[0]?.trim() || '';
+    if (/^(?:Academic Program Development|International Partnerships|Research Grants,?)/i.test(title)) {
+      return;
+    }
+    const fundingAgency = pipeParts.length > 1 ? pipeParts.slice(1).join('|').trim() : null;
 
-    const periodMatch = trimmed.match(/(\d{4})\s*[-–]\s*(\d{4}|\bPresent\b)/i);
-    const fundingMatch = trimmed.match(/\$[\d,]+|\d+,?\d*\s*USD/i);
+    const monthPeriod = extractMonthYearPeriod(trimmed);
+    const barePeriod = extractPeriodFromText(trimmed);
+    const period = monthPeriod ?? barePeriod?.period ?? null;
+
+    const fundingAmount = extractFundingAmount(trimmed);
+    const status = resolveResearchProjectStatus(trimmed, period);
 
     if (title) {
       projectsResult.push({
         id: generateStableId(title, index),
         title,
         description: lines.slice(1).join('\n').trim() || null,
-        period: periodMatch ? `${periodMatch[1]} - ${periodMatch[2]}` : null,
-        funding: null,
-        fundingAmount: fundingMatch?.[0] || null,
+        period,
+        funding: fundingAgency,
+        fundingAmount,
         role: null,
-        status: periodMatch?.[2]?.toLowerCase() === 'present' ? 'ongoing' : 'completed',
+        status,
         raw: trimmed,
       });
     }
@@ -68,7 +100,7 @@ export function parseResearchSection(text: string): ResearchProject[] {
 }
 
 export function countStudents(text: string): number {
-  const match = text.match(/(?:supervised?|mentored?)\s*(?:more than\s+)?(\d+)\+?\s*(?:Master|PhD|graduate)/i);
+  const match = text.match(/(?:supervised?|mentored?)\s*(?:more than\s+)?(\d+)\+?\s*((?:Master|PhD|graduate))/i);
   if (match && match[1]) {
     return parseInt(match[1], 10);
   }

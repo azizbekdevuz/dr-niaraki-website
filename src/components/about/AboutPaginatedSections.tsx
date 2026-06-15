@@ -8,6 +8,7 @@ import { ListPagination } from '@/components/shared/ListPagination';
 import { SectionHeading } from '@/components/shared/SectionHeading';
 import type { AboutAwardItem, AboutExperienceItem, AboutJourneyItem } from '@/content/types';
 import { usePaginatedSlice } from '@/hooks/usePaginatedSlice';
+import { displayOrNull } from '@/lib/missingValue';
 
 const JOURNEY_PAGE_SIZE = 3;
 const EXPERIENCE_PAGE_SIZE = 3;
@@ -145,17 +146,24 @@ export function AboutAwardsSection({
       </motion.div>
 
       <div key={page} className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {slice.map((award) => (
+        {slice.map((award) => {
+          const year = displayOrNull(award.year);
+          const organization = displayOrNull(award.organization);
+          const details = displayOrNull(award.details);
+          return (
           <div key={award.id} className="card card-rich p-6">
-            <div className="mb-3 flex items-center gap-2">
-              <Award className="h-5 w-5 text-warning" aria-hidden />
-              <span className="text-sm font-medium text-warning">{award.year}</span>
-            </div>
+            {year ? (
+              <div className="mb-3 flex items-center gap-2">
+                <Award className="h-5 w-5 text-warning" aria-hidden />
+                <span className="text-sm font-medium text-warning">{year}</span>
+              </div>
+            ) : null}
             <h3 className="mb-2 font-semibold text-foreground">{award.title}</h3>
-            <p className="mb-2 text-sm text-accent-primary">{award.organization}</p>
-            <p className="text-sm leading-relaxed text-muted">{award.details}</p>
+            {organization ? <p className="mb-2 text-sm text-accent-primary">{organization}</p> : null}
+            {details ? <p className="text-sm leading-relaxed text-muted">{details}</p> : null}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <ListPagination

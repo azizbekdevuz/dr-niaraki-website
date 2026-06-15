@@ -1,17 +1,24 @@
 'use client';
 
-import { Calendar, CheckCircle, Clock, Flag, Globe, Shield } from 'lucide-react';
+import { Calendar, CheckCircle, Clock, Flag, Globe, HelpCircle, Shield, XCircle } from 'lucide-react';
 import React from 'react';
 
 import type { PatentItem } from '@/content/schema';
+import { displayOrNull } from '@/lib/missingValue';
 
 export type PatentEntryCardProps = {
   patent: PatentItem;
 };
 
 export function PatentEntryCard({ patent }: PatentEntryCardProps) {
-  const StatusIcon = patent.status === 'registered' ? CheckCircle : Clock;
-  const statusColor = patent.status === 'registered' ? 'text-success' : 'text-warning';
+  const statusMeta = {
+    registered: { Icon: CheckCircle, color: 'text-success' },
+    pending: { Icon: Clock, color: 'text-warning' },
+    expired: { Icon: XCircle, color: 'text-muted' },
+    unknown: { Icon: HelpCircle, color: 'text-muted' },
+  } as const;
+  const { Icon: StatusIcon, color: statusColor } = statusMeta[patent.status] ?? statusMeta.unknown;
+  const inventors = displayOrNull(patent.inventors);
 
   return (
     <article className="card card-rich p-6">
@@ -43,9 +50,9 @@ export function PatentEntryCard({ patent }: PatentEntryCardProps) {
         </div>
       </div>
 
-      <p className="mt-4 line-clamp-2 text-sm leading-relaxed text-muted">
-        Inventors: {patent.inventors}
-      </p>
+      {inventors ? (
+        <p className="mt-4 line-clamp-2 text-sm leading-relaxed text-muted">Inventors: {inventors}</p>
+      ) : null}
     </article>
   );
 }

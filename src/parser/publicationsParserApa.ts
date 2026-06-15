@@ -60,7 +60,8 @@ export function splitPublicationApaBlocks(text: string): string[] {
     );
   };
 
-  const isNewApaEntry = (line: string) => /^[A-Z].{12,240}\(\d{4}\)\.\s/.test(line.trim());
+  const isNewApaEntry = (line: string) =>
+    /^[A-Z].{12,240}\(\d{4}(?:,\s*[A-Za-z]+)?\)\.\s/.test(line.trim());
 
   for (const line of lines) {
     const t = line.trim();

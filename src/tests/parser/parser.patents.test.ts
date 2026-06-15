@@ -59,7 +59,33 @@ Status: Application completed`;
       '19/326,984',
     ]);
     expect(result.data.every((p) => p.country === 'US')).toBe(true);
+    expect(result.data[0]?.status).toBe('registered');
+    expect(result.data[1]?.status).toBe('pending');
     const numberWarnings = result.warnings.filter((w) => w.message.includes('patent number not found'));
     expect(numberWarnings).toHaveLength(0);
+  });
+
+  it('parses Korean single-line patent with apparatus as korean type', () => {
+    const text =
+      '10-2828547 – 2025-06-27 Spatial-temporal distribution analysis method and apparatus of school';
+    const result = parsePatents(text);
+    expect(result.data[0]?.country).toBe('Korea');
+    expect(result.data[0]?.type).toBe('korean');
+  });
+
+  it('extracts inventors from US patent with Inventors label', () => {
+    const text = `US International Patent (US11,816,804B2) - Nov 14, 2023
+Title: "Tourist Accommodation Recommendation Method"
+Inventors: Abolghasem Sadeghi-Niaraki, Soo-Mi Choi
+Status: Registration completed`;
+    const result = parsePatents(text);
+    expect(result.data[0]?.inventors).toContain('Sadeghi-Niaraki');
+  });
+
+  it('leaves inventors null when not present on Korean single-line patent', () => {
+    const text =
+      '10-2828547 – 2025-06-27 Spatial-temporal distribution analysis method and apparatus of school';
+    const result = parsePatents(text);
+    expect(result.data[0]?.inventors).toBeNull();
   });
 });

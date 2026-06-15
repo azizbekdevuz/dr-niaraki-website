@@ -9,6 +9,8 @@ export const patentsSeed = {
     international: 3,
     korean: 20,
     pending: 19,
+    unknown: 0,
+    expired: 0,
   },
   items: [
     {

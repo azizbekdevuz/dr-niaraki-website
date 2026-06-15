@@ -5,6 +5,7 @@ import React from 'react';
 
 import { MetaFactRow } from '@/components/shared/MetaFactRow';
 import type { SiteContent } from '@/content/schema';
+import { displayOrNull } from '@/lib/missingValue';
 
 type ResearchProject = SiteContent['research']['projects'][number];
 
@@ -13,6 +14,11 @@ export type ResearchProjectCardProps = {
 };
 
 export function ResearchProjectCard({ project }: ResearchProjectCardProps) {
+  const period = displayOrNull(project.period);
+  const role = displayOrNull(project.role);
+  const amount = displayOrNull(project.amount);
+  const funding = displayOrNull(project.funding);
+
   return (
     <div className="card card-rich p-6">
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -29,15 +35,15 @@ export function ResearchProjectCard({ project }: ResearchProjectCardProps) {
               {project.status}
             </span>
           </div>
-          <p className="text-sm leading-relaxed text-secondary">{project.description}</p>
+          <p className="whitespace-pre-line text-sm leading-relaxed text-secondary">{project.description}</p>
         </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MetaFactRow icon={Calendar}>{project.period}</MetaFactRow>
-        <MetaFactRow icon={Users}>{project.role}</MetaFactRow>
-        <MetaFactRow icon={DollarSign}>{project.amount}</MetaFactRow>
-        <MetaFactRow icon={FolderGit2}>{project.funding}</MetaFactRow>
+        {period ? <MetaFactRow icon={Calendar}>{period}</MetaFactRow> : null}
+        {role ? <MetaFactRow icon={Users}>{role}</MetaFactRow> : null}
+        {amount ? <MetaFactRow icon={DollarSign}>{amount}</MetaFactRow> : null}
+        {funding ? <MetaFactRow icon={FolderGit2}>{funding}</MetaFactRow> : null}
       </div>
     </div>
   );

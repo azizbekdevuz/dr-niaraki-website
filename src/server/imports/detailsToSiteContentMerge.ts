@@ -1,4 +1,5 @@
 import type { ResearchProjectItem, SiteContent } from '@/content/schema';
+import { mergeRequiredField } from '@/lib/missingValue';
 import { applyCvNarrativeSectionsToSiteContent } from '@/server/imports/cvNarrativeToSimpleLists';
 import {
   awardImpactFrom,
@@ -17,12 +18,12 @@ function mapDetailsResearchProjectToSite(p: DetailsSchemaType['research']['proje
   return {
     id: p.id.trim(),
     title: p.title.trim(),
-    description: (p.description ?? p.raw ?? '—').toString().trim(),
-    period: (p.period ?? '—').toString().trim(),
-    funding: (p.funding ?? '—').toString().trim(),
-    amount: (p.fundingAmount ?? '—').toString().trim(),
+    description: mergeRequiredField(p.description ?? p.raw),
+    period: mergeRequiredField(p.period),
+    funding: mergeRequiredField(p.funding),
+    amount: mergeRequiredField(p.fundingAmount),
     status,
-    role: (p.role ?? '—').toString().trim(),
+    role: mergeRequiredField(p.role),
   };
 }
 
@@ -71,8 +72,8 @@ export function mergeCvDetailsIntoSiteContent(
       id: ed.id.trim(),
       title: ed.degree.trim(),
       institution: ed.institution.trim(),
-      year: (ed.period ?? ed.year ?? '—').toString().trim(),
-      details: (ed.details ?? ed.thesis ?? ed.raw ?? '—').toString().trim(),
+      year: mergeRequiredField(ed.period ?? ed.year),
+      details: mergeRequiredField(ed.details ?? ed.thesis ?? ed.raw),
     }));
   }
 
@@ -85,7 +86,7 @@ export function mergeCvDetailsIntoSiteContent(
         position: p.title.trim(),
         institution: p.institution.trim(),
         duration: p.period.trim(),
-        details: (p.details ?? p.raw ?? '—').toString().trim(),
+        details: mergeRequiredField(p.details ?? p.raw),
         achievements: [...(p.achievements ?? [])],
         projects: previous?.projects?.length ? [...previous.projects] : [],
         type: p.type === 'research' || p.type === 'consulting' ? p.type : 'academic',
@@ -95,9 +96,9 @@ export function mergeCvDetailsIntoSiteContent(
 
   if (!fr.has('awards')) {
     next.about.awards = details.about.awards.map((a) => {
-      const org = (a.organization ?? '—').toString().trim();
-      const year = (a.year ?? '—').toString().trim();
-      const detailsText = (a.details ?? '—').toString().trim();
+      const org = mergeRequiredField(a.organization);
+      const year = mergeRequiredField(a.year);
+      const detailsText = mergeRequiredField(a.details);
       return {
         id: a.id.trim(),
         title: a.title.trim(),
@@ -123,8 +124,8 @@ export function mergeCvDetailsIntoSiteContent(
     next.publications.items = details.publications.map((pub) => ({
       id: pub.id.trim(),
       title: pub.title.trim(),
-      authors: (pub.authors ?? '—').toString().trim(),
-      journal: (pub.journal ?? '—').toString().trim(),
+      authors: mergeRequiredField(pub.authors),
+      journal: mergeRequiredField(pub.journal),
       year: normalizedPublicationYear(pub.year ?? null, yearCeiling),
       type: publicationType(pub.type ?? undefined),
       impactFactor: pub.impactFactor ?? undefined,
@@ -135,11 +136,13 @@ export function mergeCvDetailsIntoSiteContent(
     const pj = next.publications.items.filter((i) => i.type === 'journal').length;
     const pc = next.publications.items.filter((i) => i.type === 'conference').length;
     const pb = next.publications.items.filter((i) => i.type === 'book').length;
+    const po = next.publications.items.filter((i) => i.type === 'other').length;
     next.publications.stats = {
       total: next.publications.items.length,
       journals: pj,
       conferences: pc,
       books: pb,
+      others: po,
       phdAdvised: next.publications.stats.phdAdvised,
     };
   }
@@ -148,22 +151,26 @@ export function mergeCvDetailsIntoSiteContent(
     next.patents.items = details.patents.map((pt) => ({
       id: pt.id.trim(),
       title: pt.title.trim(),
-      number: (pt.number ?? '—').toString().trim(),
-      country: (pt.country ?? '—').toString().trim(),
-      date: (pt.date ?? '—').toString().trim(),
-      inventors: (pt.inventors ?? '—').toString().trim(),
-      status: patentStatus(pt.status ?? undefined),
+      number: mergeRequiredField(pt.number),
+      country: mergeRequiredField(pt.country),
+      date: mergeRequiredField(pt.date),
+      inventors: mergeRequiredField(pt.inventors),
+      status: patentStatus(pt.status ?? undefined, pt.raw),
       type: patentType(pt.type ?? undefined),
     }));
 
     const pi = next.patents.items.filter((i) => i.type === 'international').length;
     const pk = next.patents.items.filter((i) => i.type === 'korean').length;
     const pend = next.patents.items.filter((i) => i.status === 'pending').length;
+    const punknown = next.patents.items.filter((i) => i.status === 'unknown').length;
+    const pexpired = next.patents.items.filter((i) => i.status === 'expired').length;
     next.patents.stats = {
       total: next.patents.items.length,
       international: pi,
       korean: pk,
       pending: pend,
+      unknown: punknown,
+      expired: pexpired,
     };
   }
 

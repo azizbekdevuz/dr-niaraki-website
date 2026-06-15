@@ -72,6 +72,7 @@ export function classifyCvSectionBoundary(line: string): SectionType | null {
     { re: /^workshops\s+and\s+exhibitions\b/i, type: 'workshops' },
     { re: /^skills\b/i, type: 'skills' },
     { re: /^awards\s*(?:&|and)\s*honors\b/i, type: 'awards' },
+    { re: /^professional\s+memberships\b/i, type: 'academic_narrative' },
     // NOTE: "Books and Book Chapters" is intentionally absent here.
     // It is a subsection heading within Publications, not a top-level boundary.
     // The ALL-CAPS guard above also suppresses BOOKS AND BOOK CHAPTERS.

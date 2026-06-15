@@ -39,19 +39,28 @@ function splitPatentSectionIntoEntries(text: string): string[] {
     return [];
   }
 
-  // Primary split: fire before any line that starts a new patent entry.
-  // Covers:
-  //  - "US International Patent (…)" — US format
-  //  - "Patent No. 10-XXXXXXX" — Korean registered with prefix
-  //  - "Application No. 10-XXXX-XXXXXXX" — Korean application with prefix
-  //  - "10-XXXXXXX – YYYY-MM-DD …" — Korean single-line bare number format
-  //    (real DOCX style from 2025 DOCX: no "Patent No." prefix)
-  const blocks = raw.split(
-    /\n(?=[^\n]*?(?:\bUS\s+International\s+Patent\b|\bPatent\s+No\.|\bApplication\s+No\.?\b|\b10-\d{4,}))/i,
-  );
-  const trimmed = blocks.map((b) => b.trim()).filter((b) => b.length > 22).filter(looksLikePatentEntry);
-  if (trimmed.length >= 4) {
-    return trimmed;
+  const patentMarker =
+    /(?=^(?:\bUS\s+International\s+Patent\b|\bPatent\s+No\.|\bApplication\s+No\.?\b|\b10-\d{4,}))/im;
+
+  const blocks = raw
+    .split(patentMarker)
+    .map((b) => b.trim())
+    .filter((b) => b.length > 22)
+    .filter(looksLikePatentEntry);
+
+  if (blocks.length > 1) {
+    return blocks;
+  }
+
+  if (blocks.length === 1) {
+    const inline = raw
+      .split(/(?=\bUS\s+International\s+Patent\b)/i)
+      .map((b) => b.trim())
+      .filter((b) => b.length > 22 && looksLikePatentEntry(b));
+    if (inline.length > 1) {
+      return inline;
+    }
+    return blocks;
   }
 
   const byAppOnly = raw.split(/\n(?=Application\s+No\.?\s*\d)/i);
@@ -59,11 +68,11 @@ function splitPatentSectionIntoEntries(text: string): string[] {
     .map((b) => b.trim())
     .filter((b) => b.length > 22)
     .filter(looksLikePatentEntry);
-  if (t2.length >= 4) {
+  if (t2.length >= 1) {
     return t2;
   }
 
-  return splitEntries(raw);
+  return splitEntries(raw).filter(looksLikePatentEntry);
 }
 
 /**
@@ -84,7 +93,7 @@ export function parsePatents(text: string): ParseResult<Patent[]> {
   
   // If no entries found, try more aggressive splitting
   let finalEntries = entries;
-  if (entries.length === 0 || entries.length === 1) {
+  if (entries.length === 0) {
     // Try splitting by line breaks that look like new entries
     const lines = cleanedText.split('\n').filter(l => l.trim().length > 15);
     const potentialEntries: string[] = [];
@@ -276,17 +285,10 @@ function parsePatentEntry(
     }
   }
   
-  // Extract inventors
+  // Extract inventors only when explicitly labeled
   const inventorsMatch = trimmed.match(/Inventors?:\s*([^\n]+)/i);
-  if (inventorsMatch) {
-    patent.inventors = inventorsMatch[1]?.trim() ?? '';
-  } else {
-    // Look for common inventor name patterns
-    const namePattern = /([A-Z][a-z]+(?:-[A-Z][a-z]+)?(?:\s+[A-Z][a-z]+(?:-[A-Z][a-z]+)?){1,3}(?:\s*,\s*[A-Z][a-z]+(?:-[A-Z][a-z]+)?(?:\s+[A-Z][a-z]+(?:-[A-Z][a-z]+)?){1,3})*)/;
-    const nameMatch = trimmed.match(namePattern);
-    if (nameMatch) {
-      patent.inventors = nameMatch[1];
-    }
+  if (inventorsMatch?.[1]) {
+    patent.inventors = inventorsMatch[1].trim();
   }
   
   return patent as Patent;
@@ -301,8 +303,8 @@ export function categorizePatents(patents: Patent[]): {
   other: Patent[];
 } {
   return {
-    registered: patents.filter(p => p.status === 'registered' || p.status === 'completed'),
-    pending: patents.filter(p => p.status === 'pending'),
-    other: patents.filter(p => p.status !== 'registered' && p.status !== 'pending' && p.status !== 'completed'),
+    registered: patents.filter((p) => p.status === 'registered'),
+    pending: patents.filter((p) => p.status === 'pending'),
+    other: patents.filter((p) => p.status !== 'registered' && p.status !== 'pending'),
   };
 }

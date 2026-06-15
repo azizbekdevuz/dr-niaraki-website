@@ -164,7 +164,7 @@ export const PublicationItemSchema = z.object({
   authors: z.string().min(1),
   journal: z.string().min(1),
   year: z.number().int(),
-  type: z.enum(['journal', 'conference', 'book']),
+  type: z.enum(['journal', 'conference', 'book', 'other']),
   impactFactor: z.string().optional(),
   quartile: z.string().optional(),
   doi: z.string().optional(),
@@ -175,6 +175,8 @@ export const PublicationStatsSchema = z.object({
   journals: z.number().int().nonnegative(),
   conferences: z.number().int().nonnegative(),
   books: z.number().int().nonnegative(),
+  /** Parser-classified or unknown publications needing review. */
+  others: z.number().int().nonnegative().default(0),
   /** Ph.D. dissertations directed to completion (CV: 6+). */
   phdAdvised: z.number().int().nonnegative(),
 });
@@ -193,7 +195,7 @@ export const PatentItemSchema = z.object({
   country: z.string().min(1),
   date: z.string().min(1),
   inventors: z.string().min(1),
-  status: z.enum(['registered', 'pending']),
+  status: z.enum(['registered', 'pending', 'unknown', 'expired']),
   type: z.enum(['international', 'korean']),
 });
 
@@ -202,6 +204,8 @@ export const PatentStatsSchema = z.object({
   international: z.number().int().nonnegative(),
   korean: z.number().int().nonnegative(),
   pending: z.number().int().nonnegative(),
+  unknown: z.number().int().nonnegative().default(0),
+  expired: z.number().int().nonnegative().default(0),
 });
 
 export const PatentsPageSchema = z.object({

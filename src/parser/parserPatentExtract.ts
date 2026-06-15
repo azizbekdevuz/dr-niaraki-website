@@ -30,22 +30,29 @@ export function extractPatentNumber(text: string): string | null {
 /**
  * Determines patent status from text
  */
-export function determinePatentStatus(text: string): 'registered' | 'pending' | 'completed' | 'expired' | null {
+export function determinePatentStatus(text: string): 'registered' | 'pending' | 'expired' | null {
   const lower = text.toLowerCase();
-  
-  if (lower.includes('registered') || lower.includes('granted')) {
+
+  // Phrase-specific before generic "application"
+  if (/\b(?:patent\s+)?registration\s+completed\b/i.test(text)) {
     return 'registered';
   }
-  if (lower.includes('pending') || lower.includes('under examination') || lower.includes('application')) {
+  if (lower.includes('registered') || lower.includes('granted') || lower.includes('issued')) {
+    return 'registered';
+  }
+  if (/\b(?:patent\s+)?application\s+completed\b/i.test(text)) {
     return 'pending';
   }
-  if (lower.includes('completed') || lower.includes('issued')) {
-    return 'completed';
+  if (lower.includes('pending') || lower.includes('under examination')) {
+    return 'pending';
+  }
+  if (/\bapplication\b/i.test(text) && !/\bregistration\b/i.test(text)) {
+    return 'pending';
   }
   if (lower.includes('expired')) {
     return 'expired';
   }
-  
+
   return null;
 }
 
@@ -53,14 +60,34 @@ export function determinePatentStatus(text: string): 'registered' | 'pending' | 
  * Determines patent type from text
  */
 export function determinePatentType(text: string): 'international' | 'korean' | 'other' | null {
-  const lower = text.toLowerCase();
-  
-  if (lower.includes('us patent') || lower.includes('international patent') || lower.includes('us ')) {
-    return 'international';
-  }
-  if (lower.includes('korean') || lower.includes('korea') || /10-\d{7}/.test(text)) {
+  // Korean patent-office numbers first — avoids false US match inside "apparatus of"
+  if (/\b10-\d{4,}/.test(text)) {
     return 'korean';
   }
-  
+
+  if (
+    /\bkorean\s+patent\b/i.test(text) ||
+    /\brepublic\s+of\s+korea\b/i.test(text) ||
+    /\bkipo\b/i.test(text) ||
+    /\bkorea\b/i.test(text) ||
+    /한국/.test(text)
+  ) {
+    return 'korean';
+  }
+
+  if (
+    /\bus\s+patent\b/i.test(text) ||
+    /\binternational\s+patent\b/i.test(text) ||
+    /\bunited\s+states\b/i.test(text) ||
+    /\buspto\b/i.test(text) ||
+    /\bUS\s+International\s+Patent\b/.test(text)
+  ) {
+    return 'international';
+  }
+
+  if (/\bUS\s*(?:\d{4}\/\d{7}|\d{1,3}[,.]?\d{3}[,.]?\d{3})/i.test(text)) {
+    return 'international';
+  }
+
   return 'other';
 }

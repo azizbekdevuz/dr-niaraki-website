@@ -7,7 +7,7 @@ vi.mock('@/server/content/contentWorkflowCore', () => ({
 }));
 
 import { SITE_CONTENT_RAW } from '@/content/defaults';
-import { assertSiteContent } from '@/content/validators';
+import { assertSiteContent, validateSiteContent } from '@/content/validators';
 import { getLatestPublishedVersion } from '@/server/content/contentWorkflowCore';
 import {
   getCanonicalSiteContent,
@@ -99,6 +99,41 @@ describe('publishedSiteContent helpers', () => {
     if (r.chosenSource === 'canonical') {
       expect(r.fallbackReason).toBe('invalid_published_payload');
       expect(r.failedVersionId).toBe('bad2');
+    }
+  });
+
+  it('getLatestPublishedOrCanonicalSiteContent loads v15-style payload without stats.others', async () => {
+    const v15Like = structuredClone(assertSiteContent(SITE_CONTENT_RAW));
+    const pubStats = { ...v15Like.publications.stats } as Record<string, number>;
+    delete pubStats.others;
+    v15Like.publications.stats = pubStats as typeof v15Like.publications.stats;
+    const patStats = { ...v15Like.patents.stats } as Record<string, number>;
+    delete patStats.unknown;
+    delete patStats.expired;
+    v15Like.patents.stats = patStats as typeof v15Like.patents.stats;
+
+    expect(validateSiteContent(v15Like).success).toBe(true);
+
+    vi.mocked(getLatestPublishedVersion).mockResolvedValue({
+      id: 'cmqbioh8t0003i50417cyk97c',
+      status: 'PUBLISHED',
+      payload: v15Like,
+      publishSequence: 15,
+      publishedAt: new Date('2026-06-12T22:49:18.283Z'),
+      importId: 'cmqbicp3z0004l204fkwxc189',
+      label: 'May 2026 update',
+      changeSummary: 'May 2026 update',
+      draftSlot: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: null,
+    } as never);
+
+    const r = await getLatestPublishedOrCanonicalSiteContent();
+    expect(r.chosenSource).toBe('db_published');
+    if (r.chosenSource === 'db_published') {
+      expect(r.data.publications.stats.others).toBe(0);
+      expect(r.data.patents.stats.unknown).toBe(0);
     }
   });
 });

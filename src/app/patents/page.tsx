@@ -34,7 +34,7 @@ const itemVariants = {
 };
 
 // Patent types
-type PatentFilter = 'all' | 'international' | 'korean' | 'pending';
+type PatentFilter = 'all' | 'international' | 'korean' | 'pending' | 'unknown';
 
 const PATENTS_PAGE_SIZE = 4;
 
@@ -52,6 +52,9 @@ export default function PatentsPage() {
       }
       if (filter === 'pending') {
         return patent.status === 'pending';
+      }
+      if (filter === 'unknown') {
+        return patent.status === 'unknown';
       }
       return patent.type === filter;
     });
@@ -121,6 +124,7 @@ export default function PatentsPage() {
               { value: 'international', label: 'International' },
               { value: 'korean', label: 'Korean' },
               { value: 'pending', label: 'Pending' },
+              { value: 'unknown', label: 'Unknown' },
             ].map((option) => (
               <FilterChipButton
                 key={option.value}

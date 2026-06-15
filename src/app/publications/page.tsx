@@ -161,15 +161,21 @@ export default function PublicationsPage() {
 
             {/* Type Filter */}
             <div className="flex flex-wrap gap-2 md:items-center">
-              {(['all', 'journal', 'conference', 'book'] as PublicationTypeFilter[]).map((type) => (
+              {(['all', 'journal', 'conference', 'book', 'other'] as PublicationTypeFilter[]).map((type) => {
+                let label = 'All';
+                if (type !== 'all') {
+                  label = type === 'other' ? 'Other' : `${type.charAt(0).toUpperCase()}${type.slice(1)}s`;
+                }
+                return (
                 <FilterChipButton
                   key={type}
                   selected={typeFilter === type}
                   onClick={() => setTypeFilter(type)}
                 >
-                  {type === 'all' ? 'All' : `${type.charAt(0).toUpperCase()}${type.slice(1)}s`}
+                  {label}
                 </FilterChipButton>
-              ))}
+                );
+              })}
             </div>
 
             {/* Sort */}

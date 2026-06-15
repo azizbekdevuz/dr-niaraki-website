@@ -224,7 +224,7 @@ export function DraftEditorSitePreview({
             <div className="space-y-3 text-xs">
               <p className="font-medium text-foreground">
                 {pub.stats.total} total · {pub.stats.journals} journals · {pub.stats.conferences} conferences ·{' '}
-                {pub.stats.books} books
+                {pub.stats.books} books · {pub.stats.others} other
               </p>
               <ul className="list-decimal space-y-2 pl-4 text-muted">
                 {pub.items.map((p) => (

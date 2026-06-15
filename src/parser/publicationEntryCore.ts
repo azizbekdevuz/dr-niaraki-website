@@ -62,11 +62,22 @@ export function fillPublicationTitleFromCitation(trimmed: string, pub: MutablePu
     return;
   }
 
-  const apaBody = trimmed.match(/^[^(]+?\(\d{4}\)\.\s*(.+)$/);
+  const apaBody = trimmed.match(/^[^(]+?\(\d{4}(?:,\s*[A-Za-z]+)?\)\.\s*(.+)$/s);
   if (apaBody?.[1]) {
     const body = apaBody[1].trim();
+    const venue = extractJournalName(trimmed);
+    if (venue) {
+      const venueIdx = body.indexOf(venue);
+      if (venueIdx > 20) {
+        pub.title = body.slice(0, venueIdx).replace(/\.\s*$/, '').trim();
+        if (!pub.journal) {
+          pub.journal = venue;
+        }
+        return;
+      }
+    }
     const journalBreak = body.search(
-      /\.\s+[A-Z](?:[a-z]+(?:\s+[a-z]+){0,10})\s*(?:\(?SCIE|\(?SSCI|,?\s*\d{1,2}\(\d)/i,
+      /\.\s+[A-Z](?:[a-z]+(?:\s+[a-z]+){0,10})\s*(?:\(?SCIE|\(?SSCI|,?\s*\d{1,4}\s*\()/i,
     );
     if (journalBreak > 25) {
       pub.title = body.slice(0, journalBreak + 1).trim();
@@ -84,8 +95,12 @@ export function fillPublicationTitleFromCitation(trimmed: string, pub: MutablePu
 
   const titleEnd = trimmed.search(/\.\s*(?:\(?\d{4}|\w+\s+Journal|Vol)/i);
   if (titleEnd > 0) {
-    pub.title = trimmed.slice(0, titleEnd).trim();
-    return;
+    const candidate = trimmed.slice(0, titleEnd).trim();
+    const looksLikeAuthorsOnly = /^[A-Z][a-z]+,/.test(candidate) && /\(\d{4}/.test(trimmed);
+    if (!looksLikeAuthorsOnly) {
+      pub.title = candidate;
+      return;
+    }
   }
 
   const firstLine = trimmed.split('\n')[0];
