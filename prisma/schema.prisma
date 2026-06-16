@@ -102,6 +102,10 @@ model ContentImport {
   rawExtract       Json?
   /// Parsed candidate payload for review — never the published/draft SiteContent until merged in a later phase.
   candidatePayload Json?
+  /// Candidate-vs-baseline reconciliation manifest (`CandidateReviewManifest` envelope).
+  reviewManifest Json?
+  /// Explicit admin approvals for reconciliation decisions.
+  reviewApprovals Json?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   versions         ContentVersion[]

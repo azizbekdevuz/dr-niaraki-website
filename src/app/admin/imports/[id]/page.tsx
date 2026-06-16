@@ -95,7 +95,12 @@ export default function AdminImportDetailPage() {
   const merge = useCallback(
     async (
       action: 'create' | 'replace',
-      opts: { mergeMode: 'safe_update' | 'full_replace'; acknowledgeHighRisk: boolean },
+      opts: {
+        mergeMode: 'safe_update' | 'full_replace';
+        acknowledgeHighRisk: boolean;
+        acknowledgeUnresolvedReview?: boolean;
+        unresolvedReviewReason?: string;
+      },
     ) => {
       setMerging(true);
       setMergeMsg(null);
@@ -109,6 +114,8 @@ export default function AdminImportDetailPage() {
             action,
             mergeMode: opts.mergeMode,
             acknowledgeHighRisk: opts.acknowledgeHighRisk ? true : undefined,
+            acknowledgeUnresolvedReview: opts.acknowledgeUnresolvedReview ? true : undefined,
+            unresolvedReviewReason: opts.unresolvedReviewReason,
           }),
         });
         const data = await res.json();
@@ -199,6 +206,7 @@ export default function AdminImportDetailPage() {
         merging={merging}
         mergeMsg={mergeMsg}
         error={error}
+        onReload={() => void load()}
         onMerge={(a, o) => void merge(a, o)}
       />
     </div>

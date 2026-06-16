@@ -13,6 +13,7 @@ import {
   resolveImportStatusAfterParse,
   zodIssuesToImportItems,
 } from '@/server/imports/docxImportArtifacts';
+import { generateAndPersistImportReviewManifest } from '@/server/imports/importCandidateReview/service';
 import {
   persistImportParseFailure,
   persistImportParseOutcome,
@@ -128,6 +129,19 @@ export async function runDocxImportParseJob(input: {
       parserVersion: PARSER_VERSION,
     });
     persistMs = Date.now() - persistStart;
+
+    try {
+      await generateAndPersistImportReviewManifest(input.importId);
+    } catch (reviewErr) {
+      const reviewMessage = reviewErr instanceof Error ? reviewErr.message : String(reviewErr);
+      console.warn(
+        JSON.stringify({
+          event: 'import_review_manifest_failed',
+          importId: input.importId,
+          message: reviewMessage,
+        }),
+      );
+    }
 
     logParseEvent({
       importId: input.importId,

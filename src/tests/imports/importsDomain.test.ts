@@ -92,6 +92,8 @@ describe('importsDomain', () => {
       rawPreviewPath: null,
       rawExtract: { a: 1 },
       candidatePayload: minimalImportDetails,
+      reviewManifest: null,
+      reviewApprovals: null,
       createdAt,
       updatedAt,
       uploadedFile: {
@@ -141,6 +143,8 @@ describe('importsDomain', () => {
       rawPreviewPath: null,
       rawExtract: null,
       candidatePayload: { notValidDetails: true },
+      reviewManifest: null,
+      reviewApprovals: null,
       createdAt,
       updatedAt,
       uploadedFile: {
@@ -184,6 +188,8 @@ describe('importsDomain', () => {
       rawPreviewPath: null,
       rawExtract: null,
       candidatePayload: envelope as unknown as Prisma.JsonValue,
+      reviewManifest: null,
+      reviewApprovals: null,
       createdAt,
       updatedAt,
       uploadedFile: {
@@ -244,6 +250,8 @@ describe('imports repository (mocked prisma)', () => {
       rawPreviewPath: null,
       rawExtract: null,
       candidatePayload: null,
+      reviewManifest: null,
+      reviewApprovals: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -273,6 +281,8 @@ describe('imports repository (mocked prisma)', () => {
       rawPreviewPath: null,
       rawExtract: null,
       candidatePayload: { x: 1 },
+      reviewManifest: null,
+      reviewApprovals: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

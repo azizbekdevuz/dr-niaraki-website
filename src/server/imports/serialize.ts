@@ -3,8 +3,12 @@ import 'server-only';
 import type { ContentImport, UploadedFile } from '@prisma/client';
 
 import { getDetailsFromCandidatePayload, parseImportCandidatePayload } from '@/server/imports/candidatePayload/schema';
+import { countUnresolvedBlockingDecisions } from '@/server/imports/importCandidateReview/gate';
+import { loadImportReviewStateFromRow } from '@/server/imports/importCandidateReview/reconcile';
+import { buildImportCandidateReviewStateDto } from '@/server/imports/importCandidateReview/state';
 import {
   importWarningItemSchema,
+  type ImportCandidateReconcileReviewDto,
   type ImportCandidateReviewMetadataDto,
   type ImportCandidateSummaryDto,
   type ImportDetailDto,
@@ -134,6 +138,26 @@ export function buildImportCandidateSummary(payload: unknown): ImportCandidateSu
   };
 }
 
+export function buildImportCandidateReconcileReview(
+  row: Pick<ContentImport, 'reviewManifest' | 'reviewApprovals'>,
+): ImportCandidateReconcileReviewDto | null {
+  const loaded = loadImportReviewStateFromRow({
+    reviewManifest: row.reviewManifest,
+    reviewApprovals: row.reviewApprovals,
+    candidatePayload: null,
+  });
+  if (!loaded) {
+    return null;
+  }
+  return buildImportCandidateReviewStateDto({
+    manifestEnvelope: loaded.manifestEnvelope,
+    manifest: loaded.manifest,
+    approvalsEnvelope: loaded.approvalsEnvelope,
+    approvals: loaded.approvals,
+    unresolvedBlockingCount: countUnresolvedBlockingDecisions(loaded.manifest),
+  });
+}
+
 export function toImportDetail(row: ImportWithFileAndVersions): ImportDetailDto {
   const summary = toImportSummary(row);
   const detailsOnly = getDetailsFromCandidatePayload(row.candidatePayload);
@@ -148,6 +172,7 @@ export function toImportDetail(row: ImportWithFileAndVersions): ImportDetailDto 
     candidatePayload: (detailsOnly ?? row.candidatePayload) as ImportDetailDto['candidatePayload'],
     candidateSummary: buildImportCandidateSummary(row.candidatePayload),
     candidateReview: buildImportCandidateReviewMetadata(row.candidatePayload),
+    candidateReconcileReview: buildImportCandidateReconcileReview(row),
     warnings: parseImportWarnings(row.warnings),
     linkedVersionIds: row.versions.map((v: { id: string }) => v.id),
   };
