@@ -8,6 +8,16 @@ import type {
 } from '@/server/imports/candidateReviewManifest';
 import type { StoredReviewApprovalsEnvelope, StoredReviewManifestEnvelope } from '@/server/imports/importCandidateReview/storageSchema';
 
+export type ImportCandidateReconcileLoadErrorCode =
+  | 'REVIEW_MANIFEST_INVALID'
+  | 'REVIEW_APPROVALS_INVALID'
+  | 'REVIEW_APPROVALS_STALE';
+
+export type ImportCandidateReconcileLoadErrorDto = {
+  code: ImportCandidateReconcileLoadErrorCode;
+  message: string;
+};
+
 export type ImportCandidateReviewStateDto = {
   hasManifest: boolean;
   manifestRevision: string | null;
@@ -23,6 +33,7 @@ export type ImportCandidateReviewStateDto = {
   unresolvedBlockingCount: number;
   mergeReviewBlocked: boolean;
   advisoryOnly: boolean;
+  loadError: ImportCandidateReconcileLoadErrorDto | null;
 };
 
 export function buildImportCandidateReviewStateDto(input: {
@@ -54,6 +65,31 @@ export function buildImportCandidateReviewStateDto(input: {
         (manifest.accounting.patents.unresolvedAdvisoryDecisions > 0 ||
           manifest.accounting.research.unresolvedAdvisoryDecisions > 0),
     ),
+    loadError: null,
+  };
+}
+
+export function buildImportCandidateReviewCorruptedDto(input: {
+  code: ImportCandidateReconcileLoadErrorCode;
+  message: string;
+  hasManifest: boolean;
+}): ImportCandidateReviewStateDto {
+  return {
+    hasManifest: input.hasManifest,
+    manifestRevision: null,
+    sourceTextHash: null,
+    baseline: null,
+    generatedAt: null,
+    importSource: null,
+    decisions: [],
+    accounting: null,
+    analysisAccounting: null,
+    approvals: [],
+    approvalsUpdatedAt: null,
+    unresolvedBlockingCount: 1,
+    mergeReviewBlocked: true,
+    advisoryOnly: false,
+    loadError: { code: input.code, message: input.message },
   };
 }
 

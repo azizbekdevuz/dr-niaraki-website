@@ -72,6 +72,10 @@ export type ImportCandidateReconcileReviewModel = {
   unresolvedBlockingCount: number;
   mergeReviewBlocked: boolean;
   advisoryOnly: boolean;
+  loadError?: {
+    code: 'REVIEW_MANIFEST_INVALID' | 'REVIEW_APPROVALS_INVALID' | 'REVIEW_APPROVALS_STALE';
+    message: string;
+  } | null;
 };
 
 export type ImportDetailModel = {
