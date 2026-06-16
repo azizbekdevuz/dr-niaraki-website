@@ -60,23 +60,38 @@ const advisorySectionAccountingSchema = z.object({
   affectedRecordCount: z.number().int().nonnegative(),
 });
 
-const candidateReviewManifestSchema = z.object({
-  generatedAt: z.string(),
-  importId: z.string().nullable().optional(),
-  importSource: z.string(),
-  baseline: reviewBaselineRefSchema,
-  decisions: z.array(reviewDecisionSchema),
-  analysisAccounting: z.object({
-    publications: reconciledSectionAccountingSchema,
-    awards: reconciledSectionAccountingSchema,
-  }),
-  accounting: z.object({
-    publications: reconciledSectionAccountingSchema,
-    awards: reconciledSectionAccountingSchema,
-    patents: advisorySectionAccountingSchema,
-    research: advisorySectionAccountingSchema,
-  }),
-});
+const candidateReviewManifestSchema = z
+  .object({
+    generatedAt: z.string(),
+    importId: z.string().nullable().optional(),
+    importSource: z.string(),
+    baseline: reviewBaselineRefSchema,
+    decisions: z.array(reviewDecisionSchema),
+    analysisAccounting: z.object({
+      publications: reconciledSectionAccountingSchema,
+      awards: reconciledSectionAccountingSchema,
+    }),
+    accounting: z.object({
+      publications: reconciledSectionAccountingSchema,
+      awards: reconciledSectionAccountingSchema,
+      patents: advisorySectionAccountingSchema,
+      research: advisorySectionAccountingSchema,
+    }),
+  })
+  .superRefine((value, ctx) => {
+    const seen = new Set<string>();
+    value.decisions.forEach((d, idx) => {
+      if (seen.has(d.decisionId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['decisions', idx, 'decisionId'],
+          message: 'decisionId must be unique within a manifest.',
+        });
+        return;
+      }
+      seen.add(d.decisionId);
+    });
+  });
 
 export const storedReviewManifestEnvelopeSchema = z.object({
   storageVersion: z.literal(IMPORT_REVIEW_STORAGE_VERSION),

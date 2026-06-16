@@ -144,7 +144,6 @@ export function buildImportCandidateReconcileReview(
   const loaded = loadImportReviewStateFromRow({
     reviewManifest: row.reviewManifest,
     reviewApprovals: row.reviewApprovals,
-    candidatePayload: null,
   });
   if (!loaded) {
     return null;

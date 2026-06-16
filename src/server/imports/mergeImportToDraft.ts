@@ -42,7 +42,8 @@ export class ImportMergeError extends Error {
       | 'REVIEW_BLOCKED'
       | 'REVIEW_MANIFEST_MISSING'
       | 'REVIEW_MANIFEST_STALE'
-      | 'REVIEW_APPROVALS_STALE',
+      | 'REVIEW_APPROVALS_STALE'
+      | 'REVIEW_APPROVALS_INVALID',
     message: string,
   ) {
     super(message);
@@ -70,6 +71,50 @@ export type MergeImportCandidateResult = {
   version: ContentVersion;
   alreadyMerged: boolean;
 };
+
+async function recordSuccessfulMergeEvents(input: {
+  versionId: string;
+  importId: string;
+  action: 'create' | 'replace';
+  draftEventType: 'WORKING_DRAFT_CREATED' | 'WORKING_DRAFT_UPDATED';
+  draftEventPayload: Prisma.InputJsonValue;
+  reconciledAccounting: Prisma.InputJsonValue | null;
+  unresolvedBlockingCount: number;
+  acknowledgedUnresolvedReview: boolean;
+  normalizedUnresolvedReviewReason: string | null;
+}): Promise<void> {
+  await recordContentEvent({
+    eventType: input.draftEventType,
+    versionId: input.versionId,
+    payload: input.draftEventPayload,
+  });
+  await recordContentEvent({
+    eventType: 'SYSTEM_NOTE',
+    versionId: input.versionId,
+    payload: {
+      kind: 'IMPORT_MERGED_TO_WORKING_DRAFT',
+      importId: input.importId,
+      action: input.action,
+      reconciledAccounting: input.reconciledAccounting,
+      unresolvedBlockingCount: input.unresolvedBlockingCount,
+      acknowledgedUnresolvedReview: input.acknowledgedUnresolvedReview,
+      unresolvedReviewReason: input.normalizedUnresolvedReviewReason,
+    },
+  });
+  if (input.acknowledgedUnresolvedReview) {
+    await recordContentEvent({
+      eventType: 'SYSTEM_NOTE',
+      versionId: input.versionId,
+      payload: {
+        kind: 'IMPORT_MERGE_UNRESOLVED_REVIEW_OVERRIDE',
+        importId: input.importId,
+        versionId: input.versionId,
+        unresolvedBlockingCount: input.unresolvedBlockingCount,
+        reason: input.normalizedUnresolvedReviewReason,
+      },
+    });
+  }
+}
 
 /**
  * Creates a working draft from the import candidate, or replaces the existing draft payload.
@@ -115,14 +160,22 @@ export async function mergeImportCandidateToWorkingDraft(input: {
   const baselineData = basePayload.data;
 
   const manifestEnvelope = await ensureImportReviewManifest(input.importId);
+  // Reload after ensureImportReviewManifest — it may have lazily generated and persisted a manifest.
   const reviewRow = await getContentImportDetail(input.importId);
-  const loadedReview = reviewRow
-    ? loadImportReviewStateFromRow({
+  let loadedReview: ReturnType<typeof loadImportReviewStateFromRow> = null;
+  if (reviewRow) {
+    try {
+      loadedReview = loadImportReviewStateFromRow({
         reviewManifest: reviewRow.reviewManifest,
         reviewApprovals: reviewRow.reviewApprovals,
-        candidatePayload: reviewRow.candidatePayload,
-      })
-    : null;
+      });
+    } catch (e) {
+      if (e instanceof ImportReviewReconcileError && e.code === 'REVIEW_APPROVALS_INVALID') {
+        throw new ImportMergeError('REVIEW_APPROVALS_INVALID', e.message);
+      }
+      throw e;
+    }
+  }
   if (!loadedReview) {
     throw new ImportMergeError('REVIEW_MANIFEST_MISSING', 'Import has no reconciliation review manifest.');
   }
@@ -166,27 +219,17 @@ export async function mergeImportCandidateToWorkingDraft(input: {
     throw e;
   }
 
-  if (
-    input.acknowledgeUnresolvedReview &&
-    unresolvedBlockingCount > 0 &&
-    !input.unresolvedReviewReason?.trim()
-  ) {
+  const acknowledgedUnresolvedReview =
+    Boolean(input.acknowledgeUnresolvedReview) && unresolvedBlockingCount > 0;
+  const normalizedUnresolvedReviewReason = acknowledgedUnresolvedReview
+    ? (input.unresolvedReviewReason?.trim() ?? '')
+    : '';
+
+  if (acknowledgedUnresolvedReview && normalizedUnresolvedReviewReason.length < 8) {
     throw new ImportMergeError(
       'MERGE_ACK_REQUIRED',
-      'Unresolved reconciliation override requires unresolvedReviewReason.',
+      'Unresolved reconciliation override requires unresolvedReviewReason of at least 8 characters.',
     );
-  }
-
-  if (input.acknowledgeUnresolvedReview && unresolvedBlockingCount > 0) {
-    await recordContentEvent({
-      eventType: 'SYSTEM_NOTE',
-      payload: {
-        kind: 'IMPORT_MERGE_UNRESOLVED_REVIEW_OVERRIDE',
-        importId: input.importId,
-        unresolvedBlockingCount,
-        reason: input.unresolvedReviewReason?.trim() ?? null,
-      },
-    });
   }
 
   const provenance: ImportReviewProvenance = {
@@ -244,29 +287,22 @@ export async function mergeImportCandidateToWorkingDraft(input: {
         createdBy: null,
       },
     });
-    await recordContentEvent({
-      eventType: 'WORKING_DRAFT_CREATED',
+    await recordSuccessfulMergeEvents({
       versionId: row.id,
-      payload: {
+      importId: input.importId,
+      action: 'create',
+      draftEventType: 'WORKING_DRAFT_CREATED',
+      draftEventPayload: {
         importId: input.importId,
         source: 'import_candidate',
         reconciledAccounting,
         unresolvedBlockingCount,
-        acknowledgedUnresolvedReview: Boolean(input.acknowledgeUnresolvedReview),
+        acknowledgedUnresolvedReview,
       },
-    });
-    await recordContentEvent({
-      eventType: 'SYSTEM_NOTE',
-      versionId: row.id,
-      payload: {
-        kind: 'IMPORT_MERGED_TO_WORKING_DRAFT',
-        importId: input.importId,
-        action: 'create',
-        reconciledAccounting,
-        unresolvedBlockingCount,
-        acknowledgedUnresolvedReview: Boolean(input.acknowledgeUnresolvedReview),
-        unresolvedReviewReason: input.unresolvedReviewReason ?? null,
-      },
+      reconciledAccounting,
+      unresolvedBlockingCount,
+      acknowledgedUnresolvedReview,
+      normalizedUnresolvedReviewReason: normalizedUnresolvedReviewReason || null,
     });
     await updateImportStatus(input.importId, 'MERGED');
     return { version: row, alreadyMerged: false };
@@ -283,29 +319,22 @@ export async function mergeImportCandidateToWorkingDraft(input: {
       changeSummary: input.changeSummary ?? working.changeSummary,
     },
   });
-  await recordContentEvent({
-    eventType: 'WORKING_DRAFT_UPDATED',
+  await recordSuccessfulMergeEvents({
     versionId: row.id,
-    payload: {
+    importId: input.importId,
+    action: 'replace',
+    draftEventType: 'WORKING_DRAFT_UPDATED',
+    draftEventPayload: {
       importId: input.importId,
       source: 'import_candidate_replace',
       reconciledAccounting,
       unresolvedBlockingCount,
-      acknowledgedUnresolvedReview: Boolean(input.acknowledgeUnresolvedReview),
+      acknowledgedUnresolvedReview,
     },
-  });
-  await recordContentEvent({
-    eventType: 'SYSTEM_NOTE',
-    versionId: row.id,
-    payload: {
-      kind: 'IMPORT_MERGED_TO_WORKING_DRAFT',
-      importId: input.importId,
-      action: 'replace',
-      reconciledAccounting,
-      unresolvedBlockingCount,
-      acknowledgedUnresolvedReview: Boolean(input.acknowledgeUnresolvedReview),
-      unresolvedReviewReason: input.unresolvedReviewReason ?? null,
-    },
+    reconciledAccounting,
+    unresolvedBlockingCount,
+    acknowledgedUnresolvedReview,
+    normalizedUnresolvedReviewReason: normalizedUnresolvedReviewReason || null,
   });
   await updateImportStatus(input.importId, 'MERGED');
   return { version: row, alreadyMerged: false };

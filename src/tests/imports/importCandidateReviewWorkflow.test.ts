@@ -39,13 +39,16 @@ import {
   generateImportReviewManifest,
   summarizeReviewManifestForAudit,
 } from '@/server/imports/importCandidateReview/generate';
+import { loadImportReviewStateFromRow } from '@/server/imports/importCandidateReview/reconcile';
 import { computeImportReviewManifestRevision } from '@/server/imports/importCandidateReview/revision';
 import {
   saveImportReviewApprovals,
+  importStatusAcceptsReviewApprovalUpdates,
 } from '@/server/imports/importCandidateReview/service';
 import {
   parseStoredReviewApprovals,
   parseStoredReviewManifest,
+  storedReviewManifestEnvelopeSchema,
   toStoredApprovalsEnvelope,
 } from '@/server/imports/importCandidateReview/storageSchema';
 import { minimalImportDetails } from '@/tests/fixtures/minimalImportDetails';
@@ -94,8 +97,9 @@ describe('import candidate review storage', () => {
       candidate,
     });
     const decision = manifest.decisions.find((d) => d.action === 'manual-review');
+    expect(decision).toBeDefined();
     if (!decision) {
-      return;
+      throw new Error('Expected at least one manual-review decision for this fixture.');
     }
     vi.mocked(prisma.contentImport.findUnique).mockResolvedValue({
       id: IMPORT_ID,
@@ -126,8 +130,9 @@ describe('import candidate review storage', () => {
     const decision = manifest.decisions.find(
       (d) => d.section === 'publications' && d.action === 'manual-review',
     );
+    expect(decision).toBeDefined();
     if (!decision) {
-      return;
+      throw new Error('Expected a publications manual-review decision for this fixture.');
     }
     const approvalsEnvelope = toStoredApprovalsEnvelope({
       manifestRevision: envelope.manifestRevision,
@@ -244,6 +249,133 @@ describe('import candidate review storage', () => {
       approvals: [{ decisionId: 'a:1', approvedAction: 'skip' }],
     });
     expect(parseStoredReviewApprovals(approvals)?.manifestRevision).toBe(revisionA);
+  });
+
+  it('rejects duplicate decisionId values in stored manifest envelope', async () => {
+    const candidate = minimalImportDetails();
+    const payload = envelopeFromDetails(candidate);
+    const { envelope, manifest } = await generateImportReviewManifest({
+      importId: IMPORT_ID,
+      sourceFileName: 'cv.docx',
+      sourceTextHash: payload.sourceTextHash,
+      candidate,
+    });
+    expect(manifest.decisions.length).toBeGreaterThan(0);
+    const duplicateDecision = { ...manifest.decisions[0]! };
+    const malformed = {
+      ...envelope,
+      manifest: {
+        ...manifest,
+        decisions: [...manifest.decisions, duplicateDecision],
+      },
+    };
+    expect(parseStoredReviewManifest(malformed)).toBeNull();
+  });
+
+  it('accepts unique decisionId values in stored manifest envelope', async () => {
+    const candidate = minimalImportDetails();
+    const payload = envelopeFromDetails(candidate);
+    const { envelope } = await generateImportReviewManifest({
+      importId: IMPORT_ID,
+      sourceFileName: 'cv.docx',
+      sourceTextHash: payload.sourceTextHash,
+      candidate,
+    });
+    expect(storedReviewManifestEnvelopeSchema.safeParse(envelope).success).toBe(true);
+  });
+
+  it('fails closed when stored approvals are malformed', async () => {
+    const candidate = minimalImportDetails();
+    const payload = envelopeFromDetails(candidate);
+    const { envelope } = await generateImportReviewManifest({
+      importId: IMPORT_ID,
+      sourceFileName: 'cv.docx',
+      sourceTextHash: payload.sourceTextHash,
+      candidate,
+    });
+    expect(() =>
+      loadImportReviewStateFromRow({
+        reviewManifest: envelope,
+        reviewApprovals: { not: 'valid' },
+      }),
+    ).toThrowError(expect.objectContaining({ code: 'REVIEW_APPROVALS_INVALID' }));
+  });
+
+  it('rejects approval save when import status flips to finalized inside transaction', async () => {
+    const candidate = minimalImportDetails();
+    const payload = envelopeFromDetails(candidate);
+    const { envelope, manifest } = await generateImportReviewManifest({
+      importId: IMPORT_ID,
+      sourceFileName: 'cv.docx',
+      sourceTextHash: payload.sourceTextHash,
+      candidate,
+    });
+    const decision = manifest.decisions.find(
+      (d) => d.section === 'publications' && d.action === 'manual-review',
+    );
+    expect(decision).toBeDefined();
+    if (!decision) {
+      throw new Error('Expected a publications manual-review decision for this fixture.');
+    }
+
+    vi.mocked(prisma.contentImport.findUnique).mockResolvedValue({
+      id: IMPORT_ID,
+      status: 'PARSED',
+      candidatePayload: payload,
+      reviewManifest: envelope,
+      reviewApprovals: null,
+    } as never);
+
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+      const tx = {
+        contentImport: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: IMPORT_ID,
+            status: 'MERGED',
+            candidatePayload: payload,
+            reviewManifest: envelope,
+            reviewApprovals: null,
+          }),
+          update: vi.fn(),
+        },
+      };
+      return fn(tx as never);
+    });
+
+    await expect(
+      saveImportReviewApprovals({
+        importId: IMPORT_ID,
+        manifestRevision: envelope.manifestRevision,
+        approvals: [{ decisionId: decision.decisionId, approvedAction: 'skip' }],
+      }),
+    ).rejects.toMatchObject({ code: 'IMPORT_FINALIZED' });
+  });
+
+  it('documents allowed import statuses for review approval updates', () => {
+    expect(importStatusAcceptsReviewApprovalUpdates('PARSED')).toBe(true);
+    expect(importStatusAcceptsReviewApprovalUpdates('NEEDS_REVIEW')).toBe(true);
+    expect(importStatusAcceptsReviewApprovalUpdates('MERGED')).toBe(false);
+    expect(importStatusAcceptsReviewApprovalUpdates('REJECTED')).toBe(false);
+    expect(importStatusAcceptsReviewApprovalUpdates('FAILED')).toBe(false);
+    expect(importStatusAcceptsReviewApprovalUpdates('UPLOADED')).toBe(false);
+  });
+
+  it('uses unambiguous revision serialization for unusual decision ids', () => {
+    const hash = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    const revisionA = computeImportReviewManifestRevision({
+      sourceTextHash: hash,
+      decisionIds: ['id\nb', 'id'],
+    });
+    const revisionB = computeImportReviewManifestRevision({
+      sourceTextHash: hash,
+      decisionIds: ['id', 'id\nb'],
+    });
+    const revisionC = computeImportReviewManifestRevision({
+      sourceTextHash: hash,
+      decisionIds: ['id', 'idb'],
+    });
+    expect(revisionA).toBe(revisionB);
+    expect(revisionA).not.toBe(revisionC);
   });
 
   it('advisory patent decisions do not block merge accounting count', async () => {

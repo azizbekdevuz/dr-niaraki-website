@@ -48,15 +48,25 @@ export type LoadedImportReviewState = {
 export function loadImportReviewStateFromRow(row: {
   reviewManifest: unknown;
   reviewApprovals: unknown;
-  candidatePayload: unknown;
 }): LoadedImportReviewState | null {
   const manifestEnvelope = parseStoredReviewManifest(row.reviewManifest);
   if (!manifestEnvelope) {
     return null;
   }
-  const approvalsEnvelope = row.reviewApprovals
-    ? parseStoredReviewApprovals(row.reviewApprovals)
-    : null;
+  const approvalsEnvelope =
+    row.reviewApprovals === null || row.reviewApprovals === undefined
+      ? null
+      : parseStoredReviewApprovals(row.reviewApprovals);
+  if (
+    row.reviewApprovals !== null &&
+    row.reviewApprovals !== undefined &&
+    approvalsEnvelope === null
+  ) {
+    throw new ImportReviewReconcileError(
+      'REVIEW_APPROVALS_INVALID',
+      'Stored review approvals are malformed.',
+    );
+  }
   const approvals = approvalsEnvelope?.approvals ?? [];
   let manifest = manifestEnvelope.manifest as CandidateReviewManifest;
   if (approvals.length > 0) {

@@ -38,7 +38,8 @@ function mergeErrorResponse(e: ImportMergeError): NextResponse {
     e.code === 'REVIEW_BLOCKED' ||
     e.code === 'REVIEW_MANIFEST_MISSING' ||
     e.code === 'REVIEW_MANIFEST_STALE' ||
-    e.code === 'REVIEW_APPROVALS_STALE'
+    e.code === 'REVIEW_APPROVALS_STALE' ||
+    e.code === 'REVIEW_APPROVALS_INVALID'
   ) {
     status = 422;
   }

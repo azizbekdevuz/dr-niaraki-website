@@ -129,6 +129,7 @@ describe('importsDomain', () => {
       rawHtmlTruncated: false,
     });
     expect(detail.candidateReview).toBeNull();
+    expect(detail.candidateReconcileReview).toBeNull();
   });
 
   it('toImportDetail has null candidateReview for malformed candidatePayload', () => {
@@ -162,6 +163,7 @@ describe('importsDomain', () => {
     const detail = toImportDetail(row);
     expect(detail.candidateReview).toBeNull();
     expect(detail.candidateSummary).toBeNull();
+    expect(detail.candidateReconcileReview).toBeNull();
   });
 
   it('toImportDetail includes candidateReview for envelope payloads', () => {
@@ -215,6 +217,7 @@ describe('importsDomain', () => {
     const patentEntry = detail.candidateReview!.countValidation.entries.find((e) => e.code === 'PATENT_COUNT_MISMATCH');
     expect(patentEntry).toBeDefined();
     expect(patentEntry!.severity).toBe('warning');
+    expect(detail.candidateReconcileReview).toBeNull();
   });
 });
 
