@@ -19,7 +19,12 @@ type Props = {
   merging: boolean;
   onMerge: (
     action: 'create' | 'replace',
-    opts: { mergeMode: 'safe_update' | 'full_replace'; acknowledgeHighRisk: boolean },
+    opts: {
+      mergeMode: 'safe_update' | 'full_replace';
+      acknowledgeHighRisk: boolean;
+      acknowledgeUnresolvedReview?: boolean;
+      unresolvedReviewReason?: string;
+    },
   ) => void;
 };
 
@@ -182,19 +187,31 @@ function DraftStatusNote({ hasDraft, isMerged }: { hasDraft: boolean; isMerged: 
 
 export function ImportMergeDraftCard({ imp, review, hasDraft, merging, onMerge }: Props) {
   const hint = imp.candidateReview?.reviewHint;
+  const reconcile = imp.candidateReconcileReview;
   const [mergeMode, setMergeMode] = useState<'safe_update' | 'full_replace'>('safe_update');
   const [acknowledgeHighRisk, setAcknowledgeHighRisk] = useState(false);
+  const [acknowledgeUnresolvedReview, setAcknowledgeUnresolvedReview] = useState(false);
+  const [unresolvedReviewReason, setUnresolvedReviewReason] = useState('');
 
   const safety = review?.mergeSafety;
   const needsAck = Boolean(safety?.fullReplaceRequiresAck);
+  const reviewBlocked = Boolean(reconcile?.mergeReviewBlocked);
   const fullReplaceBlocked = mergeMode === 'full_replace' && needsAck && !acknowledgeHighRisk;
+  const reviewOverrideBlocked =
+    reviewBlocked && (!acknowledgeUnresolvedReview || unresolvedReviewReason.trim().length < 8);
+  const mergeDisabled = fullReplaceBlocked || reviewOverrideBlocked;
 
   const candidateParserVersion = imp.candidateReview?.parserVersion;
   const isStaleParser = Boolean(candidateParserVersion && candidateParserVersion !== PARSER_VERSION);
 
   const mergeOpts = useMemo(
-    () => ({ mergeMode, acknowledgeHighRisk: mergeMode === 'full_replace' && acknowledgeHighRisk }),
-    [mergeMode, acknowledgeHighRisk],
+    () => ({
+      mergeMode,
+      acknowledgeHighRisk: mergeMode === 'full_replace' && acknowledgeHighRisk,
+      acknowledgeUnresolvedReview: reviewBlocked && acknowledgeUnresolvedReview,
+      unresolvedReviewReason: reviewBlocked ? unresolvedReviewReason.trim() : undefined,
+    }),
+    [mergeMode, acknowledgeHighRisk, reviewBlocked, acknowledgeUnresolvedReview, unresolvedReviewReason],
   );
 
   return (
@@ -220,6 +237,33 @@ export function ImportMergeDraftCard({ imp, review, hasDraft, merging, onMerge }
         />
       ) : null}
 
+      {reviewBlocked ? (
+        <div className="rounded border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-foreground space-y-2">
+          <p>
+            <strong className="text-warning">Reconciliation review required:</strong>{' '}
+            {reconcile?.unresolvedBlockingCount ?? 0} publication/award decision(s) remain unresolved. Resolve them in
+            the reconciliation panel above, or acknowledge override below.
+          </p>
+          <label className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              checked={acknowledgeUnresolvedReview}
+              onChange={(e) => setAcknowledgeUnresolvedReview(e.target.checked)}
+            />
+            <span>I acknowledge merging with unresolved reconciliation decisions.</span>
+          </label>
+          {acknowledgeUnresolvedReview ? (
+            <textarea
+              className="input w-full text-xs"
+              rows={2}
+              placeholder="Reason for override (required, min 8 characters)"
+              value={unresolvedReviewReason}
+              onChange={(e) => setUnresolvedReviewReason(e.target.value)}
+            />
+          ) : null}
+        </div>
+      ) : null}
+
       <p className="font-medium text-foreground">Merge into working draft</p>
       <p className="text-xs text-muted">
         Updates the <strong>working draft</strong> only — visitors still see the published site until you publish from Site
@@ -228,7 +272,7 @@ export function ImportMergeDraftCard({ imp, review, hasDraft, merging, onMerge }
       <div className="flex flex-wrap gap-3">
         <button
           type="button"
-          disabled={merging || hasDraft || fullReplaceBlocked}
+          disabled={merging || hasDraft || mergeDisabled}
           onClick={() => onMerge('create', mergeOpts)}
           className="btn-primary px-4 py-2 text-sm disabled:opacity-40"
         >
@@ -236,7 +280,7 @@ export function ImportMergeDraftCard({ imp, review, hasDraft, merging, onMerge }
         </button>
         <button
           type="button"
-          disabled={merging || !hasDraft || fullReplaceBlocked}
+          disabled={merging || !hasDraft || mergeDisabled}
           onClick={() => onMerge('replace', mergeOpts)}
           className="btn-secondary px-4 py-2 text-sm disabled:opacity-40"
         >

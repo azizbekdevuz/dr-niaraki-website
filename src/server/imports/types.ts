@@ -98,6 +98,46 @@ export type ImportCandidateReviewMetadataDto = {
   parserWarnings: ImportParserWarningItemDto[];
 };
 
+export type ImportCandidateReconcileReviewDto = {
+  hasManifest: boolean;
+  manifestRevision: string | null;
+  sourceTextHash: string | null;
+  baseline: {
+    sourceType: string;
+    versionId?: string | null;
+    publishSequence?: number | null;
+    label?: string | null;
+  } | null;
+  generatedAt: string | null;
+  importSource: string | null;
+  decisions: Array<{
+    decisionId: string;
+    section: string;
+    candidateId?: string;
+    existingId?: string;
+    relatedExistingIds?: string[];
+    action: string;
+    reason: string;
+    confidence: string;
+    affectedCount?: number;
+  }>;
+  accounting: Prisma.JsonValue | null;
+  analysisAccounting: Prisma.JsonValue | null;
+  approvals: Array<{
+    decisionId: string;
+    approvedAction: string;
+    selectedExistingId?: string;
+  }>;
+  approvalsUpdatedAt: string | null;
+  unresolvedBlockingCount: number;
+  mergeReviewBlocked: boolean;
+  advisoryOnly: boolean;
+  loadError: {
+    code: 'REVIEW_MANIFEST_INVALID' | 'REVIEW_APPROVALS_INVALID' | 'REVIEW_APPROVALS_STALE';
+    message: string;
+  } | null;
+};
+
 export type ImportDetailDto = ImportSummaryDto & {
   mimeType: string;
   sizeBytes: number;
@@ -109,6 +149,8 @@ export type ImportDetailDto = ImportSummaryDto & {
   candidateSummary: ImportCandidateSummaryDto | null;
   /** Present when `candidatePayload` is a parsed envelope (`schemaVersion` === 2). */
   candidateReview: ImportCandidateReviewMetadataDto | null;
+  /** Candidate-vs-baseline reconciliation manifest and approvals. */
+  candidateReconcileReview: ImportCandidateReconcileReviewDto | null;
   warnings: ImportWarningItem[];
   linkedVersionIds: string[];
 };

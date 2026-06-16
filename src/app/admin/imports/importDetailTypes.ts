@@ -38,6 +38,46 @@ export type ImportCandidateReviewModel = {
   parserWarnings: Array<{ code?: string; path?: string; message: string; severity: string }>;
 };
 
+export type ImportCandidateReconcileReviewModel = {
+  hasManifest: boolean;
+  manifestRevision: string | null;
+  sourceTextHash: string | null;
+  baseline: {
+    sourceType: string;
+    versionId?: string | null;
+    publishSequence?: number | null;
+    label?: string | null;
+  } | null;
+  generatedAt: string | null;
+  importSource: string | null;
+  decisions: Array<{
+    decisionId: string;
+    section: string;
+    candidateId?: string;
+    existingId?: string;
+    relatedExistingIds?: string[];
+    action: string;
+    reason: string;
+    confidence: string;
+    affectedCount?: number;
+  }>;
+  accounting: Record<string, unknown> | null;
+  analysisAccounting: Record<string, unknown> | null;
+  approvals: Array<{
+    decisionId: string;
+    approvedAction: string;
+    selectedExistingId?: string;
+  }>;
+  approvalsUpdatedAt: string | null;
+  unresolvedBlockingCount: number;
+  mergeReviewBlocked: boolean;
+  advisoryOnly: boolean;
+  loadError?: {
+    code: 'REVIEW_MANIFEST_INVALID' | 'REVIEW_APPROVALS_INVALID' | 'REVIEW_APPROVALS_STALE';
+    message: string;
+  } | null;
+};
+
 export type ImportDetailModel = {
   id: string;
   status: string;
@@ -52,6 +92,7 @@ export type ImportDetailModel = {
   } | null;
   /** Present for envelope `candidatePayload` (from GET import / review). */
   candidateReview?: ImportCandidateReviewModel | null;
+  candidateReconcileReview?: ImportCandidateReconcileReviewModel | null;
 };
 
 export type ImportReviewProvenanceModel = {

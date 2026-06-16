@@ -3,8 +3,20 @@ import 'server-only';
 import type { ContentImport, UploadedFile } from '@prisma/client';
 
 import { getDetailsFromCandidatePayload, parseImportCandidatePayload } from '@/server/imports/candidatePayload/schema';
+import { countUnresolvedBlockingDecisions } from '@/server/imports/importCandidateReview/gate';
+import {
+  ImportReviewReconcileError,
+  loadImportReviewStateFromRow,
+  verifyReviewApprovalsRevision,
+} from '@/server/imports/importCandidateReview/reconcile';
+import {
+  buildImportCandidateReviewCorruptedDto,
+  buildImportCandidateReviewStateDto,
+  type ImportCandidateReconcileLoadErrorCode,
+} from '@/server/imports/importCandidateReview/state';
 import {
   importWarningItemSchema,
+  type ImportCandidateReconcileReviewDto,
   type ImportCandidateReviewMetadataDto,
   type ImportCandidateSummaryDto,
   type ImportDetailDto,
@@ -134,6 +146,65 @@ export function buildImportCandidateSummary(payload: unknown): ImportCandidateSu
   };
 }
 
+const RECONCILE_ADMIN_LOAD_ERROR_CODES = new Set<ImportReviewReconcileError['code']>([
+  'REVIEW_MANIFEST_INVALID',
+  'REVIEW_APPROVALS_INVALID',
+  'REVIEW_APPROVALS_STALE',
+]);
+
+function adminFacingReconcileLoadMessage(code: ImportCandidateReconcileLoadErrorCode): string {
+  switch (code) {
+    case 'REVIEW_MANIFEST_INVALID':
+      return 'Stored reconciliation manifest is invalid.';
+    case 'REVIEW_APPROVALS_INVALID':
+      return 'Stored reconciliation approvals are invalid.';
+    case 'REVIEW_APPROVALS_STALE':
+      return 'Stored reconciliation approvals do not match the current manifest revision.';
+  }
+}
+
+export function buildImportCandidateReconcileReview(
+  row: Pick<ContentImport, 'reviewManifest' | 'reviewApprovals'>,
+): ImportCandidateReconcileReviewDto | null {
+  const hasStoredManifest = row.reviewManifest !== null && row.reviewManifest !== undefined;
+  if (!hasStoredManifest) {
+    return null;
+  }
+
+  try {
+    const loaded = loadImportReviewStateFromRow({
+      reviewManifest: row.reviewManifest,
+      reviewApprovals: row.reviewApprovals,
+    });
+    if (!loaded) {
+      return buildImportCandidateReviewCorruptedDto({
+        code: 'REVIEW_MANIFEST_INVALID',
+        message: adminFacingReconcileLoadMessage('REVIEW_MANIFEST_INVALID'),
+        hasManifest: true,
+      });
+    }
+    if (loaded.approvalsEnvelope) {
+      verifyReviewApprovalsRevision(loaded.manifestEnvelope, loaded.approvalsEnvelope);
+    }
+    return buildImportCandidateReviewStateDto({
+      manifestEnvelope: loaded.manifestEnvelope,
+      manifest: loaded.manifest,
+      approvalsEnvelope: loaded.approvalsEnvelope,
+      approvals: loaded.approvals,
+      unresolvedBlockingCount: countUnresolvedBlockingDecisions(loaded.manifest),
+    });
+  } catch (e) {
+    if (e instanceof ImportReviewReconcileError && RECONCILE_ADMIN_LOAD_ERROR_CODES.has(e.code)) {
+      return buildImportCandidateReviewCorruptedDto({
+        code: e.code as ImportCandidateReconcileLoadErrorCode,
+        message: adminFacingReconcileLoadMessage(e.code as ImportCandidateReconcileLoadErrorCode),
+        hasManifest: true,
+      });
+    }
+    throw e;
+  }
+}
+
 export function toImportDetail(row: ImportWithFileAndVersions): ImportDetailDto {
   const summary = toImportSummary(row);
   const detailsOnly = getDetailsFromCandidatePayload(row.candidatePayload);
@@ -148,6 +219,7 @@ export function toImportDetail(row: ImportWithFileAndVersions): ImportDetailDto 
     candidatePayload: (detailsOnly ?? row.candidatePayload) as ImportDetailDto['candidatePayload'],
     candidateSummary: buildImportCandidateSummary(row.candidatePayload),
     candidateReview: buildImportCandidateReviewMetadata(row.candidatePayload),
+    candidateReconcileReview: buildImportCandidateReconcileReview(row),
     warnings: parseImportWarnings(row.warnings),
     linkedVersionIds: row.versions.map((v: { id: string }) => v.id),
   };

@@ -1,0 +1,1581 @@
+﻿diff --git a/changes.diff b/changes.diff
+index 9a28781..e69de29 100644
+--- a/changes.diff
++++ b/changes.diff
+@@ -1,937 +0,0 @@
+-´╗┐diff --git a/src/app/admin/imports/ImportCandidateReconcilePanel.tsx b/src/app/admin/imports/ImportCandidateReconcilePanel.tsx
+-index 8674868..49ca33c 100644
+---- a/src/app/admin/imports/ImportCandidateReconcilePanel.tsx
+-+++ b/src/app/admin/imports/ImportCandidateReconcilePanel.tsx
+-@@ -154,6 +154,29 @@ function decisionControls(
+-   );
+- }
+- 
+-+function approvalBadgeStatus(
+-+  draftApproval: LocalApproval | undefined,
+-+  serverApproval: LocalApproval | undefined,
+-+): 'pending' | 'unsaved' | 'saved' {
+-+  if (draftApproval) {
+-+    return 'unsaved';
+-+  }
+-+  if (serverApproval) {
+-+    return 'saved';
+-+  }
+-+  return 'pending';
+-+}
+-+
+-+function ApprovalStatusBadge({ status }: { status: 'pending' | 'unsaved' | 'saved' }) {
+-+  if (status === 'saved') {
+-+    return <span className="rounded bg-success/15 px-1.5 py-0.5 text-success">saved</span>;
+-+  }
+-+  if (status === 'unsaved') {
+-+    return <span className="rounded bg-warning/15 px-1.5 py-0.5 text-warning">unsaved</span>;
+-+  }
+-+  return <span className="rounded bg-warning/15 px-1.5 py-0.5 text-warning">pending</span>;
+-+}
+-+
+- export function ImportCandidateReconcilePanel({ importId, reconcile, onSaved }: Props) {
+-   const [draftApprovals, setDraftApprovals] = useState<LocalApproval[]>([]);
+-   const [saving, setSaving] = useState(false);
+-@@ -308,23 +331,22 @@ export function ImportCandidateReconcilePanel({ importId, reconcile, onSaved }:
+-           <h3 className="text-sm font-medium text-foreground">{sectionLabel(section)}</h3>
+-           <div className="space-y-3">
+-             {decisions.map((decision) => {
+-+              const serverApproval = serverApprovals.find((a) => a.decisionId === decision.decisionId);
+-+              const draftApproval = draftApprovals.find((a) => a.decisionId === decision.decisionId);
+-               const current = effectiveApprovals.get(decision.decisionId);
+--              const isCluster = Boolean(decision.relatedExistingIds && decision.relatedExistingIds.length > 0);
+--              const clusterMembers = isCluster
+--                ? [decision.existingId!, ...(decision.relatedExistingIds ?? [])]
+--                : [];
+--              const resolved = Boolean(current);
+-+              const clusterMemberIds = [decision.existingId, ...(decision.relatedExistingIds ?? [])].filter(
+-+                (id): id is string => Boolean(id),
+-+              );
+-+              const isCluster = clusterMemberIds.length >= 2;
+-+              const clusterMembers = isCluster ? clusterMemberIds : [];
+-+              const approvalStatus = approvalBadgeStatus(draftApproval, serverApproval as LocalApproval | undefined);
+- 
+-               return (
+-                 <div key={decision.decisionId} className="rounded border border-primary/15 p-3 text-xs space-y-2">
+-                   <div className="flex flex-wrap items-center gap-2">
+-                     <span className="font-medium text-foreground">{decision.action}</span>
+-                     <span className="text-muted">confidence: {decision.confidence}</span>
+--                    {resolved ? (
+--                      <span className="rounded bg-success/15 px-1.5 py-0.5 text-success">saved</span>
+--                    ) : (
+--                      <span className="rounded bg-warning/15 px-1.5 py-0.5 text-warning">pending</span>
+--                    )}
+-+                    <ApprovalStatusBadge status={approvalStatus} />
+-                   </div>
+-                   <p className="text-foreground">{decision.reason}</p>
+-                   {decision.existingId ? (
+-diff --git a/src/app/api/admin/imports/[id]/merge-to-draft/route.ts b/src/app/api/admin/imports/[id]/merge-to-draft/route.ts
+-index dbb13af..3dbecca 100644
+---- a/src/app/api/admin/imports/[id]/merge-to-draft/route.ts
+-+++ b/src/app/api/admin/imports/[id]/merge-to-draft/route.ts
+-@@ -38,7 +38,8 @@ function mergeErrorResponse(e: ImportMergeError): NextResponse {
+-     e.code === 'REVIEW_BLOCKED' ||
+-     e.code === 'REVIEW_MANIFEST_MISSING' ||
+-     e.code === 'REVIEW_MANIFEST_STALE' ||
+--    e.code === 'REVIEW_APPROVALS_STALE'
+-+    e.code === 'REVIEW_APPROVALS_STALE' ||
+-+    e.code === 'REVIEW_APPROVALS_INVALID'
+-   ) {
+-     status = 422;
+-   }
+-diff --git a/src/server/imports/importCandidateReview/reconcile.ts b/src/server/imports/importCandidateReview/reconcile.ts
+-index 50c12d9..a714662 100644
+---- a/src/server/imports/importCandidateReview/reconcile.ts
+-+++ b/src/server/imports/importCandidateReview/reconcile.ts
+-@@ -48,15 +48,25 @@ export type LoadedImportReviewState = {
+- export function loadImportReviewStateFromRow(row: {
+-   reviewManifest: unknown;
+-   reviewApprovals: unknown;
+--  candidatePayload: unknown;
+- }): LoadedImportReviewState | null {
+-   const manifestEnvelope = parseStoredReviewManifest(row.reviewManifest);
+-   if (!manifestEnvelope) {
+-     return null;
+-   }
+--  const approvalsEnvelope = row.reviewApprovals
+--    ? parseStoredReviewApprovals(row.reviewApprovals)
+--    : null;
+-+  const approvalsEnvelope =
+-+    row.reviewApprovals === null || row.reviewApprovals === undefined
+-+      ? null
+-+      : parseStoredReviewApprovals(row.reviewApprovals);
+-+  if (
+-+    row.reviewApprovals !== null &&
+-+    row.reviewApprovals !== undefined &&
+-+    approvalsEnvelope === null
+-+  ) {
+-+    throw new ImportReviewReconcileError(
+-+      'REVIEW_APPROVALS_INVALID',
+-+      'Stored review approvals are malformed.',
+-+    );
+-+  }
+-   const approvals = approvalsEnvelope?.approvals ?? [];
+-   let manifest = manifestEnvelope.manifest as CandidateReviewManifest;
+-   if (approvals.length > 0) {
+-diff --git a/src/server/imports/importCandidateReview/revision.ts b/src/server/imports/importCandidateReview/revision.ts
+-index 0d19e82..15a741e 100644
+---- a/src/server/imports/importCandidateReview/revision.ts
+-+++ b/src/server/imports/importCandidateReview/revision.ts
+-@@ -7,7 +7,10 @@ export function computeImportReviewManifestRevision(input: {
+-   sourceTextHash: string;
+-   decisionIds: readonly string[];
+- }): string {
+--  const payload = `${input.sourceTextHash}\n${[...input.decisionIds].sort().join('\n')}`;
+-+  const payload = JSON.stringify({
+-+    sourceTextHash: input.sourceTextHash,
+-+    decisionIds: [...input.decisionIds].sort(),
+-+  });
+-   return createHash('sha256').update(payload).digest('hex').slice(0, 32);
+- }
+- 
+-diff --git a/src/server/imports/importCandidateReview/service.ts b/src/server/imports/importCandidateReview/service.ts
+-index 74008de..3b449d4 100644
+---- a/src/server/imports/importCandidateReview/service.ts
+-+++ b/src/server/imports/importCandidateReview/service.ts
+-@@ -1,5 +1,6 @@
+- import 'server-only';
+- 
+-+import type { ImportStatus } from '@prisma/client';
+- import { Prisma } from '@prisma/client';
+- 
+- import { recordContentEvent } from '@/server/content/contentEvents';
+-@@ -28,6 +29,21 @@ import {
+- } from '@/server/imports/importCandidateReview/storageSchema';
+- import { ImportDomainError } from '@/server/imports/types';
+- 
+-+const REVIEW_APPROVAL_ALLOWED_STATUSES = new Set<ImportStatus>(['PARSED', 'NEEDS_REVIEW']);
+-+
+-+export function importStatusAcceptsReviewApprovalUpdates(status: ImportStatus): boolean {
+-+  return REVIEW_APPROVAL_ALLOWED_STATUSES.has(status);
+-+}
+-+
+-+function assertImportStatusAcceptsReviewApprovalUpdates(status: ImportStatus): void {
+-+  if (!importStatusAcceptsReviewApprovalUpdates(status)) {
+-+    throw new ImportReviewApprovalPersistError(
+-+      'IMPORT_FINALIZED',
+-+      `Import status "${status}" does not accept review approval updates.`,
+-+    );
+-+  }
+-+}
+-+
+- export class ImportReviewApprovalPersistError extends Error {
+-   constructor(
+-     readonly code:
+-@@ -137,14 +153,17 @@ export async function saveImportReviewApprovals(input: {
+-   if (!row) {
+-     throw new ImportReviewApprovalPersistError('IMPORT_NOT_FOUND', 'Import not found.');
+-   }
+--  if (row.status === 'REJECTED' || row.status === 'FAILED') {
+--    throw new ImportReviewApprovalPersistError(
+--      'IMPORT_FINALIZED',
+--      `Import status "${row.status}" does not accept review approval updates.`,
+--    );
+--  }
+-+  assertImportStatusAcceptsReviewApprovalUpdates(row.status);
+- 
+--  const loaded = loadImportReviewStateFromRow(row);
+-+  let loaded: ReturnType<typeof loadImportReviewStateFromRow>;
+-+  try {
+-+    loaded = loadImportReviewStateFromRow(row);
+-+  } catch (e) {
+-+    if (e instanceof ImportReviewReconcileError && e.code === 'REVIEW_APPROVALS_INVALID') {
+-+      throw new ImportReviewApprovalPersistError('REVIEW_APPROVALS_INVALID', e.message);
+-+    }
+-+    throw e;
+-+  }
+-   if (!loaded) {
+-     throw new ImportReviewApprovalPersistError('REVIEW_MANIFEST_MISSING', 'Import has no review manifest.');
+-   }
+-@@ -175,6 +194,7 @@ export async function saveImportReviewApprovals(input: {
+-     if (!current) {
+-       throw new ImportReviewApprovalPersistError('IMPORT_NOT_FOUND', 'Import not found.');
+-     }
+-+    assertImportStatusAcceptsReviewApprovalUpdates(current.status);
+-     const currentLoaded = loadImportReviewStateFromRow(current);
+-     if (!currentLoaded) {
+-       throw new ImportReviewApprovalPersistError('REVIEW_MANIFEST_MISSING', 'Import has no review manifest.');
+-diff --git a/src/server/imports/importCandidateReview/storageSchema.ts b/src/server/imports/importCandidateReview/storageSchema.ts
+-index 6d2052f..10c07f0 100644
+---- a/src/server/imports/importCandidateReview/storageSchema.ts
+-+++ b/src/server/imports/importCandidateReview/storageSchema.ts
+-@@ -60,23 +60,38 @@ const advisorySectionAccountingSchema = z.object({
+-   affectedRecordCount: z.number().int().nonnegative(),
+- });
+- 
+--const candidateReviewManifestSchema = z.object({
+--  generatedAt: z.string(),
+--  importId: z.string().nullable().optional(),
+--  importSource: z.string(),
+--  baseline: reviewBaselineRefSchema,
+--  decisions: z.array(reviewDecisionSchema),
+--  analysisAccounting: z.object({
+--    publications: reconciledSectionAccountingSchema,
+--    awards: reconciledSectionAccountingSchema,
+--  }),
+--  accounting: z.object({
+--    publications: reconciledSectionAccountingSchema,
+--    awards: reconciledSectionAccountingSchema,
+--    patents: advisorySectionAccountingSchema,
+--    research: advisorySectionAccountingSchema,
+--  }),
+--});
+-+const candidateReviewManifestSchema = z
+-+  .object({
+-+    generatedAt: z.string(),
+-+    importId: z.string().nullable().optional(),
+-+    importSource: z.string(),
+-+    baseline: reviewBaselineRefSchema,
+-+    decisions: z.array(reviewDecisionSchema),
+-+    analysisAccounting: z.object({
+-+      publications: reconciledSectionAccountingSchema,
+-+      awards: reconciledSectionAccountingSchema,
+-+    }),
+-+    accounting: z.object({
+-+      publications: reconciledSectionAccountingSchema,
+-+      awards: reconciledSectionAccountingSchema,
+-+      patents: advisorySectionAccountingSchema,
+-+      research: advisorySectionAccountingSchema,
+-+    }),
+-+  })
+-+  .superRefine((value, ctx) => {
+-+    const seen = new Set<string>();
+-+    value.decisions.forEach((d, idx) => {
+-+      if (seen.has(d.decisionId)) {
+-+        ctx.addIssue({
+-+          code: z.ZodIssueCode.custom,
+-+          path: ['decisions', idx, 'decisionId'],
+-+          message: 'decisionId must be unique within a manifest.',
+-+        });
+-+        return;
+-+      }
+-+      seen.add(d.decisionId);
+-+    });
+-+  });
+- 
+- export const storedReviewManifestEnvelopeSchema = z.object({
+-   storageVersion: z.literal(IMPORT_REVIEW_STORAGE_VERSION),
+-diff --git a/src/server/imports/mergeImportToDraft.ts b/src/server/imports/mergeImportToDraft.ts
+-index c79f927..d77ae32 100644
+---- a/src/server/imports/mergeImportToDraft.ts
+-+++ b/src/server/imports/mergeImportToDraft.ts
+-@@ -42,7 +42,8 @@ export class ImportMergeError extends Error {
+-       | 'REVIEW_BLOCKED'
+-       | 'REVIEW_MANIFEST_MISSING'
+-       | 'REVIEW_MANIFEST_STALE'
+--      | 'REVIEW_APPROVALS_STALE',
+-+      | 'REVIEW_APPROVALS_STALE'
+-+      | 'REVIEW_APPROVALS_INVALID',
+-     message: string,
+-   ) {
+-     super(message);
+-@@ -71,6 +72,50 @@ export type MergeImportCandidateResult = {
+-   alreadyMerged: boolean;
+- };
+- 
+-+async function recordSuccessfulMergeEvents(input: {
+-+  versionId: string;
+-+  importId: string;
+-+  action: 'create' | 'replace';
+-+  draftEventType: 'WORKING_DRAFT_CREATED' | 'WORKING_DRAFT_UPDATED';
+-+  draftEventPayload: Prisma.InputJsonValue;
+-+  reconciledAccounting: Prisma.InputJsonValue | null;
+-+  unresolvedBlockingCount: number;
+-+  acknowledgedUnresolvedReview: boolean;
+-+  normalizedUnresolvedReviewReason: string | null;
+-+}): Promise<void> {
+-+  await recordContentEvent({
+-+    eventType: input.draftEventType,
+-+    versionId: input.versionId,
+-+    payload: input.draftEventPayload,
+-+  });
+-+  await recordContentEvent({
+-+    eventType: 'SYSTEM_NOTE',
+-+    versionId: input.versionId,
+-+    payload: {
+-+      kind: 'IMPORT_MERGED_TO_WORKING_DRAFT',
+-+      importId: input.importId,
+-+      action: input.action,
+-+      reconciledAccounting: input.reconciledAccounting,
+-+      unresolvedBlockingCount: input.unresolvedBlockingCount,
+-+      acknowledgedUnresolvedReview: input.acknowledgedUnresolvedReview,
+-+      unresolvedReviewReason: input.normalizedUnresolvedReviewReason,
+-+    },
+-+  });
+-+  if (input.acknowledgedUnresolvedReview) {
+-+    await recordContentEvent({
+-+      eventType: 'SYSTEM_NOTE',
+-+      versionId: input.versionId,
+-+      payload: {
+-+        kind: 'IMPORT_MERGE_UNRESOLVED_REVIEW_OVERRIDE',
+-+        importId: input.importId,
+-+        versionId: input.versionId,
+-+        unresolvedBlockingCount: input.unresolvedBlockingCount,
+-+        reason: input.normalizedUnresolvedReviewReason,
+-+      },
+-+    });
+-+  }
+-+}
+-+
+- /**
+-  * Creates a working draft from the import candidate, or replaces the existing draft payload.
+-  * Never touches published rows. Sets `ContentVersion.importId` and marks the import `MERGED`.
+-@@ -115,14 +160,22 @@ export async function mergeImportCandidateToWorkingDraft(input: {
+-   const baselineData = basePayload.data;
+- 
+-   const manifestEnvelope = await ensureImportReviewManifest(input.importId);
+-+  // Reload after ensureImportReviewManifest ├ö├ç├Â it may have lazily generated and persisted a manifest.
+-   const reviewRow = await getContentImportDetail(input.importId);
+--  const loadedReview = reviewRow
+--    ? loadImportReviewStateFromRow({
+-+  let loadedReview: ReturnType<typeof loadImportReviewStateFromRow> = null;
+-+  if (reviewRow) {
+-+    try {
+-+      loadedReview = loadImportReviewStateFromRow({
+-         reviewManifest: reviewRow.reviewManifest,
+-         reviewApprovals: reviewRow.reviewApprovals,
+--        candidatePayload: reviewRow.candidatePayload,
+--      })
+--    : null;
+-+      });
+-+    } catch (e) {
+-+      if (e instanceof ImportReviewReconcileError && e.code === 'REVIEW_APPROVALS_INVALID') {
+-+        throw new ImportMergeError('REVIEW_APPROVALS_INVALID', e.message);
+-+      }
+-+      throw e;
+-+    }
+-+  }
+-   if (!loadedReview) {
+-     throw new ImportMergeError('REVIEW_MANIFEST_MISSING', 'Import has no reconciliation review manifest.');
+-   }
+-@@ -166,29 +219,19 @@ export async function mergeImportCandidateToWorkingDraft(input: {
+-     throw e;
+-   }
+- 
+--  if (
+--    input.acknowledgeUnresolvedReview &&
+--    unresolvedBlockingCount > 0 &&
+--    !input.unresolvedReviewReason?.trim()
+--  ) {
+-+  const acknowledgedUnresolvedReview =
+-+    Boolean(input.acknowledgeUnresolvedReview) && unresolvedBlockingCount > 0;
+-+  const normalizedUnresolvedReviewReason = acknowledgedUnresolvedReview
+-+    ? (input.unresolvedReviewReason?.trim() ?? '')
+-+    : '';
+-+
+-+  if (acknowledgedUnresolvedReview && normalizedUnresolvedReviewReason.length < 8) {
+-     throw new ImportMergeError(
+-       'MERGE_ACK_REQUIRED',
+--      'Unresolved reconciliation override requires unresolvedReviewReason.',
+-+      'Unresolved reconciliation override requires unresolvedReviewReason of at least 8 characters.',
+-     );
+-   }
+- 
+--  if (input.acknowledgeUnresolvedReview && unresolvedBlockingCount > 0) {
+--    await recordContentEvent({
+--      eventType: 'SYSTEM_NOTE',
+--      payload: {
+--        kind: 'IMPORT_MERGE_UNRESOLVED_REVIEW_OVERRIDE',
+--        importId: input.importId,
+--        unresolvedBlockingCount,
+--        reason: input.unresolvedReviewReason?.trim() ?? null,
+--      },
+--    });
+--  }
+--
+-   const provenance: ImportReviewProvenance = {
+-     importId: importRow.id,
+-     originalFileName: importRow.uploadedFile.originalName,
+-@@ -244,29 +287,22 @@ export async function mergeImportCandidateToWorkingDraft(input: {
+-         createdBy: null,
+-       },
+-     });
+--    await recordContentEvent({
+--      eventType: 'WORKING_DRAFT_CREATED',
+-+    await recordSuccessfulMergeEvents({
+-       versionId: row.id,
+--      payload: {
+-+      importId: input.importId,
+-+      action: 'create',
+-+      draftEventType: 'WORKING_DRAFT_CREATED',
+-+      draftEventPayload: {
+-         importId: input.importId,
+-         source: 'import_candidate',
+-         reconciledAccounting,
+-         unresolvedBlockingCount,
+--        acknowledgedUnresolvedReview: Boolean(input.acknowledgeUnresolvedReview),
+--      },
+--    });
+--    await recordContentEvent({
+--      eventType: 'SYSTEM_NOTE',
+--      versionId: row.id,
+--      payload: {
+--        kind: 'IMPORT_MERGED_TO_WORKING_DRAFT',
+--        importId: input.importId,
+--        action: 'create',
+--        reconciledAccounting,
+--        unresolvedBlockingCount,
+--        acknowledgedUnresolvedReview: Boolean(input.acknowledgeUnresolvedReview),
+--        unresolvedReviewReason: input.unresolvedReviewReason ?? null,
+-+        acknowledgedUnresolvedReview,
+-       },
+-+      reconciledAccounting,
+-+      unresolvedBlockingCount,
+-+      acknowledgedUnresolvedReview,
+-+      normalizedUnresolvedReviewReason: normalizedUnresolvedReviewReason || null,
+-     });
+-     await updateImportStatus(input.importId, 'MERGED');
+-     return { version: row, alreadyMerged: false };
+-@@ -283,29 +319,22 @@ export async function mergeImportCandidateToWorkingDraft(input: {
+-       changeSummary: input.changeSummary ?? working.changeSummary,
+-     },
+-   });
+--  await recordContentEvent({
+--    eventType: 'WORKING_DRAFT_UPDATED',
+-+  await recordSuccessfulMergeEvents({
+-     versionId: row.id,
+--    payload: {
+-+    importId: input.importId,
+-+    action: 'replace',
+-+    draftEventType: 'WORKING_DRAFT_UPDATED',
+-+    draftEventPayload: {
+-       importId: input.importId,
+-       source: 'import_candidate_replace',
+-       reconciledAccounting,
+-       unresolvedBlockingCount,
+--      acknowledgedUnresolvedReview: Boolean(input.acknowledgeUnresolvedReview),
+--    },
+--  });
+--  await recordContentEvent({
+--    eventType: 'SYSTEM_NOTE',
+--    versionId: row.id,
+--    payload: {
+--      kind: 'IMPORT_MERGED_TO_WORKING_DRAFT',
+--      importId: input.importId,
+--      action: 'replace',
+--      reconciledAccounting,
+--      unresolvedBlockingCount,
+--      acknowledgedUnresolvedReview: Boolean(input.acknowledgeUnresolvedReview),
+--      unresolvedReviewReason: input.unresolvedReviewReason ?? null,
+-+      acknowledgedUnresolvedReview,
+-     },
+-+    reconciledAccounting,
+-+    unresolvedBlockingCount,
+-+    acknowledgedUnresolvedReview,
+-+    normalizedUnresolvedReviewReason: normalizedUnresolvedReviewReason || null,
+-   });
+-   await updateImportStatus(input.importId, 'MERGED');
+-   return { version: row, alreadyMerged: false };
+-diff --git a/src/server/imports/serialize.ts b/src/server/imports/serialize.ts
+-index 170d65f..bc022ed 100644
+---- a/src/server/imports/serialize.ts
+-+++ b/src/server/imports/serialize.ts
+-@@ -144,7 +144,6 @@ export function buildImportCandidateReconcileReview(
+-   const loaded = loadImportReviewStateFromRow({
+-     reviewManifest: row.reviewManifest,
+-     reviewApprovals: row.reviewApprovals,
+--    candidatePayload: null,
+-   });
+-   if (!loaded) {
+-     return null;
+-diff --git a/src/tests/imports/importCandidateReconcilePanel.test.tsx b/src/tests/imports/importCandidateReconcilePanel.test.tsx
+-index 9cbd070..785a795 100644
+---- a/src/tests/imports/importCandidateReconcilePanel.test.tsx
+-+++ b/src/tests/imports/importCandidateReconcilePanel.test.tsx
+-@@ -1,6 +1,6 @@
+- /** @vitest-environment happy-dom */
+- 
+--import { fireEvent, render, screen } from '@testing-library/react';
+-+import { fireEvent, render, screen, within } from '@testing-library/react';
+- import { describe, expect, it, vi } from 'vitest';
+- 
+- import { ImportCandidateReconcilePanel } from '@/app/admin/imports/ImportCandidateReconcilePanel';
+-@@ -82,6 +82,33 @@ describe('ImportCandidateReconcilePanel', () => {
+-     expect(screen.getByRole('button', { name: /Remove entire cluster/i })).toBeTruthy();
+-   });
+- 
+-+  it('shows unsaved badge for local draft approval before save', () => {
+-+    render(<ImportCandidateReconcilePanel importId="imp-1" reconcile={reconcile} onSaved={vi.fn()} />);
+-+    const artifactCard = screen.getByText(/Professional Memberships row/i).closest('div')!;
+-+    expect(artifactCard.textContent).toContain('pending');
+-+    fireEvent.click(within(artifactCard).getByRole('button', { name: /Approve removal/i }));
+-+    expect(artifactCard.textContent).toContain('unsaved');
+-+    expect(within(artifactCard).getByText('unsaved')).toBeTruthy();
+-+  });
+-+
+-+  it('shows saved badge for server-persisted approval', () => {
+-+    const withSavedApproval: ImportCandidateReconcileReviewModel = {
+-+      ...reconcile,
+-+      approvals: [
+-+        {
+-+          decisionId: 'awards:artifact-1::remove-artifact',
+-+          approvedAction: 'approve-removal',
+-+        },
+-+      ],
+-+      unresolvedBlockingCount: 2,
+-+    };
+-+    render(
+-+      <ImportCandidateReconcilePanel importId="imp-1" reconcile={withSavedApproval} onSaved={vi.fn()} />,
+-+    );
+-+    const artifactCard = screen.getByText(/Professional Memberships row/i).closest('div');
+-+    expect(artifactCard?.textContent).toContain('saved');
+-+  });
+-+
+-   it('submits approvals to API', async () => {
+-     const fetchMock = vi.fn().mockResolvedValue({
+-       ok: true,
+-diff --git a/src/tests/imports/importCandidateReviewWorkflow.test.ts b/src/tests/imports/importCandidateReviewWorkflow.test.ts
+-index 07ff401..9442da5 100644
+---- a/src/tests/imports/importCandidateReviewWorkflow.test.ts
+-+++ b/src/tests/imports/importCandidateReviewWorkflow.test.ts
+-@@ -39,13 +39,16 @@ import {
+-   generateImportReviewManifest,
+-   summarizeReviewManifestForAudit,
+- } from '@/server/imports/importCandidateReview/generate';
+-+import { loadImportReviewStateFromRow } from '@/server/imports/importCandidateReview/reconcile';
+- import { computeImportReviewManifestRevision } from '@/server/imports/importCandidateReview/revision';
+- import {
+-   saveImportReviewApprovals,
+-+  importStatusAcceptsReviewApprovalUpdates,
+- } from '@/server/imports/importCandidateReview/service';
+- import {
+-   parseStoredReviewApprovals,
+-   parseStoredReviewManifest,
+-+  storedReviewManifestEnvelopeSchema,
+-   toStoredApprovalsEnvelope,
+- } from '@/server/imports/importCandidateReview/storageSchema';
+- import { minimalImportDetails } from '@/tests/fixtures/minimalImportDetails';
+-@@ -94,8 +97,9 @@ describe('import candidate review storage', () => {
+-       candidate,
+-     });
+-     const decision = manifest.decisions.find((d) => d.action === 'manual-review');
+-+    expect(decision).toBeDefined();
+-     if (!decision) {
+--      return;
+-+      throw new Error('Expected at least one manual-review decision for this fixture.');
+-     }
+-     vi.mocked(prisma.contentImport.findUnique).mockResolvedValue({
+-       id: IMPORT_ID,
+-@@ -126,8 +130,9 @@ describe('import candidate review storage', () => {
+-     const decision = manifest.decisions.find(
+-       (d) => d.section === 'publications' && d.action === 'manual-review',
+-     );
+-+    expect(decision).toBeDefined();
+-     if (!decision) {
+--      return;
+-+      throw new Error('Expected a publications manual-review decision for this fixture.');
+-     }
+-     const approvalsEnvelope = toStoredApprovalsEnvelope({
+-       manifestRevision: envelope.manifestRevision,
+-@@ -246,6 +251,133 @@ describe('import candidate review storage', () => {
+-     expect(parseStoredReviewApprovals(approvals)?.manifestRevision).toBe(revisionA);
+-   });
+- 
+-+  it('rejects duplicate decisionId values in stored manifest envelope', async () => {
+-+    const candidate = minimalImportDetails();
+-+    const payload = envelopeFromDetails(candidate);
+-+    const { envelope, manifest } = await generateImportReviewManifest({
+-+      importId: IMPORT_ID,
+-+      sourceFileName: 'cv.docx',
+-+      sourceTextHash: payload.sourceTextHash,
+-+      candidate,
+-+    });
+-+    expect(manifest.decisions.length).toBeGreaterThan(0);
+-+    const duplicateDecision = { ...manifest.decisions[0]! };
+-+    const malformed = {
+-+      ...envelope,
+-+      manifest: {
+-+        ...manifest,
+-+        decisions: [...manifest.decisions, duplicateDecision],
+-+      },
+-+    };
+-+    expect(parseStoredReviewManifest(malformed)).toBeNull();
+-+  });
+-+
+-+  it('accepts unique decisionId values in stored manifest envelope', async () => {
+-+    const candidate = minimalImportDetails();
+-+    const payload = envelopeFromDetails(candidate);
+-+    const { envelope } = await generateImportReviewManifest({
+-+      importId: IMPORT_ID,
+-+      sourceFileName: 'cv.docx',
+-+      sourceTextHash: payload.sourceTextHash,
+-+      candidate,
+-+    });
+-+    expect(storedReviewManifestEnvelopeSchema.safeParse(envelope).success).toBe(true);
+-+  });
+-+
+-+  it('fails closed when stored approvals are malformed', async () => {
+-+    const candidate = minimalImportDetails();
+-+    const payload = envelopeFromDetails(candidate);
+-+    const { envelope } = await generateImportReviewManifest({
+-+      importId: IMPORT_ID,
+-+      sourceFileName: 'cv.docx',
+-+      sourceTextHash: payload.sourceTextHash,
+-+      candidate,
+-+    });
+-+    expect(() =>
+-+      loadImportReviewStateFromRow({
+-+        reviewManifest: envelope,
+-+        reviewApprovals: { not: 'valid' },
+-+      }),
+-+    ).toThrowError(expect.objectContaining({ code: 'REVIEW_APPROVALS_INVALID' }));
+-+  });
+-+
+-+  it('rejects approval save when import status flips to finalized inside transaction', async () => {
+-+    const candidate = minimalImportDetails();
+-+    const payload = envelopeFromDetails(candidate);
+-+    const { envelope, manifest } = await generateImportReviewManifest({
+-+      importId: IMPORT_ID,
+-+      sourceFileName: 'cv.docx',
+-+      sourceTextHash: payload.sourceTextHash,
+-+      candidate,
+-+    });
+-+    const decision = manifest.decisions.find(
+-+      (d) => d.section === 'publications' && d.action === 'manual-review',
+-+    );
+-+    expect(decision).toBeDefined();
+-+    if (!decision) {
+-+      throw new Error('Expected a publications manual-review decision for this fixture.');
+-+    }
+-+
+-+    vi.mocked(prisma.contentImport.findUnique).mockResolvedValue({
+-+      id: IMPORT_ID,
+-+      status: 'PARSED',
+-+      candidatePayload: payload,
+-+      reviewManifest: envelope,
+-+      reviewApprovals: null,
+-+    } as never);
+-+
+-+    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+-+      const tx = {
+-+        contentImport: {
+-+          findUnique: vi.fn().mockResolvedValue({
+-+            id: IMPORT_ID,
+-+            status: 'MERGED',
+-+            candidatePayload: payload,
+-+            reviewManifest: envelope,
+-+            reviewApprovals: null,
+-+          }),
+-+          update: vi.fn(),
+-+        },
+-+      };
+-+      return fn(tx as never);
+-+    });
+-+
+-+    await expect(
+-+      saveImportReviewApprovals({
+-+        importId: IMPORT_ID,
+-+        manifestRevision: envelope.manifestRevision,
+-+        approvals: [{ decisionId: decision.decisionId, approvedAction: 'skip' }],
+-+      }),
+-+    ).rejects.toMatchObject({ code: 'IMPORT_FINALIZED' });
+-+  });
+-+
+-+  it('documents allowed import statuses for review approval updates', () => {
+-+    expect(importStatusAcceptsReviewApprovalUpdates('PARSED')).toBe(true);
+-+    expect(importStatusAcceptsReviewApprovalUpdates('NEEDS_REVIEW')).toBe(true);
+-+    expect(importStatusAcceptsReviewApprovalUpdates('MERGED')).toBe(false);
+-+    expect(importStatusAcceptsReviewApprovalUpdates('REJECTED')).toBe(false);
+-+    expect(importStatusAcceptsReviewApprovalUpdates('FAILED')).toBe(false);
+-+    expect(importStatusAcceptsReviewApprovalUpdates('UPLOADED')).toBe(false);
+-+  });
+-+
+-+  it('uses unambiguous revision serialization for unusual decision ids', () => {
+-+    const hash = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+-+    const revisionA = computeImportReviewManifestRevision({
+-+      sourceTextHash: hash,
+-+      decisionIds: ['id\nb', 'id'],
+-+    });
+-+    const revisionB = computeImportReviewManifestRevision({
+-+      sourceTextHash: hash,
+-+      decisionIds: ['id', 'id\nb'],
+-+    });
+-+    const revisionC = computeImportReviewManifestRevision({
+-+      sourceTextHash: hash,
+-+      decisionIds: ['id', 'idb'],
+-+    });
+-+    expect(revisionA).toBe(revisionB);
+-+    expect(revisionA).not.toBe(revisionC);
+-+  });
+-+
+-   it('advisory patent decisions do not block merge accounting count', async () => {
+-     const baseline = assertSiteContent(SITE_CONTENT_RAW);
+-     const candidate = minimalImportDetails({
+-diff --git a/src/tests/imports/importsDomain.test.ts b/src/tests/imports/importsDomain.test.ts
+-index 5be36e8..30589a5 100644
+---- a/src/tests/imports/importsDomain.test.ts
+-+++ b/src/tests/imports/importsDomain.test.ts
+-@@ -129,6 +129,7 @@ describe('importsDomain', () => {
+-       rawHtmlTruncated: false,
+-     });
+-     expect(detail.candidateReview).toBeNull();
+-+    expect(detail.candidateReconcileReview).toBeNull();
+-   });
+- 
+-   it('toImportDetail has null candidateReview for malformed candidatePayload', () => {
+-@@ -162,6 +163,7 @@ describe('importsDomain', () => {
+-     const detail = toImportDetail(row);
+-     expect(detail.candidateReview).toBeNull();
+-     expect(detail.candidateSummary).toBeNull();
+-+    expect(detail.candidateReconcileReview).toBeNull();
+-   });
+- 
+-   it('toImportDetail includes candidateReview for envelope payloads', () => {
+-@@ -215,6 +217,7 @@ describe('importsDomain', () => {
+-     const patentEntry = detail.candidateReview!.countValidation.entries.find((e) => e.code === 'PATENT_COUNT_MISMATCH');
+-     expect(patentEntry).toBeDefined();
+-     expect(patentEntry!.severity).toBe('warning');
+-+    expect(detail.candidateReconcileReview).toBeNull();
+-   });
+- });
+- 
+-diff --git a/src/tests/imports/mergeImportToDraft.test.ts b/src/tests/imports/mergeImportToDraft.test.ts
+-index e2285e2..a1babad 100644
+---- a/src/tests/imports/mergeImportToDraft.test.ts
+-+++ b/src/tests/imports/mergeImportToDraft.test.ts
+-@@ -35,6 +35,7 @@ vi.mock('@/server/imports/importCandidateReview/service', () => ({
+- 
+- import { SITE_CONTENT_RAW } from '@/content/defaults';
+- import { assertSiteContent, validateSiteContent } from '@/content/validators';
+-+import { recordContentEvent } from '@/server/content/contentEvents';
+- import { getWorkingDraft } from '@/server/content/contentWorkflowCore';
+- import { prisma } from '@/server/db/prisma';
+- import { buildImportCandidatePayload } from '@/server/imports/candidatePayload/builder';
+-@@ -62,6 +63,7 @@ describe('mergeImportCandidateToWorkingDraft', () => {
+-     details: ReturnType<typeof minimalImportDetails>,
+-     importId: string,
+-     rawDocumentText = 'body',
+-+    options?: { resolveBlocking?: boolean },
+-   ) {
+-     const envelope = buildImportCandidatePayload({
+-       rawDocumentText,
+-@@ -80,7 +82,7 @@ describe('mergeImportCandidateToWorkingDraft', () => {
+-       .filter((d) => (d.action === 'manual-review' || d.action === 'remove-artifact') && d.section !== 'patents' && d.section !== 'research')
+-       .map((d) => ({ decisionId: d.decisionId, approvedAction: 'skip' as const }));
+-     const approvalsEnvelope =
+--      blockingApprovals.length > 0
+-+      options?.resolveBlocking !== false && blockingApprovals.length > 0
+-         ? toStoredApprovalsEnvelope({
+-             manifestRevision: reviewEnvelope.manifestRevision,
+-             approvals: blockingApprovals,
+-@@ -477,4 +479,176 @@ describe('mergeImportCandidateToWorkingDraft', () => {
+-       expect(validated.data.patents.items).toHaveLength(5);
+-     }
+-   });
+-+
+-+  it('rejects unresolved review override when reason is shorter than 8 characters', async () => {
+-+    const details = minimalImportDetails();
+-+    const row = await attachReviewManifest(
+-+      {
+-+        id: 'imp-short-reason',
+-+        status: 'PARSED',
+-+        uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
+-+        createdAt: new Date(),
+-+        versions: [],
+-+      },
+-+      details,
+-+      'imp-short-reason',
+-+      'body',
+-+      { resolveBlocking: false },
+-+    );
+-+    vi.mocked(getContentImportDetail).mockResolvedValue(row as never);
+-+    vi.mocked(getWorkingDraft).mockResolvedValue(null);
+-+
+-+    await expect(
+-+      mergeImportCandidateToWorkingDraft({
+-+        importId: 'imp-short-reason',
+-+        action: 'create',
+-+        acknowledgeUnresolvedReview: true,
+-+        unresolvedReviewReason: 'short',
+-+      }),
+-+    ).rejects.toMatchObject({ code: 'MERGE_ACK_REQUIRED' });
+-+    expect(prisma.contentVersion.create).not.toHaveBeenCalled();
+-+  });
+-+
+-+  it('does not record override audit event when merge fails after acknowledgement', async () => {
+-+    vi.mocked(recordContentEvent).mockClear();
+-+    const details = minimalImportDetails();
+-+    const row = await attachReviewManifest(
+-+      {
+-+        id: 'imp-fail-merge',
+-+        status: 'PARSED',
+-+        uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
+-+        createdAt: new Date(),
+-+        versions: [],
+-+      },
+-+      details,
+-+      'imp-fail-merge',
+-+      'body',
+-+      { resolveBlocking: false },
+-+    );
+-+    vi.mocked(getContentImportDetail).mockResolvedValue(row as never);
+-+    vi.mocked(getWorkingDraft).mockResolvedValue(null);
+-+    vi.mocked(prisma.contentVersion.create).mockRejectedValue(new Error('db failure'));
+-+
+-+    await expect(
+-+      mergeImportCandidateToWorkingDraft({
+-+        importId: 'imp-fail-merge',
+-+        action: 'create',
+-+        acknowledgeUnresolvedReview: true,
+-+        unresolvedReviewReason: 'Accepted risk for unresolved reconciliation decisions.',
+-+      }),
+-+    ).rejects.toThrow('db failure');
+-+
+-+    const overrideEvents = vi
+-+      .mocked(recordContentEvent)
+-+      .mock.calls.filter(
+-+        (call) =>
+-+          (call[0] as { payload?: { kind?: string } }).payload?.kind ===
+-+          'IMPORT_MERGE_UNRESOLVED_REVIEW_OVERRIDE',
+-+      );
+-+    expect(overrideEvents).toHaveLength(0);
+-+  });
+-+
+-+  it('records exactly one override audit event after successful acknowledged merge', async () => {
+-+    vi.mocked(recordContentEvent).mockClear();
+-+    const details = minimalImportDetails();
+-+    const row = await attachReviewManifest(
+-+      {
+-+        id: 'imp-override-ok',
+-+        status: 'PARSED',
+-+        uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
+-+        createdAt: new Date(),
+-+        versions: [],
+-+      },
+-+      details,
+-+      'imp-override-ok',
+-+      'body',
+-+      { resolveBlocking: false },
+-+    );
+-+    vi.mocked(getContentImportDetail).mockResolvedValue(row as never);
+-+    vi.mocked(getWorkingDraft).mockResolvedValue(null);
+-+    vi.mocked(prisma.contentVersion.create).mockResolvedValue({
+-+      id: 'cv-override',
+-+      status: 'DRAFT',
+-+      draftSlot: 'main',
+-+      importId: 'imp-override-ok',
+-+      payload: {},
+-+      label: null,
+-+      changeSummary: null,
+-+      createdBy: null,
+-+      createdAt: new Date(),
+-+      updatedAt: new Date(),
+-+      publishedAt: null,
+-+      publishSequence: null,
+-+    } as never);
+-+
+-+    await mergeImportCandidateToWorkingDraft({
+-+      importId: 'imp-override-ok',
+-+      action: 'create',
+-+      acknowledgeUnresolvedReview: true,
+-+      unresolvedReviewReason: '  Accepted risk for unresolved reconciliation decisions.  ',
+-+    });
+-+
+-+    const overrideEvents = vi
+-+      .mocked(recordContentEvent)
+-+      .mock.calls.filter(
+-+        (call) =>
+-+          (call[0] as { payload?: { kind?: string } }).payload?.kind ===
+-+          'IMPORT_MERGE_UNRESOLVED_REVIEW_OVERRIDE',
+-+      );
+-+    expect(overrideEvents).toHaveLength(1);
+-+    expect(overrideEvents[0]?.[0]).toMatchObject({
+-+      versionId: 'cv-override',
+-+      payload: expect.objectContaining({
+-+        reason: 'Accepted risk for unresolved reconciliation decisions.',
+-+      }),
+-+    });
+-+  });
+-+
+-+  it('does not record override audit event when unresolved blocking count is zero', async () => {
+-+    vi.mocked(recordContentEvent).mockClear();
+-+    const details = minimalImportDetails();
+-+    const row = await attachReviewManifest(
+-+      {
+-+        id: 'imp-no-override',
+-+        status: 'PARSED',
+-+        uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
+-+        createdAt: new Date(),
+-+        versions: [],
+-+      },
+-+      details,
+-+      'imp-no-override',
+-+    );
+-+    vi.mocked(getContentImportDetail).mockResolvedValue(row as never);
+-+    vi.mocked(getWorkingDraft).mockResolvedValue(null);
+-+    vi.mocked(prisma.contentVersion.create).mockResolvedValue({
+-+      id: 'cv-no-override',
+-+      status: 'DRAFT',
+-+      draftSlot: 'main',
+-+      importId: 'imp-no-override',
+-+      payload: {},
+-+      label: null,
+-+      changeSummary: null,
+-+      createdBy: null,
+-+      createdAt: new Date(),
+-+      updatedAt: new Date(),
+-+      publishedAt: null,
+-+      publishSequence: null,
+-+    } as never);
+-+
+-+    await mergeImportCandidateToWorkingDraft({
+-+      importId: 'imp-no-override',
+-+      action: 'create',
+-+      acknowledgeUnresolvedReview: true,
+-+      unresolvedReviewReason: 'Should not be used when nothing is unresolved.',
+-+    });
+-+
+-+    const overrideEvents = vi
+-+      .mocked(recordContentEvent)
+-+      .mock.calls.filter(
+-+        (call) =>
+-+          (call[0] as { payload?: { kind?: string } }).payload?.kind ===
+-+          'IMPORT_MERGE_UNRESOLVED_REVIEW_OVERRIDE',
+-+      );
+-+    expect(overrideEvents).toHaveLength(0);
+-+  });
+- });
+diff --git a/src/app/admin/imports/ImportCandidateReconcilePanel.tsx b/src/app/admin/imports/ImportCandidateReconcilePanel.tsx
+index 49ca33c..a5e4137 100644
+--- a/src/app/admin/imports/ImportCandidateReconcilePanel.tsx
++++ b/src/app/admin/imports/ImportCandidateReconcilePanel.tsx
+@@ -276,6 +276,19 @@ export function ImportCandidateReconcilePanel({ importId, reconcile, onSaved }:
+     );
+   }
+ 
++  if (reconcile.loadError) {
++    return (
++      <div className="card p-4 space-y-3">
++        <h2 className="text-lg font-semibold text-foreground">Candidate reconciliation review</h2>
++        <div className="rounded border border-error/40 bg-error/10 px-3 py-2 text-sm text-foreground space-y-1">
++          <p className="font-medium">Stored reconciliation data is invalid.</p>
++          <p>Merge is blocked. Reprocess the import or repair the stored review data.</p>
++          <p className="text-xs text-muted">{reconcile.loadError.message}</p>
++        </div>
++      </div>
++    );
++  }
++
+   const pub = reconcile.accounting as {
+     publications?: { candidateTotal?: number; baselineTotal?: number };
+     awards?: { candidateTotal?: number; baselineTotal?: number };
+diff --git a/src/app/admin/imports/importDetailTypes.ts b/src/app/admin/imports/importDetailTypes.ts
+index 8e72516..21430d6 100644
+--- a/src/app/admin/imports/importDetailTypes.ts
++++ b/src/app/admin/imports/importDetailTypes.ts
+@@ -72,6 +72,10 @@ export type ImportCandidateReconcileReviewModel = {
+   unresolvedBlockingCount: number;
+   mergeReviewBlocked: boolean;
+   advisoryOnly: boolean;
++  loadError?: {
++    code: 'REVIEW_MANIFEST_INVALID' | 'REVIEW_APPROVALS_INVALID' | 'REVIEW_APPROVALS_STALE';
++    message: string;
++  } | null;
+ };
+ 
+ export type ImportDetailModel = {
+diff --git a/src/server/imports/importCandidateReview/service.ts b/src/server/imports/importCandidateReview/service.ts
+index 3b449d4..2a7454e 100644
+--- a/src/server/imports/importCandidateReview/service.ts
++++ b/src/server/imports/importCandidateReview/service.ts
+@@ -190,12 +190,28 @@ export async function saveImportReviewApprovals(input: {
+   });
+ 
+   await prisma.$transaction(async (tx) => {
++    await tx.$queryRaw`
++      SELECT "id"
++      FROM "ContentImport"
++      WHERE "id" = ${input.importId}
++      FOR UPDATE
++    `;
++
+     const current = await tx.contentImport.findUnique({ where: { id: input.importId } });
+     if (!current) {
+       throw new ImportReviewApprovalPersistError('IMPORT_NOT_FOUND', 'Import not found.');
+     }
+     assertImportStatusAcceptsReviewApprovalUpdates(current.status);
+-    const currentLoaded = loadImportReviewStateFromRow(current);
++
++    let currentLoaded: ReturnType<typeof loadImportReviewStateFromRow>;
++    try {
++      currentLoaded = loadImportReviewStateFromRow(current);
++    } catch (e) {
++      if (e instanceof ImportReviewReconcileError && e.code === 'REVIEW_APPROVALS_INVALID') {
++        throw new ImportReviewApprovalPersistError('REVIEW_APPROVALS_INVALID', e.message);
++      }
++      throw e;
++    }
+     if (!currentLoaded) {
+       throw new ImportReviewApprovalPersistError('REVIEW_MANIFEST_MISSING', 'Import has no review manifest.');
+     }
+diff --git a/src/server/imports/importCandidateReview/state.ts b/src/server/imports/importCandidateReview/state.ts
+index 3ccaefa..ecb318c 100644
+--- a/src/server/imports/importCandidateReview/state.ts
++++ b/src/server/imports/importCandidateReview/state.ts
+@@ -8,6 +8,16 @@ import type {
+ } from '@/server/imports/candidateReviewManifest';
+ import type { StoredReviewApprovalsEnvelope, StoredReviewManifestEnvelope } from '@/server/imports/importCandidateReview/storageSchema';
+ 
++export type ImportCandidateReconcileLoadErrorCode =
++  | 'REVIEW_MANIFEST_INVALID'
++  | 'REVIEW_APPROVALS_INVALID'
++  | 'REVIEW_APPROVALS_STALE';
++
++export type ImportCandidateReconcileLoadErrorDto = {
++  code: ImportCandidateReconcileLoadErrorCode;
++  message: string;
++};
++
+ export type ImportCandidateReviewStateDto = {
+   hasManifest: boolean;
+   manifestRevision: string | null;
+@@ -23,6 +33,7 @@ export type ImportCandidateReviewStateDto = {
+   unresolvedBlockingCount: number;
+   mergeReviewBlocked: boolean;
+   advisoryOnly: boolean;
++  loadError: ImportCandidateReconcileLoadErrorDto | null;
+ };
+ 
+ export function buildImportCandidateReviewStateDto(input: {
+@@ -54,6 +65,31 @@ export function buildImportCandidateReviewStateDto(input: {
+         (manifest.accounting.patents.unresolvedAdvisoryDecisions > 0 ||
+           manifest.accounting.research.unresolvedAdvisoryDecisions > 0),
+     ),
++    loadError: null,
++  };
++}
++
++export function buildImportCandidateReviewCorruptedDto(input: {
++  code: ImportCandidateReconcileLoadErrorCode;
++  message: string;
++  hasManifest: boolean;
++}): ImportCandidateReviewStateDto {
++  return {
++    hasManifest: input.hasManifest,
++    manifestRevision: null,
++    sourceTextHash: null,
++    baseline: null,
++    generatedAt: null,
++    importSource: null,
++    decisions: [],
++    accounting: null,
++    analysisAccounting: null,
++    approvals: [],
++    approvalsUpdatedAt: null,
++    unresolvedBlockingCount: 1,
++    mergeReviewBlocked: true,
++    advisoryOnly: false,
++    loadError: { code: input.code, message: input.message },
+   };
+ }
+ 
+diff --git a/src/server/imports/serialize.ts b/src/server/imports/serialize.ts
+index bc022ed..b434bdb 100644
+--- a/src/server/imports/serialize.ts
++++ b/src/server/imports/serialize.ts
+@@ -4,8 +4,16 @@ import type { ContentImport, UploadedFile } from '@prisma/client';
+ 
+ import { getDetailsFromCandidatePayload, parseImportCandidatePayload } from '@/server/imports/candidatePayload/schema';
+ import { countUnresolvedBlockingDecisions } from '@/server/imports/importCandidateReview/gate';
+-import { loadImportReviewStateFromRow } from '@/server/imports/importCandidateReview/reconcile';
+-import { buildImportCandidateReviewStateDto } from '@/server/imports/importCandidateReview/state';
++import {
++  ImportReviewReconcileError,
++  loadImportReviewStateFromRow,
++  verifyReviewApprovalsRevision,
++} from '@/server/imports/importCandidateReview/reconcile';
++import {
++  buildImportCandidateReviewCorruptedDto,
++  buildImportCandidateReviewStateDto,
++  type ImportCandidateReconcileLoadErrorCode,
++} from '@/server/imports/importCandidateReview/state';
+ import {
+   importWarningItemSchema,
+   type ImportCandidateReconcileReviewDto,
+@@ -138,23 +146,63 @@ export function buildImportCandidateSummary(payload: unknown): ImportCandidateSu
+   };
+ }
+ 
++const RECONCILE_ADMIN_LOAD_ERROR_CODES = new Set<ImportReviewReconcileError['code']>([
++  'REVIEW_MANIFEST_INVALID',
++  'REVIEW_APPROVALS_INVALID',
++  'REVIEW_APPROVALS_STALE',
++]);
++
++function adminFacingReconcileLoadMessage(code: ImportCandidateReconcileLoadErrorCode): string {
++  switch (code) {
++    case 'REVIEW_MANIFEST_INVALID':
++      return 'Stored reconciliation manifest is invalid.';
++    case 'REVIEW_APPROVALS_INVALID':
++      return 'Stored reconciliation approvals are invalid.';
++    case 'REVIEW_APPROVALS_STALE':
++      return 'Stored reconciliation approvals do not match the current manifest revision.';
++  }
++}
++
+ export function buildImportCandidateReconcileReview(
+   row: Pick<ContentImport, 'reviewManifest' | 'reviewApprovals'>,
+ ): ImportCandidateReconcileReviewDto | null {
+-  const loaded = loadImportReviewStateFromRow({
+-    reviewManifest: row.reviewManifest,
+-    reviewApprovals: row.reviewApprovals,
+-  });
+-  if (!loaded) {
++  const hasStoredManifest = row.reviewManifest !== null && row.reviewManifest !== undefined;
++  if (!hasStoredManifest) {
+     return null;
+   }
+-  return buildImportCandidateReviewStateDto({
+-    manifestEnvelope: loaded.manifestEnvelope,
+-    manifest: loaded.manifest,
+-    approvalsEnvelope: loaded.approvalsEnvelope,
+-    approvals: loaded.approvals,
+-    unresolvedBlockingCount: countUnresolvedBlockingDecisions(loaded.manifest),
+-  });
++
++  try {
++    const loaded = loadImportReviewStateFromRow({
++      reviewManifest: row.reviewManifest,
++      reviewApprovals: row.reviewApprovals,
++    });
++    if (!loaded) {
++      return buildImportCandidateReviewCorruptedDto({
++        code: 'REVIEW_MANIFEST_INVALID',
++        message: adminFacingReconcileLoadMessage('REVIEW_MANIFEST_INVALID'),
++        hasManifest: true,
++      });
++    }
++    if (loaded.approvalsEnvelope) {
++      verifyReviewApprovalsRevision(loaded.manifestEnvelope, loaded.approvalsEnvelope);
++    }
++    return buildImportCandidateReviewStateDto({
++      manifestEnvelope: loaded.manifestEnvelope,
++      manifest: loaded.manifest,
++      approvalsEnvelope: loaded.approvalsEnvelope,
++      approvals: loaded.approvals,
++      unresolvedBlockingCount: countUnresolvedBlockingDecisions(loaded.manifest),
++    });
++  } catch (e) {
++    if (e instanceof ImportReviewReconcileError && RECONCILE_ADMIN_LOAD_ERROR_CODES.has(e.code)) {
++      return buildImportCandidateReviewCorruptedDto({
++        code: e.code as ImportCandidateReconcileLoadErrorCode,
++        message: adminFacingReconcileLoadMessage(e.code as ImportCandidateReconcileLoadErrorCode),
++        hasManifest: true,
++      });
++    }
++    throw e;
++  }
+ }
+ 
+ export function toImportDetail(row: ImportWithFileAndVersions): ImportDetailDto {
+diff --git a/src/server/imports/types.ts b/src/server/imports/types.ts
+index 79783ea..0f093f8 100644
+--- a/src/server/imports/types.ts
++++ b/src/server/imports/types.ts
+@@ -132,6 +132,10 @@ export type ImportCandidateReconcileReviewDto = {
+   unresolvedBlockingCount: number;
+   mergeReviewBlocked: boolean;
+   advisoryOnly: boolean;
++  loadError: {
++    code: 'REVIEW_MANIFEST_INVALID' | 'REVIEW_APPROVALS_INVALID' | 'REVIEW_APPROVALS_STALE';
++    message: string;
++  } | null;
+ };
+ 
+ export type ImportDetailDto = ImportSummaryDto & {
+diff --git a/src/tests/imports/importCandidateReconcilePanel.test.tsx b/src/tests/imports/importCandidateReconcilePanel.test.tsx
+index 785a795..0fd3da7 100644
+--- a/src/tests/imports/importCandidateReconcilePanel.test.tsx
++++ b/src/tests/imports/importCandidateReconcilePanel.test.tsx
+@@ -58,6 +58,7 @@ const reconcile: ImportCandidateReconcileReviewModel = {
+   unresolvedBlockingCount: 3,
+   mergeReviewBlocked: true,
+   advisoryOnly: false,
++  loadError: null,
+ };
+ 
+ describe('ImportCandidateReconcilePanel', () => {
+@@ -109,6 +110,34 @@ describe('ImportCandidateReconcilePanel', () => {
+     expect(artifactCard?.textContent).toContain('saved');
+   });
+ 
++  it('renders blocking error card when stored reconciliation data is corrupted', () => {
++    const corrupted: ImportCandidateReconcileReviewModel = {
++      hasManifest: true,
++      manifestRevision: null,
++      sourceTextHash: null,
++      baseline: null,
++      generatedAt: null,
++      importSource: null,
++      decisions: [],
++      accounting: null,
++      analysisAccounting: null,
++      approvals: [],
++      approvalsUpdatedAt: null,
++      unresolvedBlockingCount: 1,
++      mergeReviewBlocked: true,
++      advisoryOnly: false,
++      loadError: {
++        code: 'REVIEW_APPROVALS_INVALID',
++        message: 'Stored reconciliation approvals are invalid.',
++      },
++    };
++    render(<ImportCandidateReconcilePanel importId="imp-1" reconcile={corrupted} onSaved={vi.fn()} />);
++    expect(screen.getByText(/Stored reconciliation data is invalid/i)).toBeTruthy();
++    expect(screen.getByText(/Merge is blocked/i)).toBeTruthy();
++    expect(screen.queryByRole('button', { name: /Save reconciliation approvals/i })).toBeNull();
++    expect(screen.queryByRole('button', { name: /Approve removal/i })).toBeNull();
++  });
++
+   it('submits approvals to API', async () => {
+     const fetchMock = vi.fn().mockResolvedValue({
+       ok: true,
+diff --git a/src/tests/imports/importCandidateReviewWorkflow.test.ts b/src/tests/imports/importCandidateReviewWorkflow.test.ts
+index 9442da5..7f9ae15 100644
+--- a/src/tests/imports/importCandidateReviewWorkflow.test.ts
++++ b/src/tests/imports/importCandidateReviewWorkflow.test.ts
+@@ -55,6 +55,35 @@ import { minimalImportDetails } from '@/tests/fixtures/minimalImportDetails';
+ 
+ const IMPORT_ID = 'imp-review-workflow';
+ 
++function mockApprovalSaveTransaction(input: {
++  importId: string;
++  row: Record<string, unknown>;
++  onLocked?: () => void;
++}) {
++  const callOrder: string[] = [];
++  const queryRaw = vi.fn(async () => {
++    callOrder.push('lock');
++    input.onLocked?.();
++    return [{ id: input.importId }];
++  });
++  const findUnique = vi.fn(async () => {
++    callOrder.push('read');
++    return input.row;
++  });
++  const update = vi.fn(async () => {
++    callOrder.push('update');
++    return {};
++  });
++  vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
++    const tx = {
++      $queryRaw: queryRaw,
++      contentImport: { findUnique, update },
++    };
++    return fn(tx as never);
++  });
++  return { callOrder, queryRaw, findUnique, update };
++}
++
+ function envelopeFromDetails(details = minimalImportDetails(), rawDocumentText = 'cv body text for hash') {
+   return buildImportCandidatePayload({
+     rawDocumentText,
+@@ -164,6 +193,7 @@ describe('import candidate review storage', () => {
+ 
+     vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+       const tx = {
++        $queryRaw: vi.fn().mockResolvedValue([{ id: IMPORT_ID }]),
+         contentImport: {
+           findUnique: vi.fn().mockResolvedValue({
+             id: IMPORT_ID,
+@@ -326,20 +356,15 @@ describe('import candidate review storage', () => {
+       reviewApprovals: null,
+     } as never);
+ 
+-    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+-      const tx = {
+-        contentImport: {
+-          findUnique: vi.fn().mockResolvedValue({
+-            id: IMPORT_ID,
+-            status: 'MERGED',
+-            candidatePayload: payload,
+-            reviewManifest: envelope,
+-            reviewApprovals: null,
+-          }),
+-          update: vi.fn(),
+-        },
+-      };
+-      return fn(tx as never);
++    const { callOrder, update } = mockApprovalSaveTransaction({
++      importId: IMPORT_ID,
++      row: {
++        id: IMPORT_ID,
++        status: 'MERGED',
++        candidatePayload: payload,
++        reviewManifest: envelope,
++        reviewApprovals: null,
++      },
+     });
+ 
+     await expect(
+@@ -349,6 +374,128 @@ describe('import candidate review storage', () => {
+         approvals: [{ decisionId: decision.decisionId, approvedAction: 'skip' }],
+       }),
+     ).rejects.toMatchObject({ code: 'IMPORT_FINALIZED' });
++    expect(callOrder).toEqual(['lock', 'read']);
++    expect(update).not.toHaveBeenCalled();
++  });
++
++  it('locks the import row before reading and updating approvals', async () => {
++    const candidate = minimalImportDetails();
++    const payload = envelopeFromDetails(candidate);
++    const { envelope, manifest } = await generateImportReviewManifest({
++      importId: IMPORT_ID,
++      sourceFileName: 'cv.docx',
++      sourceTextHash: payload.sourceTextHash,
++      candidate,
++    });
++    const decision = manifest.decisions.find(
++      (d) => d.section === 'publications' && d.action === 'manual-review',
++    );
++    expect(decision).toBeDefined();
++    if (!decision) {
++      throw new Error('Expected a publications manual-review decision for this fixture.');
++    }
++
++    vi.mocked(prisma.contentImport.findUnique)
++      .mockResolvedValueOnce({
++        id: IMPORT_ID,
++        status: 'PARSED',
++        candidatePayload: payload,
++        reviewManifest: envelope,
++        reviewApprovals: null,
++      } as never)
++      .mockResolvedValueOnce({
++        id: IMPORT_ID,
++        status: 'PARSED',
++        candidatePayload: payload,
++        reviewManifest: envelope,
++        reviewApprovals: toStoredApprovalsEnvelope({
++          manifestRevision: envelope.manifestRevision,
++          approvals: [{ decisionId: decision.decisionId, approvedAction: 'skip' }],
++        }),
++      } as never)
++      .mockResolvedValueOnce({
++        id: IMPORT_ID,
++        status: 'PARSED',
++        candidatePayload: payload,
++        reviewManifest: envelope,
++        reviewApprovals: toStoredApprovalsEnvelope({
++          manifestRevision: envelope.manifestRevision,
++          approvals: [{ decisionId: decision.decisionId, approvedAction: 'skip' }],
++        }),
++      } as never);
++
++    const { callOrder, queryRaw, findUnique, update } = mockApprovalSaveTransaction({
++      importId: IMPORT_ID,
++      row: {
++        id: IMPORT_ID,
++        status: 'PARSED',
++        candidatePayload: payload,
++        reviewManifest: envelope,
++        reviewApprovals: null,
++      },
++    });
++
++    await saveImportReviewApprovals({
++      importId: IMPORT_ID,
++      manifestRevision: envelope.manifestRevision,
++      approvals: [{ decisionId: decision.decisionId, approvedAction: 'skip' }],
++    });
++
++    expect(queryRaw).toHaveBeenCalledTimes(1);
++    expect(callOrder).toEqual(['lock', 'read', 'update']);
++    expect(findUnique).toHaveBeenCalledTimes(1);
++    expect(update).toHaveBeenCalledTimes(1);
++  });
++
++  it('rejects approval save when manifest revision changes after row lock', async () => {
++    const candidate = minimalImportDetails();
++    const payload = envelopeFromDetails(candidate);
++    const { envelope, manifest } = await generateImportReviewManifest({
++      importId: IMPORT_ID,
++      sourceFileName: 'cv.docx',
++      sourceTextHash: payload.sourceTextHash,
++      candidate,
++    });
++    const decision = manifest.decisions.find(
++      (d) => d.section === 'publications' && d.action === 'manual-review',
++    );
++    expect(decision).toBeDefined();
++    if (!decision) {
++      throw new Error('Expected a publications manual-review decision for this fixture.');
++    }
++    const staleEnvelope = {
++      ...envelope,
++      manifestRevision: 'deadbeefdeadbeefdeadbeefdeadbeef',
++    };
++
++    vi.mocked(prisma.contentImport.findUnique).mockResolvedValue({
++      id: IMPORT_ID,
++      status: 'PARSED',
++      candidatePayload: payload,
++      reviewManifest: envelope,
++      reviewApprovals: null,
++    } as never);
++
++    const { callOrder, update } = mockApprovalSaveTransaction({
++      importId: IMPORT_ID,
++      row: {
++        id: IMPORT_ID,
++        status: 'PARSED',
++        candidatePayload: payload,
++        reviewManifest: staleEnvelope,
++        reviewApprovals: null,
++      },
++    });
++
++    await expect(
++      saveImportReviewApprovals({
++        importId: IMPORT_ID,
++        manifestRevision: envelope.manifestRevision,
++        approvals: [{ decisionId: decision.decisionId, approvedAction: 'skip' }],
++      }),
++    ).rejects.toMatchObject({ code: 'CONCURRENT_UPDATE' });
++    expect(callOrder).toEqual(['lock', 'read']);
++    expect(update).not.toHaveBeenCalled();
+   });
+ 
+   it('documents allowed import statuses for review approval updates', () => {
+diff --git a/src/tests/imports/importsDomain.test.ts b/src/tests/imports/importsDomain.test.ts
+index 30589a5..08479c8 100644
+--- a/src/tests/imports/importsDomain.test.ts
++++ b/src/tests/imports/importsDomain.test.ts
+@@ -3,6 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
+ 
+ vi.mock('server-only', () => ({}));
+ 
++vi.mock('@/server/content/contentWorkflowCore', async () => {
++  const actual = await vi.importActual('@/server/content/contentWorkflowCore');
++  return {
++    ...(actual as Record<string, unknown>),
++    getWorkingDraft: vi.fn().mockResolvedValue(null),
++    getLatestPublishedVersion: vi.fn().mockResolvedValue(null),
++  };
++});
++
+ vi.mock('@/server/db/prisma', () => ({
+   prisma: {
+     uploadedFile: { findUnique: vi.fn(), create: vi.fn() },
+@@ -13,14 +22,18 @@ vi.mock('@/server/db/prisma', () => ({
+ 
+ import { prisma } from '@/server/db/prisma';
+ import { buildImportCandidatePayload } from '@/server/imports/candidatePayload/builder';
++import { generateImportReviewManifest } from '@/server/imports/importCandidateReview/generate';
++import * as reconcileModule from '@/server/imports/importCandidateReview/reconcile';
++import { toStoredApprovalsEnvelope } from '@/server/imports/importCandidateReview/storageSchema';
+ import { isTerminalImportStatus } from '@/server/imports/importStatus';
+ import {
+   createContentImportRecord,
+   saveImportCandidateAndWarnings,
+   updateImportStatus,
+ } from '@/server/imports/repository';
+-import { parseImportWarnings, toImportDetail, toImportSummary } from '@/server/imports/serialize';
++import { parseImportWarnings, toImportDetail, toImportSummary, buildImportCandidateReconcileReview } from '@/server/imports/serialize';
+ import { ImportDomainError } from '@/server/imports/types';
++import { minimalImportDetails as fixtureImportDetails } from '@/tests/fixtures/minimalImportDetails';
+ import type { DetectedSection } from '@/types/parser';
+ import { validateDetails } from '@/validators/detailsSchema';
+ 
+@@ -132,6 +145,96 @@ describe('importsDomain', () => {
+     expect(detail.candidateReconcileReview).toBeNull();
+   });
+ 
++  it('toImportDetail returns corrupted reconciliation DTO for malformed stored approvals', async () => {
++    const candidate = fixtureImportDetails();
++    const payload = buildImportCandidatePayload({
++      rawDocumentText: 'cv body',
++      parserVersion: '1',
++      details: candidate,
++      sections: [],
++      importWarnings: [],
++    });
++    const { envelope } = await generateImportReviewManifest({
++      importId: 'imp-corrupt',
++      sourceFileName: 'cv.docx',
++      sourceTextHash: payload.sourceTextHash,
++      candidate,
++    });
++    const createdAt = new Date('2026-01-02T03:04:05.000Z');
++    const updatedAt = new Date('2026-01-03T03:04:05.000Z');
++    const row = {
++      id: 'imp-corrupt',
++      uploadedFileId: 'up1',
++      status: 'PARSED' as const,
++      parserVersion: '1',
++      warnings: [],
++      rawPreviewPath: null,
++      rawExtract: null,
++      candidatePayload: payload as unknown as Prisma.JsonValue,
++      reviewManifest: envelope,
++      reviewApprovals: { corrupted: true },
++      createdAt,
++      updatedAt,
++      uploadedFile: {
++        id: 'up1',
++        originalName: 'cv.docx',
++        storedPath: '/files/cv.docx',
++        mimeType: 'application/whatever',
++        sizeBytes: 10,
++        sha256: 'abc',
++        sourceFormat: 'DOCX' as const,
++        uploadedAt: createdAt,
++      },
++      versions: [],
++    };
++    const detail = toImportDetail(row);
++    expect(detail.candidateReconcileReview).not.toBeNull();
++    expect(detail.candidateReconcileReview!.loadError?.code).toBe('REVIEW_APPROVALS_INVALID');
++    expect(detail.candidateReconcileReview!.mergeReviewBlocked).toBe(true);
++    expect(detail.candidateReconcileReview!.hasManifest).toBe(true);
++  });
++
++  it('buildImportCandidateReconcileReview returns stale approvals load error without throwing', async () => {
++    const candidate = fixtureImportDetails();
++    const payload = buildImportCandidatePayload({
++      rawDocumentText: 'cv body',
++      parserVersion: '1',
++      details: candidate,
++      sections: [],
++      importWarnings: [],
++    });
++    const { envelope } = await generateImportReviewManifest({
++      importId: 'imp-stale',
++      sourceFileName: 'cv.docx',
++      sourceTextHash: payload.sourceTextHash,
++      candidate,
++    });
++    const staleApprovals = toStoredApprovalsEnvelope({
++      manifestRevision: 'deadbeefdeadbeefdeadbeefdeadbeef',
++      approvals: [],
++    });
++    const review = buildImportCandidateReconcileReview({
++      reviewManifest: envelope,
++      reviewApprovals: staleApprovals,
++    });
++    expect(review).not.toBeNull();
++    expect(review!.loadError?.code).toBe('REVIEW_APPROVALS_STALE');
++    expect(review!.mergeReviewBlocked).toBe(true);
++  });
++
++  it('buildImportCandidateReconcileReview does not swallow unknown programming errors', async () => {
++    const spy = vi.spyOn(reconcileModule, 'loadImportReviewStateFromRow').mockImplementation(() => {
++      throw new Error('unexpected programming failure');
++    });
++    expect(() =>
++      buildImportCandidateReconcileReview({
++        reviewManifest: { storageVersion: 1 },
++        reviewApprovals: null,
++      }),
++    ).toThrow('unexpected programming failure');
++    spy.mockRestore();
++  });
++
+   it('toImportDetail has null candidateReview for malformed candidatePayload', () => {
+     const createdAt = new Date('2026-01-02T03:04:05.000Z');
+     const updatedAt = new Date('2026-01-03T03:04:05.000Z');

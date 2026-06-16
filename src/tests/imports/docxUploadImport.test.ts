@@ -99,8 +99,10 @@ describe('processDocxUploadWithImportPersistence', () => {
         warnings: null,
         rawPreviewPath: null,
         rawExtract: null,
-        candidatePayload: null,
-        createdAt: new Date(),
+      candidatePayload: null,
+      reviewManifest: null,
+      reviewApprovals: null,
+      createdAt: new Date(),
         updatedAt: new Date(),
       },
     });
