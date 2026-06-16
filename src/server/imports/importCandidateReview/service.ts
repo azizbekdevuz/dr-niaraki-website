@@ -1,5 +1,6 @@
 import 'server-only';
 
+import type { ImportStatus } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 
 import { recordContentEvent } from '@/server/content/contentEvents';
@@ -27,6 +28,21 @@ import {
   type StoredReviewManifestEnvelope,
 } from '@/server/imports/importCandidateReview/storageSchema';
 import { ImportDomainError } from '@/server/imports/types';
+
+const REVIEW_APPROVAL_ALLOWED_STATUSES = new Set<ImportStatus>(['PARSED', 'NEEDS_REVIEW']);
+
+export function importStatusAcceptsReviewApprovalUpdates(status: ImportStatus): boolean {
+  return REVIEW_APPROVAL_ALLOWED_STATUSES.has(status);
+}
+
+function assertImportStatusAcceptsReviewApprovalUpdates(status: ImportStatus): void {
+  if (!importStatusAcceptsReviewApprovalUpdates(status)) {
+    throw new ImportReviewApprovalPersistError(
+      'IMPORT_FINALIZED',
+      `Import status "${status}" does not accept review approval updates.`,
+    );
+  }
+}
 
 export class ImportReviewApprovalPersistError extends Error {
   constructor(
@@ -137,14 +153,17 @@ export async function saveImportReviewApprovals(input: {
   if (!row) {
     throw new ImportReviewApprovalPersistError('IMPORT_NOT_FOUND', 'Import not found.');
   }
-  if (row.status === 'REJECTED' || row.status === 'FAILED') {
-    throw new ImportReviewApprovalPersistError(
-      'IMPORT_FINALIZED',
-      `Import status "${row.status}" does not accept review approval updates.`,
-    );
-  }
+  assertImportStatusAcceptsReviewApprovalUpdates(row.status);
 
-  const loaded = loadImportReviewStateFromRow(row);
+  let loaded: ReturnType<typeof loadImportReviewStateFromRow>;
+  try {
+    loaded = loadImportReviewStateFromRow(row);
+  } catch (e) {
+    if (e instanceof ImportReviewReconcileError && e.code === 'REVIEW_APPROVALS_INVALID') {
+      throw new ImportReviewApprovalPersistError('REVIEW_APPROVALS_INVALID', e.message);
+    }
+    throw e;
+  }
   if (!loaded) {
     throw new ImportReviewApprovalPersistError('REVIEW_MANIFEST_MISSING', 'Import has no review manifest.');
   }
@@ -175,6 +194,7 @@ export async function saveImportReviewApprovals(input: {
     if (!current) {
       throw new ImportReviewApprovalPersistError('IMPORT_NOT_FOUND', 'Import not found.');
     }
+    assertImportStatusAcceptsReviewApprovalUpdates(current.status);
     const currentLoaded = loadImportReviewStateFromRow(current);
     if (!currentLoaded) {
       throw new ImportReviewApprovalPersistError('REVIEW_MANIFEST_MISSING', 'Import has no review manifest.');

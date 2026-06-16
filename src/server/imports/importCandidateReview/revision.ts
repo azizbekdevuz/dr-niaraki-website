@@ -7,7 +7,10 @@ export function computeImportReviewManifestRevision(input: {
   sourceTextHash: string;
   decisionIds: readonly string[];
 }): string {
-  const payload = `${input.sourceTextHash}\n${[...input.decisionIds].sort().join('\n')}`;
+  const payload = JSON.stringify({
+    sourceTextHash: input.sourceTextHash,
+    decisionIds: [...input.decisionIds].sort(),
+  });
   return createHash('sha256').update(payload).digest('hex').slice(0, 32);
 }
 

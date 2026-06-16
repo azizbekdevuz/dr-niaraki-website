@@ -154,6 +154,29 @@ function decisionControls(
   );
 }
 
+function approvalBadgeStatus(
+  draftApproval: LocalApproval | undefined,
+  serverApproval: LocalApproval | undefined,
+): 'pending' | 'unsaved' | 'saved' {
+  if (draftApproval) {
+    return 'unsaved';
+  }
+  if (serverApproval) {
+    return 'saved';
+  }
+  return 'pending';
+}
+
+function ApprovalStatusBadge({ status }: { status: 'pending' | 'unsaved' | 'saved' }) {
+  if (status === 'saved') {
+    return <span className="rounded bg-success/15 px-1.5 py-0.5 text-success">saved</span>;
+  }
+  if (status === 'unsaved') {
+    return <span className="rounded bg-warning/15 px-1.5 py-0.5 text-warning">unsaved</span>;
+  }
+  return <span className="rounded bg-warning/15 px-1.5 py-0.5 text-warning">pending</span>;
+}
+
 export function ImportCandidateReconcilePanel({ importId, reconcile, onSaved }: Props) {
   const [draftApprovals, setDraftApprovals] = useState<LocalApproval[]>([]);
   const [saving, setSaving] = useState(false);
@@ -308,23 +331,22 @@ export function ImportCandidateReconcilePanel({ importId, reconcile, onSaved }: 
           <h3 className="text-sm font-medium text-foreground">{sectionLabel(section)}</h3>
           <div className="space-y-3">
             {decisions.map((decision) => {
+              const serverApproval = serverApprovals.find((a) => a.decisionId === decision.decisionId);
+              const draftApproval = draftApprovals.find((a) => a.decisionId === decision.decisionId);
               const current = effectiveApprovals.get(decision.decisionId);
-              const isCluster = Boolean(decision.relatedExistingIds && decision.relatedExistingIds.length > 0);
-              const clusterMembers = isCluster
-                ? [decision.existingId!, ...(decision.relatedExistingIds ?? [])]
-                : [];
-              const resolved = Boolean(current);
+              const clusterMemberIds = [decision.existingId, ...(decision.relatedExistingIds ?? [])].filter(
+                (id): id is string => Boolean(id),
+              );
+              const isCluster = clusterMemberIds.length >= 2;
+              const clusterMembers = isCluster ? clusterMemberIds : [];
+              const approvalStatus = approvalBadgeStatus(draftApproval, serverApproval as LocalApproval | undefined);
 
               return (
                 <div key={decision.decisionId} className="rounded border border-primary/15 p-3 text-xs space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-foreground">{decision.action}</span>
                     <span className="text-muted">confidence: {decision.confidence}</span>
-                    {resolved ? (
-                      <span className="rounded bg-success/15 px-1.5 py-0.5 text-success">saved</span>
-                    ) : (
-                      <span className="rounded bg-warning/15 px-1.5 py-0.5 text-warning">pending</span>
-                    )}
+                    <ApprovalStatusBadge status={approvalStatus} />
                   </div>
                   <p className="text-foreground">{decision.reason}</p>
                   {decision.existingId ? (

@@ -1,6 +1,6 @@
 /** @vitest-environment happy-dom */
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ImportCandidateReconcilePanel } from '@/app/admin/imports/ImportCandidateReconcilePanel';
@@ -80,6 +80,33 @@ describe('ImportCandidateReconcilePanel', () => {
     expect(screen.getByText(/Cluster members: dup-a, dup-b/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: /Preserve selected/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /Remove entire cluster/i })).toBeTruthy();
+  });
+
+  it('shows unsaved badge for local draft approval before save', () => {
+    render(<ImportCandidateReconcilePanel importId="imp-1" reconcile={reconcile} onSaved={vi.fn()} />);
+    const artifactCard = screen.getByText(/Professional Memberships row/i).closest('div')!;
+    expect(artifactCard.textContent).toContain('pending');
+    fireEvent.click(within(artifactCard).getByRole('button', { name: /Approve removal/i }));
+    expect(artifactCard.textContent).toContain('unsaved');
+    expect(within(artifactCard).getByText('unsaved')).toBeTruthy();
+  });
+
+  it('shows saved badge for server-persisted approval', () => {
+    const withSavedApproval: ImportCandidateReconcileReviewModel = {
+      ...reconcile,
+      approvals: [
+        {
+          decisionId: 'awards:artifact-1::remove-artifact',
+          approvedAction: 'approve-removal',
+        },
+      ],
+      unresolvedBlockingCount: 2,
+    };
+    render(
+      <ImportCandidateReconcilePanel importId="imp-1" reconcile={withSavedApproval} onSaved={vi.fn()} />,
+    );
+    const artifactCard = screen.getByText(/Professional Memberships row/i).closest('div');
+    expect(artifactCard?.textContent).toContain('saved');
   });
 
   it('submits approvals to API', async () => {
