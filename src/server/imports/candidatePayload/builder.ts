@@ -214,7 +214,19 @@ export function buildImportCandidatePayload(input: {
       code: e.code,
       message: `Patent heading declares ${e.declaredInHeading} patents but parser extracted ${e.extractedCount}.`,
     }));
-  const parserWarnings = [...input.importWarnings, ...patentMismatchWarnings];
+  const unknownPatentCount = input.details.patents.filter(
+    (p) => p.status === null || p.status === undefined,
+  ).length;
+  const unknownPatentWarnings: ImportWarningItem[] =
+    unknownPatentCount > 0
+      ? [
+          {
+            code: 'PATENT_STATUS_UNKNOWN',
+            message: `${unknownPatentCount} patents have no individually verifiable status in the current CV.`,
+          },
+        ]
+      : [];
+  const parserWarnings = [...input.importWarnings, ...patentMismatchWarnings, ...unknownPatentWarnings];
   const reviewHint = mergeReviewHint(countValidation, 'READY');
 
   return {

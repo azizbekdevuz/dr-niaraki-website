@@ -14,6 +14,7 @@ import {
   splitEntries,
 } from './parserUtils';
 import { isPublicationSubsectionMegaBlob } from './publicationApaStructure';
+import { deduplicatePublications } from './publicationDeduplicate';
 import { parsePublicationEntry } from './publicationEntryParser';
 import { isPublicationProseNoiseLine, splitPublicationApaBlocks } from './publicationsParserApa';
 
@@ -116,7 +117,10 @@ export function parsePublications(text: string): ParseResult<Publication[]> {
     }
   });
 
-  return { data: publications, warnings };
+  const deduped = deduplicatePublications(publications, 0);
+  warnings.push(...deduped.warnings);
+
+  return { data: deduped.data, warnings };
 }
 
 /**
