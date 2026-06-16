@@ -4,6 +4,7 @@ import Link from 'next/link';
 import React from 'react';
 
 import { ImportAiReviewAssistantPanel } from './ImportAiReviewAssistantPanel';
+import { ImportCandidateReconcilePanel } from './ImportCandidateReconcilePanel';
 import { ImportCandidateReviewPanels } from './ImportCandidateReviewPanels';
 import { ImportCandidateSummaryCard } from './ImportCandidateSummaryCard';
 import type { ImportDetailModel, ReviewBaselineQuery, ReviewPayloadModel } from './importDetailTypes';
@@ -20,9 +21,15 @@ type Props = {
   merging: boolean;
   mergeMsg: string | null;
   error: string | null;
+  onReload: () => void;
   onMerge: (
     action: 'create' | 'replace',
-    opts: { mergeMode: 'safe_update' | 'full_replace'; acknowledgeHighRisk: boolean },
+    opts: {
+      mergeMode: 'safe_update' | 'full_replace';
+      acknowledgeHighRisk: boolean;
+      acknowledgeUnresolvedReview?: boolean;
+      unresolvedReviewReason?: string;
+    },
   ) => void;
 };
 
@@ -34,6 +41,7 @@ export function ImportDetailBody({
   merging,
   mergeMsg,
   error,
+  onReload,
   onMerge,
 }: Props) {
   return (
@@ -64,6 +72,12 @@ export function ImportDetailBody({
         <ImportCandidateSummaryCard imp={imp} />
 
         <ImportCandidateReviewPanels imp={imp} review={review} />
+
+        <ImportCandidateReconcilePanel
+          importId={imp.id}
+          reconcile={imp.candidateReconcileReview}
+          onSaved={onReload}
+        />
 
         {review ? <ImportReviewWarningsPanel review={review} /> : null}
 

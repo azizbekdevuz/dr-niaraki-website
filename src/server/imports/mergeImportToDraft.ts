@@ -12,8 +12,17 @@ import {
 } from '@/server/content/contentWorkflowCore';
 import { prisma } from '@/server/db/prisma';
 import { buildImportMergeSafetyReport } from '@/server/imports/buildImportMergeSafetyReport';
-import { getDetailsFromCandidatePayload } from '@/server/imports/candidatePayload/schema';
+import { getDetailsFromCandidatePayload, parseImportCandidatePayload } from '@/server/imports/candidatePayload/schema';
 import { mergeCvDetailsIntoSiteContent } from '@/server/imports/detailsToSiteContentMerge';
+import {
+  ImportReviewReconcileError,
+  loadImportReviewStateFromRow,
+  reconcileCandidateForMerge,
+  verifyReviewManifestSourceHash,
+} from '@/server/imports/importCandidateReview/reconcile';
+import {
+  ensureImportReviewManifest,
+} from '@/server/imports/importCandidateReview/service';
 import { freezeKeysFromSafetyReport } from '@/server/imports/importMergeSectionSafety';
 import { type ImportReviewProvenance } from '@/server/imports/importReviewStructured';
 import { getContentImportDetail, updateImportStatus } from '@/server/imports/repository';
@@ -29,7 +38,11 @@ export class ImportMergeError extends Error {
       | 'NO_CANDIDATE'
       | 'INVALID_CANDIDATE'
       | 'MERGE_VALIDATION_FAILED'
-      | 'MERGE_ACK_REQUIRED',
+      | 'MERGE_ACK_REQUIRED'
+      | 'REVIEW_BLOCKED'
+      | 'REVIEW_MANIFEST_MISSING'
+      | 'REVIEW_MANIFEST_STALE'
+      | 'REVIEW_APPROVALS_STALE',
     message: string,
   ) {
     super(message);
@@ -69,6 +82,9 @@ export async function mergeImportCandidateToWorkingDraft(input: {
   mergeMode?: 'safe_update' | 'full_replace';
   /** Required when `mergeMode` is `full_replace` and the import has any non-safe section. */
   acknowledgeHighRisk?: boolean;
+  /** Required when unresolved publication/award reconciliation decisions remain. */
+  acknowledgeUnresolvedReview?: boolean;
+  unresolvedReviewReason?: string | null;
   changeSummary?: string | null;
 }): Promise<MergeImportCandidateResult> {
   const quick = await getContentImportDetail(input.importId);
@@ -86,7 +102,7 @@ export async function mergeImportCandidateToWorkingDraft(input: {
     // Draft was discarded (or replaced by a different import) — fall through to re-merge.
   }
 
-  const { importRow, details } = await loadDetailsFromImportRow(quick);
+  const { importRow, details: rawDetails } = await loadDetailsFromImportRow(quick);
   const baselineParsed = validateSiteContent(SITE_CONTENT_RAW);
   if (!baselineParsed.success) {
     throw new ImportMergeError('MERGE_VALIDATION_FAILED', 'Canonical baseline failed validation.');
@@ -98,6 +114,81 @@ export async function mergeImportCandidateToWorkingDraft(input: {
   }
   const baselineData = basePayload.data;
 
+  const manifestEnvelope = await ensureImportReviewManifest(input.importId);
+  const reviewRow = await getContentImportDetail(input.importId);
+  const loadedReview = reviewRow
+    ? loadImportReviewStateFromRow({
+        reviewManifest: reviewRow.reviewManifest,
+        reviewApprovals: reviewRow.reviewApprovals,
+        candidatePayload: reviewRow.candidatePayload,
+      })
+    : null;
+  if (!loadedReview) {
+    throw new ImportMergeError('REVIEW_MANIFEST_MISSING', 'Import has no reconciliation review manifest.');
+  }
+  const envelopePayload = parseImportCandidatePayload(importRow.candidatePayload);
+  if (envelopePayload) {
+    try {
+      verifyReviewManifestSourceHash(manifestEnvelope, envelopePayload.sourceTextHash);
+    } catch (e) {
+      if (e instanceof ImportReviewReconcileError) {
+        throw new ImportMergeError('REVIEW_MANIFEST_STALE', e.message);
+      }
+      throw e;
+    }
+  }
+
+  let reconciledDetails = rawDetails;
+  let reconciledAccounting: Prisma.InputJsonValue | null = null;
+  let unresolvedBlockingCount = 0;
+  try {
+    const reconciled = await reconcileCandidateForMerge({
+      candidate: rawDetails,
+      baseline: baselineData,
+      manifestEnvelope: loadedReview.manifestEnvelope,
+      manifest: loadedReview.manifestEnvelope.manifest,
+      approvals: loadedReview.approvals,
+      acknowledgeUnresolvedReview: input.acknowledgeUnresolvedReview,
+      unresolvedReviewReason: input.unresolvedReviewReason,
+    });
+    reconciledDetails = reconciled.details;
+    reconciledAccounting = JSON.parse(JSON.stringify(reconciled.manifest.accounting)) as Prisma.InputJsonValue;
+    unresolvedBlockingCount = reconciled.unresolvedBlockingCount;
+  } catch (e) {
+    if (e instanceof ImportReviewReconcileError) {
+      if (e.code === 'REVIEW_BLOCKED') {
+        throw new ImportMergeError('REVIEW_BLOCKED', e.message);
+      }
+      if (e.code === 'REVIEW_MANIFEST_STALE' || e.code === 'REVIEW_APPROVALS_STALE') {
+        throw new ImportMergeError(e.code, e.message);
+      }
+    }
+    throw e;
+  }
+
+  if (
+    input.acknowledgeUnresolvedReview &&
+    unresolvedBlockingCount > 0 &&
+    !input.unresolvedReviewReason?.trim()
+  ) {
+    throw new ImportMergeError(
+      'MERGE_ACK_REQUIRED',
+      'Unresolved reconciliation override requires unresolvedReviewReason.',
+    );
+  }
+
+  if (input.acknowledgeUnresolvedReview && unresolvedBlockingCount > 0) {
+    await recordContentEvent({
+      eventType: 'SYSTEM_NOTE',
+      payload: {
+        kind: 'IMPORT_MERGE_UNRESOLVED_REVIEW_OVERRIDE',
+        importId: input.importId,
+        unresolvedBlockingCount,
+        reason: input.unresolvedReviewReason?.trim() ?? null,
+      },
+    });
+  }
+
   const provenance: ImportReviewProvenance = {
     importId: importRow.id,
     originalFileName: importRow.uploadedFile.originalName,
@@ -106,7 +197,7 @@ export async function mergeImportCandidateToWorkingDraft(input: {
   };
 
   const { mergeSafety: safety } = buildImportMergeSafetyReport({
-    details,
+    details: reconciledDetails,
     mergeBaseline: baselineData,
     candidatePayload: importRow.candidatePayload,
     provenance,
@@ -122,8 +213,10 @@ export async function mergeImportCandidateToWorkingDraft(input: {
 
   const merged =
     mergeMode === 'full_replace'
-      ? mergeCvDetailsIntoSiteContent(details, baselineData)
-      : mergeCvDetailsIntoSiteContent(details, baselineData, { freeze: freezeKeysFromSafetyReport(safety) });
+      ? mergeCvDetailsIntoSiteContent(reconciledDetails, baselineData)
+      : mergeCvDetailsIntoSiteContent(reconciledDetails, baselineData, {
+          freeze: freezeKeysFromSafetyReport(safety),
+        });
 
   const validated = validateSiteContent(merged);
   if (!validated.success) {
@@ -154,12 +247,26 @@ export async function mergeImportCandidateToWorkingDraft(input: {
     await recordContentEvent({
       eventType: 'WORKING_DRAFT_CREATED',
       versionId: row.id,
-      payload: { importId: input.importId, source: 'import_candidate' },
+      payload: {
+        importId: input.importId,
+        source: 'import_candidate',
+        reconciledAccounting,
+        unresolvedBlockingCount,
+        acknowledgedUnresolvedReview: Boolean(input.acknowledgeUnresolvedReview),
+      },
     });
     await recordContentEvent({
       eventType: 'SYSTEM_NOTE',
       versionId: row.id,
-      payload: { kind: 'IMPORT_MERGED_TO_WORKING_DRAFT', importId: input.importId, action: 'create' },
+      payload: {
+        kind: 'IMPORT_MERGED_TO_WORKING_DRAFT',
+        importId: input.importId,
+        action: 'create',
+        reconciledAccounting,
+        unresolvedBlockingCount,
+        acknowledgedUnresolvedReview: Boolean(input.acknowledgeUnresolvedReview),
+        unresolvedReviewReason: input.unresolvedReviewReason ?? null,
+      },
     });
     await updateImportStatus(input.importId, 'MERGED');
     return { version: row, alreadyMerged: false };
@@ -179,12 +286,26 @@ export async function mergeImportCandidateToWorkingDraft(input: {
   await recordContentEvent({
     eventType: 'WORKING_DRAFT_UPDATED',
     versionId: row.id,
-    payload: { importId: input.importId, source: 'import_candidate_replace' },
+    payload: {
+      importId: input.importId,
+      source: 'import_candidate_replace',
+      reconciledAccounting,
+      unresolvedBlockingCount,
+      acknowledgedUnresolvedReview: Boolean(input.acknowledgeUnresolvedReview),
+    },
   });
   await recordContentEvent({
     eventType: 'SYSTEM_NOTE',
     versionId: row.id,
-    payload: { kind: 'IMPORT_MERGED_TO_WORKING_DRAFT', importId: input.importId, action: 'replace' },
+    payload: {
+      kind: 'IMPORT_MERGED_TO_WORKING_DRAFT',
+      importId: input.importId,
+      action: 'replace',
+      reconciledAccounting,
+      unresolvedBlockingCount,
+      acknowledgedUnresolvedReview: Boolean(input.acknowledgeUnresolvedReview),
+      unresolvedReviewReason: input.unresolvedReviewReason ?? null,
+    },
   });
   await updateImportStatus(input.importId, 'MERGED');
   return { version: row, alreadyMerged: false };

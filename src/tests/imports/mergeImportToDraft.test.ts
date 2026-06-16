@@ -29,12 +29,19 @@ vi.mock('@/server/content/contentWorkflowCore', async () => {
   };
 });
 
+vi.mock('@/server/imports/importCandidateReview/service', () => ({
+  ensureImportReviewManifest: vi.fn(),
+}));
+
 import { SITE_CONTENT_RAW } from '@/content/defaults';
 import { assertSiteContent, validateSiteContent } from '@/content/validators';
 import { getWorkingDraft } from '@/server/content/contentWorkflowCore';
 import { prisma } from '@/server/db/prisma';
 import { buildImportCandidatePayload } from '@/server/imports/candidatePayload/builder';
 import { CV_NARRATIVE_LIST_ITEM_PREFIX } from '@/server/imports/cvNarrativeToSimpleLists';
+import { generateImportReviewManifest } from '@/server/imports/importCandidateReview/generate';
+import { ensureImportReviewManifest } from '@/server/imports/importCandidateReview/service';
+import { toStoredApprovalsEnvelope } from '@/server/imports/importCandidateReview/storageSchema';
 import { ImportMergeError, mergeImportCandidateToWorkingDraft } from '@/server/imports/mergeImportToDraft';
 import { getContentImportDetail, updateImportStatus } from '@/server/imports/repository';
 import { minimalImportDetails } from '@/tests/fixtures/minimalImportDetails';
@@ -47,7 +54,46 @@ describe('mergeImportCandidateToWorkingDraft', () => {
     vi.mocked(prisma.contentVersion.update).mockReset();
     vi.mocked(prisma.contentVersion.findFirst).mockReset();
     vi.mocked(getWorkingDraft).mockReset();
+    vi.mocked(ensureImportReviewManifest).mockReset();
   });
+
+  async function attachReviewManifest<T extends Record<string, unknown>>(
+    row: T,
+    details: ReturnType<typeof minimalImportDetails>,
+    importId: string,
+    rawDocumentText = 'body',
+  ) {
+    const envelope = buildImportCandidatePayload({
+      rawDocumentText,
+      parserVersion: 't',
+      details,
+      sections: [],
+      importWarnings: [],
+    });
+    const { envelope: reviewEnvelope, manifest } = await generateImportReviewManifest({
+      importId,
+      sourceFileName: 't.docx',
+      sourceTextHash: envelope.sourceTextHash,
+      candidate: details,
+    });
+    const blockingApprovals = manifest.decisions
+      .filter((d) => (d.action === 'manual-review' || d.action === 'remove-artifact') && d.section !== 'patents' && d.section !== 'research')
+      .map((d) => ({ decisionId: d.decisionId, approvedAction: 'skip' as const }));
+    const approvalsEnvelope =
+      blockingApprovals.length > 0
+        ? toStoredApprovalsEnvelope({
+            manifestRevision: reviewEnvelope.manifestRevision,
+            approvals: blockingApprovals,
+          })
+        : null;
+    vi.mocked(ensureImportReviewManifest).mockResolvedValue(reviewEnvelope);
+    return {
+      ...row,
+      candidatePayload: envelope,
+      reviewManifest: reviewEnvelope,
+      reviewApprovals: approvalsEnvelope,
+    };
+  }
 
   it('returns idempotent success when import already MERGED and a working draft exists', async () => {
     vi.mocked(getContentImportDetail).mockResolvedValue({
@@ -100,21 +146,18 @@ describe('mergeImportCandidateToWorkingDraft', () => {
     const details = minimalImportDetails({
       profile: { ...minimalImportDetails().profile, name: 'Re-merge Name' },
     });
-    const envelope = buildImportCandidatePayload({
-      rawDocumentText: 'body',
-      parserVersion: 't',
+    const row = await attachReviewManifest(
+      {
+        id: 'imp-remerge',
+        status: 'MERGED',
+        uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
+        createdAt: new Date(),
+        versions: [],
+      },
       details,
-      sections: [],
-      importWarnings: [],
-    });
-    vi.mocked(getContentImportDetail).mockResolvedValue({
-      id: 'imp-remerge',
-      status: 'MERGED',
-      candidatePayload: envelope,
-      uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
-      createdAt: new Date(),
-      versions: [],
-    } as never);
+      'imp-remerge',
+    );
+    vi.mocked(getContentImportDetail).mockResolvedValue(row as never);
     vi.mocked(prisma.contentVersion.findFirst).mockResolvedValueOnce(null);
     vi.mocked(getWorkingDraft).mockResolvedValue(null);
     vi.mocked(prisma.contentVersion.create).mockResolvedValue({
@@ -158,21 +201,19 @@ describe('mergeImportCandidateToWorkingDraft', () => {
       patents,
       counts: { publications: 0, patents: 5, projects: 0, awards: 0, students: 0 },
     });
-    const envelope = buildImportCandidatePayload({
-      rawDocumentText: raw,
-      parserVersion: 't',
+    const row = await attachReviewManifest(
+      {
+        id: 'imp-pat',
+        status: 'PARSED',
+        uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
+        createdAt: new Date(),
+        versions: [],
+      },
       details,
-      sections: [],
-      importWarnings: [],
-    });
-    vi.mocked(getContentImportDetail).mockResolvedValue({
-      id: 'imp-pat',
-      status: 'PARSED',
-      candidatePayload: envelope,
-      uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
-      createdAt: new Date(),
-      versions: [],
-    } as never);
+      'imp-pat',
+      raw,
+    );
+    vi.mocked(getContentImportDetail).mockResolvedValue(row as never);
     vi.mocked(getWorkingDraft).mockResolvedValue(null);
     vi.mocked(prisma.contentVersion.create).mockResolvedValue({
       id: 'cv-new',
@@ -219,21 +260,19 @@ describe('mergeImportCandidateToWorkingDraft', () => {
       raw: null,
     }));
     const details = minimalImportDetails({ patents, counts: { publications: 0, patents: 5, projects: 0, awards: 0, students: 0 } });
-    const envelope = buildImportCandidatePayload({
-      rawDocumentText: raw,
-      parserVersion: 't',
+    const row = await attachReviewManifest(
+      {
+        id: 'imp-ack',
+        status: 'PARSED',
+        uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
+        createdAt: new Date(),
+        versions: [],
+      },
       details,
-      sections: [],
-      importWarnings: [],
-    });
-    vi.mocked(getContentImportDetail).mockResolvedValue({
-      id: 'imp-ack',
-      status: 'PARSED',
-      candidatePayload: envelope,
-      uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
-      createdAt: new Date(),
-      versions: [],
-    } as never);
+      'imp-ack',
+      raw,
+    );
+    vi.mocked(getContentImportDetail).mockResolvedValue(row as never);
     vi.mocked(getWorkingDraft).mockResolvedValue(null);
 
     await expect(
@@ -275,21 +314,18 @@ describe('mergeImportCandidateToWorkingDraft', () => {
         ],
       },
     });
-    const envelope = buildImportCandidatePayload({
-      rawDocumentText: 'cv body',
-      parserVersion: 't',
+    const row = await attachReviewManifest(
+      {
+        id: 'imp-nar',
+        status: 'PARSED',
+        uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
+        createdAt: new Date(),
+        versions: [],
+      },
       details,
-      sections: [],
-      importWarnings: [],
-    });
-    vi.mocked(getContentImportDetail).mockResolvedValue({
-      id: 'imp-nar',
-      status: 'PARSED',
-      candidatePayload: envelope,
-      uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
-      createdAt: new Date(),
-      versions: [],
-    } as never);
+      'imp-nar',
+    );
+    vi.mocked(getContentImportDetail).mockResolvedValue(row as never);
     vi.mocked(getWorkingDraft).mockResolvedValue(null);
     vi.mocked(prisma.contentVersion.create).mockResolvedValue({
       id: 'cv-nar',
@@ -335,21 +371,18 @@ describe('mergeImportCandidateToWorkingDraft', () => {
         ],
       },
     });
-    const envelope = buildImportCandidatePayload({
-      rawDocumentText: 'cv body',
-      parserVersion: 't',
+    const row = await attachReviewManifest(
+      {
+        id: 'imp-nar-fr',
+        status: 'PARSED',
+        uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
+        createdAt: new Date(),
+        versions: [],
+      },
       details,
-      sections: [],
-      importWarnings: [],
-    });
-    vi.mocked(getContentImportDetail).mockResolvedValue({
-      id: 'imp-nar-fr',
-      status: 'PARSED',
-      candidatePayload: envelope,
-      uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
-      createdAt: new Date(),
-      versions: [],
-    } as never);
+      'imp-nar-fr',
+    );
+    vi.mocked(getContentImportDetail).mockResolvedValue(row as never);
     vi.mocked(getWorkingDraft).mockResolvedValue(null);
     vi.mocked(prisma.contentVersion.create).mockResolvedValue({
       id: 'cv-nar-fr',
@@ -400,21 +433,19 @@ describe('mergeImportCandidateToWorkingDraft', () => {
       raw: null,
     }));
     const details = minimalImportDetails({ patents, counts: { publications: 0, patents: 5, projects: 0, awards: 0, students: 0 } });
-    const envelope = buildImportCandidatePayload({
-      rawDocumentText: raw,
-      parserVersion: 't',
+    const row = await attachReviewManifest(
+      {
+        id: 'imp-fr',
+        status: 'PARSED',
+        uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
+        createdAt: new Date(),
+        versions: [],
+      },
       details,
-      sections: [],
-      importWarnings: [],
-    });
-    vi.mocked(getContentImportDetail).mockResolvedValue({
-      id: 'imp-fr',
-      status: 'PARSED',
-      candidatePayload: envelope,
-      uploadedFile: { originalName: 't.docx', storedPath: '/u/t', id: 'uf1' },
-      createdAt: new Date(),
-      versions: [],
-    } as never);
+      'imp-fr',
+      raw,
+    );
+    vi.mocked(getContentImportDetail).mockResolvedValue(row as never);
     vi.mocked(getWorkingDraft).mockResolvedValue(null);
     vi.mocked(prisma.contentVersion.create).mockResolvedValue({
       id: 'cv-fr',
