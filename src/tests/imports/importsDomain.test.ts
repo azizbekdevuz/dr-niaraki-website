@@ -3,6 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
+vi.mock('@/server/content/contentWorkflowCore', async () => {
+  const actual = await vi.importActual('@/server/content/contentWorkflowCore');
+  return {
+    ...(actual as Record<string, unknown>),
+    getWorkingDraft: vi.fn().mockResolvedValue(null),
+    getLatestPublishedVersion: vi.fn().mockResolvedValue(null),
+  };
+});
+
 vi.mock('@/server/db/prisma', () => ({
   prisma: {
     uploadedFile: { findUnique: vi.fn(), create: vi.fn() },
@@ -13,14 +22,18 @@ vi.mock('@/server/db/prisma', () => ({
 
 import { prisma } from '@/server/db/prisma';
 import { buildImportCandidatePayload } from '@/server/imports/candidatePayload/builder';
+import { generateImportReviewManifest } from '@/server/imports/importCandidateReview/generate';
+import * as reconcileModule from '@/server/imports/importCandidateReview/reconcile';
+import { toStoredApprovalsEnvelope } from '@/server/imports/importCandidateReview/storageSchema';
 import { isTerminalImportStatus } from '@/server/imports/importStatus';
 import {
   createContentImportRecord,
   saveImportCandidateAndWarnings,
   updateImportStatus,
 } from '@/server/imports/repository';
-import { parseImportWarnings, toImportDetail, toImportSummary } from '@/server/imports/serialize';
+import { parseImportWarnings, toImportDetail, toImportSummary, buildImportCandidateReconcileReview } from '@/server/imports/serialize';
 import { ImportDomainError } from '@/server/imports/types';
+import { minimalImportDetails as fixtureImportDetails } from '@/tests/fixtures/minimalImportDetails';
 import type { DetectedSection } from '@/types/parser';
 import { validateDetails } from '@/validators/detailsSchema';
 
@@ -130,6 +143,96 @@ describe('importsDomain', () => {
     });
     expect(detail.candidateReview).toBeNull();
     expect(detail.candidateReconcileReview).toBeNull();
+  });
+
+  it('toImportDetail returns corrupted reconciliation DTO for malformed stored approvals', async () => {
+    const candidate = fixtureImportDetails();
+    const payload = buildImportCandidatePayload({
+      rawDocumentText: 'cv body',
+      parserVersion: '1',
+      details: candidate,
+      sections: [],
+      importWarnings: [],
+    });
+    const { envelope } = await generateImportReviewManifest({
+      importId: 'imp-corrupt',
+      sourceFileName: 'cv.docx',
+      sourceTextHash: payload.sourceTextHash,
+      candidate,
+    });
+    const createdAt = new Date('2026-01-02T03:04:05.000Z');
+    const updatedAt = new Date('2026-01-03T03:04:05.000Z');
+    const row = {
+      id: 'imp-corrupt',
+      uploadedFileId: 'up1',
+      status: 'PARSED' as const,
+      parserVersion: '1',
+      warnings: [],
+      rawPreviewPath: null,
+      rawExtract: null,
+      candidatePayload: payload as unknown as Prisma.JsonValue,
+      reviewManifest: envelope,
+      reviewApprovals: { corrupted: true },
+      createdAt,
+      updatedAt,
+      uploadedFile: {
+        id: 'up1',
+        originalName: 'cv.docx',
+        storedPath: '/files/cv.docx',
+        mimeType: 'application/whatever',
+        sizeBytes: 10,
+        sha256: 'abc',
+        sourceFormat: 'DOCX' as const,
+        uploadedAt: createdAt,
+      },
+      versions: [],
+    };
+    const detail = toImportDetail(row);
+    expect(detail.candidateReconcileReview).not.toBeNull();
+    expect(detail.candidateReconcileReview!.loadError?.code).toBe('REVIEW_APPROVALS_INVALID');
+    expect(detail.candidateReconcileReview!.mergeReviewBlocked).toBe(true);
+    expect(detail.candidateReconcileReview!.hasManifest).toBe(true);
+  });
+
+  it('buildImportCandidateReconcileReview returns stale approvals load error without throwing', async () => {
+    const candidate = fixtureImportDetails();
+    const payload = buildImportCandidatePayload({
+      rawDocumentText: 'cv body',
+      parserVersion: '1',
+      details: candidate,
+      sections: [],
+      importWarnings: [],
+    });
+    const { envelope } = await generateImportReviewManifest({
+      importId: 'imp-stale',
+      sourceFileName: 'cv.docx',
+      sourceTextHash: payload.sourceTextHash,
+      candidate,
+    });
+    const staleApprovals = toStoredApprovalsEnvelope({
+      manifestRevision: 'deadbeefdeadbeefdeadbeefdeadbeef',
+      approvals: [],
+    });
+    const review = buildImportCandidateReconcileReview({
+      reviewManifest: envelope,
+      reviewApprovals: staleApprovals,
+    });
+    expect(review).not.toBeNull();
+    expect(review!.loadError?.code).toBe('REVIEW_APPROVALS_STALE');
+    expect(review!.mergeReviewBlocked).toBe(true);
+  });
+
+  it('buildImportCandidateReconcileReview does not swallow unknown programming errors', async () => {
+    const spy = vi.spyOn(reconcileModule, 'loadImportReviewStateFromRow').mockImplementation(() => {
+      throw new Error('unexpected programming failure');
+    });
+    expect(() =>
+      buildImportCandidateReconcileReview({
+        reviewManifest: { storageVersion: 1 },
+        reviewApprovals: null,
+      }),
+    ).toThrow('unexpected programming failure');
+    spy.mockRestore();
   });
 
   it('toImportDetail has null candidateReview for malformed candidatePayload', () => {

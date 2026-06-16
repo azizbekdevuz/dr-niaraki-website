@@ -58,6 +58,7 @@ const reconcile: ImportCandidateReconcileReviewModel = {
   unresolvedBlockingCount: 3,
   mergeReviewBlocked: true,
   advisoryOnly: false,
+  loadError: null,
 };
 
 describe('ImportCandidateReconcilePanel', () => {
@@ -107,6 +108,34 @@ describe('ImportCandidateReconcilePanel', () => {
     );
     const artifactCard = screen.getByText(/Professional Memberships row/i).closest('div');
     expect(artifactCard?.textContent).toContain('saved');
+  });
+
+  it('renders blocking error card when stored reconciliation data is corrupted', () => {
+    const corrupted: ImportCandidateReconcileReviewModel = {
+      hasManifest: true,
+      manifestRevision: null,
+      sourceTextHash: null,
+      baseline: null,
+      generatedAt: null,
+      importSource: null,
+      decisions: [],
+      accounting: null,
+      analysisAccounting: null,
+      approvals: [],
+      approvalsUpdatedAt: null,
+      unresolvedBlockingCount: 1,
+      mergeReviewBlocked: true,
+      advisoryOnly: false,
+      loadError: {
+        code: 'REVIEW_APPROVALS_INVALID',
+        message: 'Stored reconciliation approvals are invalid.',
+      },
+    };
+    render(<ImportCandidateReconcilePanel importId="imp-1" reconcile={corrupted} onSaved={vi.fn()} />);
+    expect(screen.getByText(/Stored reconciliation data is invalid/i)).toBeTruthy();
+    expect(screen.getByText(/Merge is blocked/i)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Save reconciliation approvals/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Approve removal/i })).toBeNull();
   });
 
   it('submits approvals to API', async () => {

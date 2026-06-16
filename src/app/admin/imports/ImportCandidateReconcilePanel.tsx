@@ -276,6 +276,19 @@ export function ImportCandidateReconcilePanel({ importId, reconcile, onSaved }: 
     );
   }
 
+  if (reconcile.loadError) {
+    return (
+      <div className="card p-4 space-y-3">
+        <h2 className="text-lg font-semibold text-foreground">Candidate reconciliation review</h2>
+        <div className="rounded border border-error/40 bg-error/10 px-3 py-2 text-sm text-foreground space-y-1">
+          <p className="font-medium">Stored reconciliation data is invalid.</p>
+          <p>Merge is blocked. Reprocess the import or repair the stored review data.</p>
+          <p className="text-xs text-muted">{reconcile.loadError.message}</p>
+        </div>
+      </div>
+    );
+  }
+
   const pub = reconcile.accounting as {
     publications?: { candidateTotal?: number; baselineTotal?: number };
     awards?: { candidateTotal?: number; baselineTotal?: number };

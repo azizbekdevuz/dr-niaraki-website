@@ -190,12 +190,28 @@ export async function saveImportReviewApprovals(input: {
   });
 
   await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`
+      SELECT "id"
+      FROM "ContentImport"
+      WHERE "id" = ${input.importId}
+      FOR UPDATE
+    `;
+
     const current = await tx.contentImport.findUnique({ where: { id: input.importId } });
     if (!current) {
       throw new ImportReviewApprovalPersistError('IMPORT_NOT_FOUND', 'Import not found.');
     }
     assertImportStatusAcceptsReviewApprovalUpdates(current.status);
-    const currentLoaded = loadImportReviewStateFromRow(current);
+
+    let currentLoaded: ReturnType<typeof loadImportReviewStateFromRow>;
+    try {
+      currentLoaded = loadImportReviewStateFromRow(current);
+    } catch (e) {
+      if (e instanceof ImportReviewReconcileError && e.code === 'REVIEW_APPROVALS_INVALID') {
+        throw new ImportReviewApprovalPersistError('REVIEW_APPROVALS_INVALID', e.message);
+      }
+      throw e;
+    }
     if (!currentLoaded) {
       throw new ImportReviewApprovalPersistError('REVIEW_MANIFEST_MISSING', 'Import has no review manifest.');
     }

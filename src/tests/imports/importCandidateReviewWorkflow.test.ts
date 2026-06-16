@@ -55,6 +55,35 @@ import { minimalImportDetails } from '@/tests/fixtures/minimalImportDetails';
 
 const IMPORT_ID = 'imp-review-workflow';
 
+function mockApprovalSaveTransaction(input: {
+  importId: string;
+  row: Record<string, unknown>;
+  onLocked?: () => void;
+}) {
+  const callOrder: string[] = [];
+  const queryRaw = vi.fn(async () => {
+    callOrder.push('lock');
+    input.onLocked?.();
+    return [{ id: input.importId }];
+  });
+  const findUnique = vi.fn(async () => {
+    callOrder.push('read');
+    return input.row;
+  });
+  const update = vi.fn(async () => {
+    callOrder.push('update');
+    return {};
+  });
+  vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+    const tx = {
+      $queryRaw: queryRaw,
+      contentImport: { findUnique, update },
+    };
+    return fn(tx as never);
+  });
+  return { callOrder, queryRaw, findUnique, update };
+}
+
 function envelopeFromDetails(details = minimalImportDetails(), rawDocumentText = 'cv body text for hash') {
   return buildImportCandidatePayload({
     rawDocumentText,
@@ -164,6 +193,7 @@ describe('import candidate review storage', () => {
 
     vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
       const tx = {
+        $queryRaw: vi.fn().mockResolvedValue([{ id: IMPORT_ID }]),
         contentImport: {
           findUnique: vi.fn().mockResolvedValue({
             id: IMPORT_ID,
@@ -326,20 +356,15 @@ describe('import candidate review storage', () => {
       reviewApprovals: null,
     } as never);
 
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
-      const tx = {
-        contentImport: {
-          findUnique: vi.fn().mockResolvedValue({
-            id: IMPORT_ID,
-            status: 'MERGED',
-            candidatePayload: payload,
-            reviewManifest: envelope,
-            reviewApprovals: null,
-          }),
-          update: vi.fn(),
-        },
-      };
-      return fn(tx as never);
+    const { callOrder, update } = mockApprovalSaveTransaction({
+      importId: IMPORT_ID,
+      row: {
+        id: IMPORT_ID,
+        status: 'MERGED',
+        candidatePayload: payload,
+        reviewManifest: envelope,
+        reviewApprovals: null,
+      },
     });
 
     await expect(
@@ -349,6 +374,128 @@ describe('import candidate review storage', () => {
         approvals: [{ decisionId: decision.decisionId, approvedAction: 'skip' }],
       }),
     ).rejects.toMatchObject({ code: 'IMPORT_FINALIZED' });
+    expect(callOrder).toEqual(['lock', 'read']);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('locks the import row before reading and updating approvals', async () => {
+    const candidate = minimalImportDetails();
+    const payload = envelopeFromDetails(candidate);
+    const { envelope, manifest } = await generateImportReviewManifest({
+      importId: IMPORT_ID,
+      sourceFileName: 'cv.docx',
+      sourceTextHash: payload.sourceTextHash,
+      candidate,
+    });
+    const decision = manifest.decisions.find(
+      (d) => d.section === 'publications' && d.action === 'manual-review',
+    );
+    expect(decision).toBeDefined();
+    if (!decision) {
+      throw new Error('Expected a publications manual-review decision for this fixture.');
+    }
+
+    vi.mocked(prisma.contentImport.findUnique)
+      .mockResolvedValueOnce({
+        id: IMPORT_ID,
+        status: 'PARSED',
+        candidatePayload: payload,
+        reviewManifest: envelope,
+        reviewApprovals: null,
+      } as never)
+      .mockResolvedValueOnce({
+        id: IMPORT_ID,
+        status: 'PARSED',
+        candidatePayload: payload,
+        reviewManifest: envelope,
+        reviewApprovals: toStoredApprovalsEnvelope({
+          manifestRevision: envelope.manifestRevision,
+          approvals: [{ decisionId: decision.decisionId, approvedAction: 'skip' }],
+        }),
+      } as never)
+      .mockResolvedValueOnce({
+        id: IMPORT_ID,
+        status: 'PARSED',
+        candidatePayload: payload,
+        reviewManifest: envelope,
+        reviewApprovals: toStoredApprovalsEnvelope({
+          manifestRevision: envelope.manifestRevision,
+          approvals: [{ decisionId: decision.decisionId, approvedAction: 'skip' }],
+        }),
+      } as never);
+
+    const { callOrder, queryRaw, findUnique, update } = mockApprovalSaveTransaction({
+      importId: IMPORT_ID,
+      row: {
+        id: IMPORT_ID,
+        status: 'PARSED',
+        candidatePayload: payload,
+        reviewManifest: envelope,
+        reviewApprovals: null,
+      },
+    });
+
+    await saveImportReviewApprovals({
+      importId: IMPORT_ID,
+      manifestRevision: envelope.manifestRevision,
+      approvals: [{ decisionId: decision.decisionId, approvedAction: 'skip' }],
+    });
+
+    expect(queryRaw).toHaveBeenCalledTimes(1);
+    expect(callOrder).toEqual(['lock', 'read', 'update']);
+    expect(findUnique).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects approval save when manifest revision changes after row lock', async () => {
+    const candidate = minimalImportDetails();
+    const payload = envelopeFromDetails(candidate);
+    const { envelope, manifest } = await generateImportReviewManifest({
+      importId: IMPORT_ID,
+      sourceFileName: 'cv.docx',
+      sourceTextHash: payload.sourceTextHash,
+      candidate,
+    });
+    const decision = manifest.decisions.find(
+      (d) => d.section === 'publications' && d.action === 'manual-review',
+    );
+    expect(decision).toBeDefined();
+    if (!decision) {
+      throw new Error('Expected a publications manual-review decision for this fixture.');
+    }
+    const staleEnvelope = {
+      ...envelope,
+      manifestRevision: 'deadbeefdeadbeefdeadbeefdeadbeef',
+    };
+
+    vi.mocked(prisma.contentImport.findUnique).mockResolvedValue({
+      id: IMPORT_ID,
+      status: 'PARSED',
+      candidatePayload: payload,
+      reviewManifest: envelope,
+      reviewApprovals: null,
+    } as never);
+
+    const { callOrder, update } = mockApprovalSaveTransaction({
+      importId: IMPORT_ID,
+      row: {
+        id: IMPORT_ID,
+        status: 'PARSED',
+        candidatePayload: payload,
+        reviewManifest: staleEnvelope,
+        reviewApprovals: null,
+      },
+    });
+
+    await expect(
+      saveImportReviewApprovals({
+        importId: IMPORT_ID,
+        manifestRevision: envelope.manifestRevision,
+        approvals: [{ decisionId: decision.decisionId, approvedAction: 'skip' }],
+      }),
+    ).rejects.toMatchObject({ code: 'CONCURRENT_UPDATE' });
+    expect(callOrder).toEqual(['lock', 'read']);
+    expect(update).not.toHaveBeenCalled();
   });
 
   it('documents allowed import statuses for review approval updates', () => {
