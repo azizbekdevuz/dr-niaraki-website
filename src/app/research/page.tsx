@@ -22,7 +22,6 @@ import { ListPagination } from '@/components/shared/ListPagination';
 import { SectionHeading } from '@/components/shared/SectionHeading';
 import { usePublicSiteContent } from '@/contexts/PublicSiteContentContext';
 import { usePaginatedSlice } from '@/hooks/usePaginatedSlice';
-import { TW_ACCENT_SOFT_GRADIENT } from '@/lib/ui/chromeClassStrings';
 
 const containerVariants = {
   hidden: { opacity: 0 },
