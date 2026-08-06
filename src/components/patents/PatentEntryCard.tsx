@@ -29,17 +29,17 @@ export function PatentEntryCard({ patent }: PatentEntryCardProps) {
           ) : (
             <Flag className="h-5 w-5 text-accent-secondary" aria-hidden />
           )}
-          <span className="text-sm text-muted">{patent.country}</span>
+          <span className="text-sm font-medium text-muted">{patent.country}</span>
         </div>
         <div className={`flex items-center gap-1 ${statusColor}`}>
           <StatusIcon className="h-4 w-4" aria-hidden />
-          <span className="text-xs capitalize">{patent.status}</span>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.08em]">{patent.status}</span>
         </div>
       </div>
 
-      <h3 className="mb-3 line-clamp-2 text-lg font-semibold text-foreground">{patent.title}</h3>
+      <h3 className="font-editorial mb-3 line-clamp-2 text-2xl font-semibold text-foreground">{patent.title}</h3>
 
-      <div className="space-y-2 text-sm text-muted">
+      <div className="space-y-2 rounded-xl border border-primary/20 bg-surface-secondary/35 p-3 text-sm text-muted">
         <div className="flex items-center gap-2">
           <Shield className="h-4 w-4 shrink-0" aria-hidden />
           <span className="font-mono text-xs md:text-sm">{patent.number}</span>

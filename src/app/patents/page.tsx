@@ -72,33 +72,27 @@ export default function PatentsPage() {
   } = usePaginatedSlice(filteredPatents, PATENTS_PAGE_SIZE, listResetKey);
 
   return (
-    <main className="min-h-screen pt-20">
-      {/* Hero Section */}
-      <section className="section bg-gradient-to-b from-surface-tertiary to-transparent">
-        <div className="container-custom text-center">
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-          >
-            <motion.div
-              variants={itemVariants}
-              className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-6 ${TW_ACCENT_SOFT_GRADIENT}`}
-            >
-              <Shield className="w-10 h-10 text-accent-primary" />
+    <main className="min-h-screen pt-24">
+      <section className="section pb-10 md:pb-12">
+        <div className="container-custom">
+          <motion.div initial="hidden" animate="visible" variants={containerVariants} className="max-w-4xl">
+            <motion.p variants={itemVariants} className="editorial-kicker mb-4">
+              Innovation portfolio
+            </motion.p>
+            <motion.div variants={itemVariants} className={`mb-5 inline-flex h-14 w-14 items-center justify-center rounded-xl ${TW_ACCENT_SOFT_GRADIENT}`}>
+              <Shield className="h-7 w-7 text-accent-primary" />
             </motion.div>
-            <motion.h1 variants={itemVariants} className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+            <motion.h1 variants={itemVariants} className="font-editorial mb-5 text-4xl text-foreground md:text-5xl lg:text-6xl">
               Patents
             </motion.h1>
-            <motion.p variants={itemVariants} className="text-secondary max-w-2xl mx-auto">
+            <motion.p variants={itemVariants} className="max-w-3xl text-secondary md:text-lg">
               {heroIntro}
             </motion.p>
           </motion.div>
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="border-y border-primary/20 bg-surface-secondary/40 py-10 backdrop-blur-sm">
+      <section className="border-y border-primary/20 bg-surface-secondary/35 py-10">
         <div className="container-custom">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
             {[
@@ -113,12 +107,11 @@ export default function PatentsPage() {
         </div>
       </section>
 
-      {/* Patents List */}
       <section className="section">
-        <div className="container-custom mx-auto max-w-5xl">
+        <div className="container-custom mx-auto max-w-6xl">
           <SectionHeading eyebrow="Portfolio" title="Filter & explore" icon={Shield} className="!mb-6" />
 
-          <div className="list-page-panel mb-10 flex flex-wrap gap-2">
+          <div className="panel-premium mb-10 flex flex-wrap gap-2 !p-3">
             {[
               { value: 'all', label: 'All Patents' },
               { value: 'international', label: 'International' },
@@ -136,7 +129,6 @@ export default function PatentsPage() {
             ))}
           </div>
 
-          {/* Patents Grid */}
           {filteredPatents.length === 0 ? (
             <EmptyStateHint
               icon={Shield}
@@ -169,23 +161,22 @@ export default function PatentsPage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="section bg-gradient-to-b from-transparent via-surface-tertiary to-transparent">
-        <div className="container-custom text-center">
+      <section className="section pt-6 md:pt-8">
+        <div className="container-custom">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            className="panel-premium text-center"
           >
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+            <p className="editorial-kicker mb-3">Partnership</p>
+            <h2 className="font-editorial mb-4 text-3xl font-semibold text-foreground md:text-4xl">
               {licensingHeading}
             </h2>
-            <p className="text-muted mb-8 max-w-2xl mx-auto">
-              {licensingBody}
-            </p>
-            <Link href="/contact" className="btn-primary px-8 py-3 inline-flex items-center gap-2">
+            <p className="mx-auto mb-8 max-w-2xl text-muted">{licensingBody}</p>
+            <Link href="/contact" className="btn-primary inline-flex items-center gap-2 px-8 py-3">
               Get in Touch
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="h-4 w-4" />
             </Link>
           </motion.div>
         </div>
@@ -193,4 +184,3 @@ export default function PatentsPage() {
     </main>
   );
 }
-

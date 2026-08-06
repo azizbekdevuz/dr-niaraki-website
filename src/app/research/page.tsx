@@ -76,28 +76,28 @@ export default function ResearchPage() {
   } = usePaginatedSlice(filteredProjects, RESEARCH_PROJECT_PAGE_SIZE, projectsResetKey);
 
   return (
-    <main className="min-h-screen pt-20">
-      <section className="section bg-gradient-to-b from-surface-tertiary to-transparent">
-        <div className="container-custom text-center">
-          <motion.div initial="hidden" animate="visible" variants={containerVariants}>
-            <motion.div
-              variants={itemVariants}
-              className={`mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full ${TW_ACCENT_SOFT_GRADIENT}`}
-            >
-              <Microscope className="h-10 w-10 text-accent-primary" />
+    <main className="min-h-screen pt-24">
+      <section className="section pb-10 md:pb-12">
+        <div className="container-custom">
+          <motion.div initial="hidden" animate="visible" variants={containerVariants} className="max-w-4xl">
+            <motion.p variants={itemVariants} className="editorial-kicker mb-4">
+              Research docket
+            </motion.p>
+            <motion.div variants={itemVariants} className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-xl border border-accent-primary/30 bg-surface-secondary/55">
+              <Microscope className="h-7 w-7 text-accent-primary" />
             </motion.div>
-            <motion.h1 variants={itemVariants} className="mb-4 text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
+            <motion.h1 variants={itemVariants} className="font-editorial mb-5 text-4xl text-foreground md:text-5xl lg:text-6xl">
               Research
             </motion.h1>
-            <motion.p variants={itemVariants} className="mx-auto max-w-2xl text-secondary">
+            <motion.p variants={itemVariants} className="max-w-3xl text-secondary md:text-lg">
               {heroIntro}
             </motion.p>
           </motion.div>
         </div>
       </section>
 
-      <section className="section">
-        <div className="container-custom mx-auto max-w-5xl">
+      <section className="section pt-4 md:pt-6">
+        <div className="container-custom mx-auto max-w-6xl">
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -122,19 +122,19 @@ export default function ResearchPage() {
         </div>
       </section>
 
-      <section className="section bg-gradient-to-b from-transparent via-surface-tertiary to-transparent">
-        <div className="container-custom mx-auto max-w-5xl">
+      <section className="section bg-gradient-to-b from-transparent via-surface-tertiary/60 to-transparent">
+        <div className="container-custom mx-auto max-w-6xl">
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             variants={containerVariants}
           >
-            <div className="mb-8 flex flex-col justify-between gap-6 md:flex-row md:items-end">
-              <motion.div variants={itemVariants} className="min-w-0 flex-1">
+            <div className="mb-8 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
+              <motion.div variants={itemVariants}>
                 <SectionHeading eyebrow="Programmes" title="Research Projects" icon={FolderGit2} className="!mb-0" />
               </motion.div>
-              <motion.div variants={itemVariants} className="list-page-panel flex flex-shrink-0 flex-wrap gap-2">
+              <motion.div variants={itemVariants} className="panel-premium flex flex-wrap gap-2 !p-3">
                 {(['all', 'ongoing', 'completed'] as StatusFilter[]).map((f) => (
                   <FilterChipButton key={f} selected={statusFilter === f} onClick={() => setStatusFilter(f)}>
                     {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -177,15 +177,16 @@ export default function ResearchPage() {
         </div>
       </section>
 
-      <section className="section">
+      <section className="section pt-6 md:pt-8">
         <div className="container-custom mx-auto max-w-5xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="card card-rich bg-gradient-to-br from-accent-primary/5 to-accent-secondary/5 p-8 text-center md:p-12"
+            className="panel-premium text-center"
           >
-            <h2 className="mb-4 text-2xl font-bold text-foreground md:text-3xl">{collaborationHeading}</h2>
+            <p className="editorial-kicker mb-3">Collaboration</p>
+            <h2 className="font-editorial mb-4 text-3xl font-semibold text-foreground md:text-4xl">{collaborationHeading}</h2>
             <p className="mx-auto mb-8 max-w-2xl text-muted">{collaborationBody}</p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link href="/contact" className="btn-primary inline-flex items-center gap-2 px-8 py-3">

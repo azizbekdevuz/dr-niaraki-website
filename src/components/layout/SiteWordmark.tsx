@@ -36,7 +36,7 @@ export function SiteWordmark({ className, variant = 'header' }: SiteWordmarkProp
       </span>
       <span
         className={clsx(
-          'min-w-0 whitespace-nowrap bg-gradient-to-r from-foreground via-foreground to-accent-primary bg-clip-text font-bold leading-tight tracking-tight text-transparent',
+          'font-editorial min-w-0 whitespace-nowrap bg-gradient-to-r from-foreground via-foreground to-accent-primary bg-clip-text font-semibold leading-tight tracking-tight text-transparent',
           isHeader ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl md:text-2xl',
         )}
       >
