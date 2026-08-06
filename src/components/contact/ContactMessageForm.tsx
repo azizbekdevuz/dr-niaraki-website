@@ -141,13 +141,14 @@ export function ContactMessageForm({ directEmail, siteBrand }: ContactMessageFor
 
   return (
     <motion.div variants={itemVariants}>
-      <h2 className="text-2xl font-bold text-foreground mb-6">Send a Message</h2>
+      <p className="editorial-kicker mb-3">Direct communication</p>
+      <h2 className="font-editorial mb-6 text-3xl font-semibold text-foreground">Send a Message</h2>
 
-      <div className="card p-6">
+      <div className="panel-premium">
         {sent ? (
           <div className="text-center py-10">
             <CheckCircle className="w-16 h-16 mx-auto mb-4 text-success" aria-hidden />
-            <h3 className="text-xl font-semibold text-foreground mb-2">Message delivered</h3>
+            <h3 className="font-editorial mb-2 text-3xl font-semibold text-foreground">Message delivered</h3>
             <p className="text-muted mb-2 max-w-md mx-auto">
               Your note was submitted successfully. If a reply is needed, it will go to the address you entered.
             </p>
@@ -212,7 +213,7 @@ export function ContactMessageForm({ directEmail, siteBrand }: ContactMessageFor
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg bg-surface-secondary border border-primary focus:border-accent focus:ring-1 focus:ring-accent-primary outline-none transition-all text-foreground"
+                  className="w-full rounded-xl border border-primary/40 bg-surface-secondary px-4 py-3 text-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent-primary"
                   required
                   aria-invalid={Boolean(fieldErrors.name)}
                   aria-describedby={fieldErrors.name ? 'name-error' : undefined}
@@ -232,7 +233,7 @@ export function ContactMessageForm({ directEmail, siteBrand }: ContactMessageFor
                   id="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg bg-surface-secondary border border-primary focus:border-accent focus:ring-1 focus:ring-accent-primary outline-none transition-all text-foreground"
+                  className="w-full rounded-xl border border-primary/40 bg-surface-secondary px-4 py-3 text-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent-primary"
                   required
                   aria-invalid={Boolean(fieldErrors.email)}
                   aria-describedby={fieldErrors.email ? 'email-error' : undefined}
@@ -254,7 +255,7 @@ export function ContactMessageForm({ directEmail, siteBrand }: ContactMessageFor
                 id="subject"
                 value={formData.subject}
                 onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                className="w-full px-4 py-3 rounded-lg bg-surface-secondary border border-primary focus:border-accent focus:ring-1 focus:ring-accent-primary outline-none transition-all text-foreground"
+                className="w-full rounded-xl border border-primary/40 bg-surface-secondary px-4 py-3 text-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent-primary"
                 required
                 aria-invalid={Boolean(fieldErrors.subject)}
                 aria-describedby={fieldErrors.subject ? 'subject-error' : undefined}
@@ -275,7 +276,7 @@ export function ContactMessageForm({ directEmail, siteBrand }: ContactMessageFor
                 rows={6}
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                className="w-full px-4 py-3 rounded-lg bg-surface-secondary border border-primary focus:border-accent focus:ring-1 focus:ring-accent-primary outline-none transition-all text-foreground resize-none"
+                className="w-full resize-none rounded-xl border border-primary/40 bg-surface-secondary px-4 py-3 text-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent-primary"
                 required
                 aria-invalid={Boolean(fieldErrors.message)}
                 aria-describedby={fieldErrors.message ? 'message-error' : undefined}

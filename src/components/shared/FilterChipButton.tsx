@@ -21,10 +21,10 @@ export function FilterChipButton({
     <button
       type={type}
       className={clsx(
-        'rounded-xl px-4 py-2.5 text-sm font-semibold transition-all',
+        'rounded-full px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.08em] transition-all md:text-sm md:tracking-[0.06em]',
         selected
           ? 'bg-gradient-to-r from-accent-primary to-accent-secondary text-white shadow-md ring-1 ring-white/10'
-          : 'border border-primary/30 bg-surface-secondary/60 text-muted hover:border-accent-primary/40 hover:text-foreground',
+          : 'border border-primary/30 bg-surface-secondary/60 text-muted hover:border-accent-primary/40 hover:bg-surface-hover/70 hover:text-foreground',
         className,
       )}
       {...rest}

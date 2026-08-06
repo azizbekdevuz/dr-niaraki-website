@@ -1,6 +1,6 @@
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Playfair_Display } from 'next/font/google';
 
 import { DeviceProvider } from '@/components/shared/DeviceProvider';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
@@ -21,6 +21,13 @@ const inter = Inter({
   display: 'swap',
   preload: true,
   variable: '--font-inter'
+});
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  display: 'swap',
+  preload: true,
+  variable: '--font-playfair',
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -51,7 +58,7 @@ export default async function RootLayout({
   const { data: siteContent } = await getPublicSiteContent();
 
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <body className={`${inter.className} min-h-screen bg-background text-foreground antialiased`}>
         <PublicSiteContentProvider value={siteContent}>
           <LoadingProvider>

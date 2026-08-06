@@ -47,108 +47,87 @@ export default function ContactPage() {
     siteContent.contact;
 
   return (
-    <main className="min-h-screen pt-20">
-      {/* Hero Section */}
-      <section className="section bg-gradient-to-b from-surface-tertiary to-transparent">
-        <div className="container-custom text-center">
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-          >
-            <motion.div
-              variants={itemVariants}
-              className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-6 ${TW_ACCENT_SOFT_GRADIENT}`}
-            >
-              <Mail className="w-10 h-10 text-accent-primary" />
+    <main className="min-h-screen pt-24">
+      <section className="section pb-10 md:pb-12">
+        <div className="container-custom">
+          <motion.div initial="hidden" animate="visible" variants={containerVariants} className="max-w-4xl">
+            <motion.p variants={itemVariants} className="editorial-kicker mb-4">
+              Contact desk
+            </motion.p>
+            <motion.div variants={itemVariants} className={`mb-5 inline-flex h-14 w-14 items-center justify-center rounded-xl ${TW_ACCENT_SOFT_GRADIENT}`}>
+              <Mail className="h-7 w-7 text-accent-primary" />
             </motion.div>
-            <motion.h1 variants={itemVariants} className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+            <motion.h1 variants={itemVariants} className="font-editorial mb-5 text-4xl text-foreground md:text-5xl lg:text-6xl">
               {heroHeading}
             </motion.h1>
-            <motion.p variants={itemVariants} className="text-secondary max-w-2xl mx-auto">
+            <motion.p variants={itemVariants} className="max-w-3xl text-secondary md:text-lg">
               {heroSubtext}
             </motion.p>
           </motion.div>
         </div>
       </section>
 
-      {/* Main Content */}
-      <section className="section">
+      <section className="section pt-4 md:pt-6">
         <div className="container-custom">
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Contact Info */}
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={containerVariants}
-            >
-              <motion.h2 variants={itemVariants} className="text-2xl font-bold text-foreground mb-6">
+          <div className="grid gap-10 lg:grid-cols-[0.92fr_1.08fr]">
+            <motion.div initial="hidden" animate="visible" variants={containerVariants}>
+              <motion.h2 variants={itemVariants} className="font-editorial mb-6 text-3xl text-foreground">
                 Contact Information
               </motion.h2>
 
-              <div className="space-y-6">
-                {/* Email */}
-                <motion.div variants={itemVariants} className="card p-5">
+              <div className="space-y-5">
+                <motion.div variants={itemVariants} className="card card-rich p-5">
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-accent-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Mail className="w-5 h-5 text-accent-primary" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-primary/10">
+                      <Mail className="h-5 w-5 text-accent-primary" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-foreground mb-1">Email</h3>
-                      <a
-                        href={`mailto:${contactInfo.email}`}
-                        className="text-accent-primary hover:underline block"
-                      >
+                      <h3 className="mb-1 text-sm font-semibold uppercase tracking-[0.09em] text-foreground/90">Email</h3>
+                      <a href={`mailto:${contactInfo.email}`} className="block text-accent-primary hover:underline">
                         {contactInfo.email}
                       </a>
-                      <a
-                        href={`mailto:${contactInfo.personalEmail}`}
-                        className="text-muted text-sm hover:text-foreground"
-                      >
+                      <a href={`mailto:${contactInfo.personalEmail}`} className="text-sm text-muted hover:text-foreground">
                         {contactInfo.personalEmail}
                       </a>
                     </div>
                   </div>
                 </motion.div>
 
-                {/* Phone */}
-                <motion.div variants={itemVariants} className="card p-5">
+                <motion.div variants={itemVariants} className="card card-rich p-5">
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-accent-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Phone className="w-5 h-5 text-accent-primary" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-primary/10">
+                      <Phone className="h-5 w-5 text-accent-primary" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-foreground mb-1">Phone</h3>
+                      <h3 className="mb-1 text-sm font-semibold uppercase tracking-[0.09em] text-foreground/90">Phone</h3>
                       <p className="text-secondary">Tel: {contactInfo.phone}</p>
-                      <p className="text-muted text-sm">Fax: {contactInfo.fax}</p>
-                      <p className="text-muted text-sm">Cell: {contactInfo.cellPhone}</p>
+                      <p className="text-sm text-muted">Fax: {contactInfo.fax}</p>
+                      <p className="text-sm text-muted">Cell: {contactInfo.cellPhone}</p>
                     </div>
                   </div>
                 </motion.div>
 
-                {/* Address */}
-                <motion.div variants={itemVariants} className="card p-5">
+                <motion.div variants={itemVariants} className="card card-rich p-5">
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-accent-primary/10 flex items-center justify-center flex-shrink-0">
-                      <MapPin className="w-5 h-5 text-accent-primary" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-primary/10">
+                      <MapPin className="h-5 w-5 text-accent-primary" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-foreground mb-1">Office</h3>
+                      <h3 className="mb-1 text-sm font-semibold uppercase tracking-[0.09em] text-foreground/90">Office</h3>
                       <p className="text-secondary">{contactInfo.department}</p>
                       <p className="text-secondary">{contactInfo.university}</p>
-                      <p className="text-muted text-sm mt-1">{contactInfo.address}</p>
+                      <p className="mt-1 text-sm text-muted">{contactInfo.address}</p>
                     </div>
                   </div>
                 </motion.div>
 
-                {/* Website */}
-                <motion.div variants={itemVariants} className="card p-5">
+                <motion.div variants={itemVariants} className="card card-rich p-5">
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-accent-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Globe className="w-5 h-5 text-accent-primary" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-primary/10">
+                      <Globe className="h-5 w-5 text-accent-primary" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-foreground mb-1">Website</h3>
+                      <h3 className="mb-1 text-sm font-semibold uppercase tracking-[0.09em] text-foreground/90">Website</h3>
                       <a
                         href={
                           contactInfo.websiteDisplay.startsWith('http')
@@ -157,20 +136,19 @@ export default function ContactPage() {
                         }
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-accent-primary hover:underline flex items-center gap-1"
+                        className="inline-flex items-center gap-1 text-accent-primary hover:underline"
                       >
                         {contactInfo.websiteDisplay}
-                        <ExternalLink className="w-3 h-3" />
+                        <ExternalLink className="h-3 w-3" />
                       </a>
                     </div>
                   </div>
                 </motion.div>
               </div>
 
-              {/* Social Links */}
               <motion.div variants={itemVariants} className="mt-8">
-                <h3 className="font-medium text-foreground mb-4">Connect</h3>
-                <div className="flex flex-wrap gap-4">
+                <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.09em] text-foreground/90">Connect</h3>
+                <div className="flex flex-wrap gap-3">
                   {socialLinks.map((social) => {
                     const SocIcon = CONTACT_SOCIAL_ICON_MAP[social.iconName];
                     return (
@@ -179,10 +157,10 @@ export default function ContactPage() {
                         href={social.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-secondary hover:bg-surface-hover transition-colors"
+                        className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-surface-secondary/60 px-4 py-2.5 transition-colors hover:border-accent-primary/40 hover:bg-surface-hover"
                       >
-                        <SocIcon className={`w-5 h-5 ${social.colorClass}`} />
-                        <span className="text-foreground text-sm">{social.name}</span>
+                        <SocIcon className={`h-5 w-5 ${social.colorClass}`} />
+                        <span className="text-sm text-foreground">{social.name}</span>
                       </a>
                     );
                   })}
@@ -190,11 +168,7 @@ export default function ContactPage() {
               </motion.div>
             </motion.div>
 
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={containerVariants}
-            >
+            <motion.div initial="hidden" animate="visible" variants={containerVariants}>
               <ContactMessageForm
                 directEmail={contactInfo.email}
                 siteBrand={siteContent.meta.openGraphSiteName}
@@ -204,27 +178,26 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* Map Section (Placeholder) */}
-      <section className="section bg-surface-secondary/30">
+      <section className="section pt-6 md:pt-8">
         <div className="container-custom">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="card overflow-hidden"
+            className="panel-premium overflow-hidden"
           >
-            <div className="aspect-video bg-surface-tertiary flex items-center justify-center">
+            <div className="flex aspect-video items-center justify-center rounded-xl border border-primary/20 bg-surface-tertiary/65">
               <div className="text-center text-muted">
-                <MapPin className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <MapPin className="mx-auto mb-4 h-12 w-12 opacity-50" />
                 <p>{mapPlaceLabel}</p>
                 <a
                   href={mapQueryUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-accent-primary hover:underline flex items-center justify-center gap-1 mt-2"
+                  className="mt-2 inline-flex items-center justify-center gap-1 text-accent-primary hover:underline"
                 >
                   Open in Google Maps
-                  <ExternalLink className="w-3 h-3" />
+                  <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
             </div>
@@ -234,4 +207,3 @@ export default function ContactPage() {
     </main>
   );
 }
-

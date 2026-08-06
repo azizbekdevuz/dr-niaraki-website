@@ -92,19 +92,21 @@ export default function Header() {
       <header
         className={clsx(
           'fixed left-0 right-0 top-0 z-fixed gpu-accelerated motion-safe:transition-all motion-safe:duration-300',
-          isScrolled ? 'glass shadow-lg' : 'bg-transparent',
+          isScrolled
+            ? 'border-b border-primary/20 bg-background/72 shadow-[0_14px_38px_-24px_rgba(0,0,0,0.9)] backdrop-blur-xl'
+            : 'bg-transparent',
         )}
       >
         <div className="container-custom">
           <nav
-            className="flex items-center justify-between gap-3 py-2.5 md:py-4"
+            className="flex items-center justify-between gap-3 py-3 md:py-4"
             aria-label="Primary"
           >
             <SiteWordmark variant="header" className="min-w-0 shrink" />
 
             {!isMobile && (
-              <div className="rounded-full border border-primary/20 bg-surface-primary/45 px-1 py-1 shadow-sm backdrop-blur-md">
-                <ul className="flex items-center gap-0.5 lg:gap-1">
+              <div className="panel-premium !rounded-full !px-1.5 !py-1.5 shadow-[0_18px_42px_-28px_rgba(0,0,0,0.95)]">
+                <ul className="flex items-center gap-0.5 lg:gap-1.5">
                   {NAV_ITEMS.map((item) => {
                     const active = pathname === item.href;
                     return (
@@ -112,11 +114,11 @@ export default function Header() {
                         <Link
                           href={item.href}
                           className={clsx(
-                            'flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium motion-safe:transition-colors motion-safe:duration-150',
+                            'flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium motion-safe:transition-colors motion-safe:duration-150',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-primary',
                             active
-                              ? 'bg-accent-primary/15 text-accent-primary'
-                              : 'text-foreground/75 hover:bg-surface-hover hover:text-foreground',
+                              ? 'bg-accent-primary/16 text-accent-primary ring-1 ring-accent-primary/30'
+                              : 'text-foreground/72 hover:bg-surface-hover/80 hover:text-foreground',
                           )}
                         >
                           <HeaderNavIcon
@@ -137,7 +139,7 @@ export default function Header() {
                 type="button"
                 onClick={() => setIsMobileMenuOpen((o) => !o)}
                 className={clsx(
-                  'relative inline-flex h-12 min-w-12 shrink-0 items-center justify-center rounded-xl border border-primary/25 bg-surface-primary/50 touch-manipulation',
+                  'relative inline-flex h-12 min-w-12 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-surface-primary/70 touch-manipulation',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/55 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                   '[-webkit-tap-highlight-color:transparent]',
                 )}
@@ -193,7 +195,7 @@ export default function Header() {
             aria-modal="true"
             aria-label="Site navigation"
             className={clsx(
-              'absolute right-0 top-0 flex h-full w-[min(20rem,calc(100vw-0.75rem))] max-w-full flex-col border-l border-primary/25 bg-surface-primary/95 shadow-2xl backdrop-blur-xl motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out',
+              'absolute right-0 top-0 flex h-full w-[min(20rem,calc(100vw-0.75rem))] max-w-full flex-col border-l border-primary/25 bg-background/95 shadow-2xl backdrop-blur-xl motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out',
               isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full',
             )}
           >
@@ -214,7 +216,7 @@ export default function Header() {
                           'flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-base font-medium touch-manipulation',
                           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-primary/45',
                           active
-                            ? 'bg-gradient-to-r from-accent-primary/18 to-accent-secondary/15 text-accent-primary'
+                            ? 'bg-gradient-to-r from-accent-primary/20 to-accent-secondary/15 text-accent-primary'
                             : 'text-foreground/80 hover:bg-surface-hover hover:text-foreground',
                         )}
                       >

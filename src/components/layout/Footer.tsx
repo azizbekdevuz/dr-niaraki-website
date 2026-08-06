@@ -92,10 +92,10 @@ export default function Footer() {
 
   return (
     <footer className="relative z-10 mt-auto">
-      <div className="h-px bg-gradient-to-r from-transparent via-accent-primary/50 to-transparent" />
+      <div className="h-px bg-gradient-to-r from-transparent via-accent-primary/60 to-transparent" />
 
-      <div className="glass">
-        <div className="container-custom py-10 md:py-14">
+      <div className="bg-background/75 backdrop-blur-xl">
+        <div className="container-custom py-12 md:py-16">
           <div
             className={clsx(
               'grid gap-10',
@@ -104,7 +104,7 @@ export default function Footer() {
           >
             <div className="flex flex-col gap-4">
               <SiteWordmark variant="footer" />
-              <p className="text-sm font-medium text-accent-primary/90">{aboutHeading}</p>
+              <p className="editorial-kicker !text-[10px]">{aboutHeading}</p>
               <p className="max-w-md text-sm leading-relaxed text-foreground/70">{aboutBlurb}</p>
               <div className="flex flex-wrap gap-2 pt-1">
                 {socialLinks.map((link) => (
@@ -114,7 +114,7 @@ export default function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className={clsx(
-                      'inline-flex h-11 w-11 items-center justify-center rounded-full border border-primary/25 bg-surface-secondary/50 touch-manipulation',
+                      'inline-flex h-11 w-11 items-center justify-center rounded-full border border-primary/30 bg-surface-secondary/50 touch-manipulation',
                       'hover:border-accent-primary/45 hover:bg-accent-primary/10 hover:text-accent-primary',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-primary',
                       '[-webkit-tap-highlight-color:transparent]',
@@ -136,7 +136,7 @@ export default function Footer() {
                 {researchFocusItems.map((item) => (
                   <li
                     key={item.id}
-                    className="flex items-start gap-3 rounded-xl border border-primary/15 bg-surface-secondary/30 px-3 py-2.5 text-sm text-foreground/85"
+                    className="flex items-start gap-3 rounded-xl border border-primary/20 bg-surface-secondary/35 px-3 py-2.5 text-sm text-foreground/85"
                   >
                     <Network
                       className="mt-0.5 h-4 w-4 shrink-0 text-accent-primary/90"
@@ -153,11 +153,11 @@ export default function Footer() {
                 <Code2 className="h-5 w-5 shrink-0 text-accent-primary" aria-hidden />
                 {developerSection.sectionTitle}
               </h3>
-              <div className="rounded-2xl border border-primary/20 bg-surface-secondary/35 p-4 shadow-inner backdrop-blur-sm md:p-5">
+              <div className="panel-premium">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted">
                   {developerSection.introLine}
                 </p>
-                <p className="mt-2 text-lg font-semibold text-accent-primary md:text-xl">
+                <p className="font-editorial mt-2 text-xl font-semibold text-foreground md:text-2xl">
                   {developerSection.name}
                 </p>
                 <p className="mt-0.5 text-sm text-foreground/65">{developerSection.role}</p>

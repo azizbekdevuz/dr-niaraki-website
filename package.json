@@ -2,6 +2,9 @@
   "name": "dr-niaraki-website",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "postinstall": "prisma generate",
     "prisma:validate": "cross-env DATABASE_URL=postgresql://127.0.0.1:5432/placeholder?schema=public prisma validate",

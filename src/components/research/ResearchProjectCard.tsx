@@ -20,13 +20,13 @@ export function ResearchProjectCard({ project }: ResearchProjectCardProps) {
   const funding = displayOrNull(project.funding);
 
   return (
-    <div className="card card-rich p-6">
+    <article className="card card-rich p-6">
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="mb-2 flex flex-wrap items-center gap-3">
-            <h3 className="text-lg font-semibold text-foreground">{project.title}</h3>
+            <h3 className="font-editorial text-2xl font-semibold text-foreground">{project.title}</h3>
             <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] ${
                 project.status === 'ongoing'
                   ? 'bg-success/15 text-success ring-1 ring-success/25'
                   : 'bg-muted/15 text-muted ring-1 ring-primary/15'
@@ -39,12 +39,12 @@ export function ResearchProjectCard({ project }: ResearchProjectCardProps) {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 rounded-xl border border-primary/20 bg-surface-secondary/35 p-4 sm:grid-cols-2 lg:grid-cols-4">
         {period ? <MetaFactRow icon={Calendar}>{period}</MetaFactRow> : null}
         {role ? <MetaFactRow icon={Users}>{role}</MetaFactRow> : null}
         {amount ? <MetaFactRow icon={DollarSign}>{amount}</MetaFactRow> : null}
         {funding ? <MetaFactRow icon={FolderGit2}>{funding}</MetaFactRow> : null}
       </div>
-    </div>
+    </article>
   );
 }

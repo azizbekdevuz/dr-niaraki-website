@@ -32,7 +32,7 @@ export function SectionHeading({
       {eyebrow ? (
         <p
           className={clsx(
-            'mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-accent-primary/85',
+            'editorial-kicker mb-2',
             centered && 'mx-auto max-w-prose',
           )}
         >
@@ -41,13 +41,13 @@ export function SectionHeading({
       ) : null}
       <div className={clsx('flex flex-wrap items-center gap-3', centered && 'justify-center')}>
         {Icon ? (
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-accent-primary/25 bg-accent-primary/10 shadow-section-heading-icon">
-            <Icon className="h-6 w-6 text-accent-primary" aria-hidden />
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-accent-primary/35 bg-accent-primary/10 shadow-section-heading-icon">
+            <Icon className="h-5 w-5 text-accent-primary" aria-hidden />
           </span>
         ) : null}
         <h2
           className={clsx(
-            'text-2xl font-bold tracking-tight text-foreground md:text-3xl',
+            'font-editorial text-3xl font-semibold tracking-tight text-foreground md:text-4xl',
             titleClassName,
           )}
         >
@@ -56,7 +56,7 @@ export function SectionHeading({
       </div>
       <div
         className={clsx(
-          'mt-4 h-px max-w-[10rem] rounded-full bg-gradient-to-r from-accent-primary via-accent-secondary/60 to-transparent',
+          'mt-4 h-px max-w-[12rem] rounded-full bg-gradient-to-r from-accent-primary/90 via-accent-secondary/55 to-transparent',
           centered && 'mx-auto',
         )}
         aria-hidden
