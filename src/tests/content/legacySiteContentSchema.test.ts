@@ -34,6 +34,17 @@ describe('legacy published SiteContent compatibility', () => {
       expect(result.data.patents.stats.expired).toBe(0);
     }
   });
+
+  it('defaults missing dynamicSections to empty array', () => {
+    const legacy = structuredClone(assertSiteContent(SITE_CONTENT_RAW)) as Record<string, unknown>;
+    delete legacy.dynamicSections;
+
+    const result = validateSiteContent(legacy);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.dynamicSections).toEqual([]);
+    }
+  });
 });
 
 describe('publicationType chapter mapping and stats', () => {

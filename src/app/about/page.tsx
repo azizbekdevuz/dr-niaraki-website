@@ -22,6 +22,7 @@ import {
   AboutExperienceSection,
   AboutJourneySection,
 } from '@/components/about/AboutPaginatedSections';
+import { DynamicSectionsBlock } from '@/components/content/DynamicSectionsBlock';
 import { ContentStatTile } from '@/components/shared/ContentStatTile';
 import { SectionHeading } from '@/components/shared/SectionHeading';
 import { usePublicSiteContent } from '@/contexts/PublicSiteContentContext';
@@ -46,6 +47,7 @@ export default function AboutPage() {
   const { journey, experiences, awards, stats, page } = siteContent.about;
   const { displayName, roleLine, photoSrc, photoAlt, aboutIntroTagline, aboutSkillTags } =
     siteContent.profile;
+  const dynamicSections = siteContent.dynamicSections ?? [];
 
   const statsRow = [
     { icon: BookOpen, value: `${stats.publications}+`, label: 'Publications' },
@@ -169,6 +171,14 @@ export default function AboutPage() {
           <AboutAwardsSection awards={awards} itemVariants={itemVariants} />
         </div>
       </section>
+
+      {dynamicSections.length > 0 ? (
+        <section className="section">
+          <div className="container-custom mx-auto max-w-5xl">
+            <DynamicSectionsBlock sections={dynamicSections} />
+          </div>
+        </section>
+      ) : null}
 
       {/* CTA */}
       <section className="section">

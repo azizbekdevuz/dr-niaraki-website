@@ -29,6 +29,7 @@ export const SITE_CONTENT_RAW = {
   teaching: [],
   supervision: [],
   service: [],
+  dynamicSections: [],
   layout: layoutSeed,
 } as const;
 

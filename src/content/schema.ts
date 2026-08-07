@@ -5,6 +5,17 @@
 
 import { z } from 'zod';
 
+import { DynamicSectionSchema } from './dynamicSectionSchema';
+
+export {
+  DynamicSectionPresentationSchema,
+  DynamicSectionItemSchema,
+  DynamicSectionSchema,
+  type DynamicSection,
+  type DynamicSectionItem,
+  type DynamicSectionPresentation,
+} from './dynamicSectionSchema';
+
 const lucideIconName = z.enum([
   'GraduationCap',
   'Linkedin',
@@ -307,6 +318,8 @@ export const SiteContentSchema = z.object({
   teaching: z.array(SimpleListItemSchema),
   supervision: z.array(SimpleListItemSchema),
   service: z.array(SimpleListItemSchema),
+  /** Optional CV-derived sections; legacy payloads omit this and default to []. */
+  dynamicSections: z.array(DynamicSectionSchema).default([]),
   layout: LayoutSchema,
 });
 
