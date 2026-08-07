@@ -107,6 +107,8 @@ describe('importsDomain', () => {
       candidatePayload: minimalImportDetails,
       reviewManifest: null,
       reviewApprovals: null,
+      changeSet: null,
+      changeDecisions: null,
       createdAt,
       updatedAt,
       uploadedFile: {
@@ -143,6 +145,7 @@ describe('importsDomain', () => {
     });
     expect(detail.candidateReview).toBeNull();
     expect(detail.candidateReconcileReview).toBeNull();
+    expect(detail.changeSetSummary).toBeNull();
   });
 
   it('toImportDetail returns corrupted reconciliation DTO for malformed stored approvals', async () => {
@@ -173,6 +176,8 @@ describe('importsDomain', () => {
       candidatePayload: payload as unknown as Prisma.JsonValue,
       reviewManifest: envelope,
       reviewApprovals: { corrupted: true },
+      changeSet: null,
+      changeDecisions: null,
       createdAt,
       updatedAt,
       uploadedFile: {
@@ -249,6 +254,8 @@ describe('importsDomain', () => {
       candidatePayload: { notValidDetails: true },
       reviewManifest: null,
       reviewApprovals: null,
+      changeSet: null,
+      changeDecisions: null,
       createdAt,
       updatedAt,
       uploadedFile: {
@@ -295,6 +302,8 @@ describe('importsDomain', () => {
       candidatePayload: envelope as unknown as Prisma.JsonValue,
       reviewManifest: null,
       reviewApprovals: null,
+      changeSet: null,
+      changeDecisions: null,
       createdAt,
       updatedAt,
       uploadedFile: {
@@ -358,6 +367,8 @@ describe('imports repository (mocked prisma)', () => {
       candidatePayload: null,
       reviewManifest: null,
       reviewApprovals: null,
+      changeSet: null,
+      changeDecisions: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -389,6 +400,8 @@ describe('imports repository (mocked prisma)', () => {
       candidatePayload: { x: 1 },
       reviewManifest: null,
       reviewApprovals: null,
+      changeSet: null,
+      changeDecisions: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

@@ -157,15 +157,14 @@ export default function AdminImportDetailPage() {
             <Package className="w-6 h-6 text-accent-primary" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-bold text-foreground">Import review</h1>
+            <h1 className="text-2xl font-bold text-foreground">CV update</h1>
             <p className="text-muted text-sm">{imp.originalFileName}</p>
             <p className="text-xs text-muted mt-1">
-              Status: <span className="text-foreground">{imp.status}</span> · Baseline:{' '}
-              <span className="text-foreground">{review?.baselineSource ?? '—'}</span>
-              {review?.baselineLabel ? (
+              Status: <span className="text-foreground">{imp.status}</span>
+              {imp.changeSetSummary ? (
                 <>
                   {' '}
-                  — <span className="text-foreground">{review.baselineLabel}</span>
+                  · <span className="text-foreground">{imp.changeSetSummary.totalChanges}</span> changes found
                 </>
               ) : null}
             </p>

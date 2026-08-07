@@ -254,20 +254,23 @@ export function ImportMergeDraftCard({ imp, review, hasDraft, merging, onMerge }
           </label>
           {acknowledgeUnresolvedReview ? (
             <textarea
-              className="input w-full text-xs"
+              className="form-input w-full rounded-lg border border-primary bg-surface-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/40 disabled:opacity-50"
               rows={2}
               placeholder="Reason for override (required, min 8 characters)"
               value={unresolvedReviewReason}
               onChange={(e) => setUnresolvedReviewReason(e.target.value)}
+              aria-label="Reconciliation override reason"
+              minLength={8}
+              required
             />
           ) : null}
         </div>
       ) : null}
 
-      <p className="font-medium text-foreground">Merge into working draft</p>
+      <p className="font-medium text-foreground">Apply approved changes to draft</p>
       <p className="text-xs text-muted">
         Updates the <strong>working draft</strong> only — visitors still see the published site until you publish from Site
-        content. Safe update is the default; merge mode controls how much of the import is applied.
+        content. Safe update is the default; advanced options below control how much of the import is applied.
       </p>
       <div className="flex flex-wrap gap-3">
         <button

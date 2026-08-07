@@ -3,6 +3,8 @@ import 'server-only';
 import type { ContentImport, UploadedFile } from '@prisma/client';
 
 import { getDetailsFromCandidatePayload, parseImportCandidatePayload } from '@/server/imports/candidatePayload/schema';
+import { parseCvChangeSet } from '@/server/imports/cvUpdate/persistChangeSet';
+import { toChangeSetSummaryCompact } from '@/server/imports/cvUpdate/professorChangeSetDto';
 import { countUnresolvedBlockingDecisions } from '@/server/imports/importCandidateReview/gate';
 import {
   ImportReviewReconcileError,
@@ -19,13 +21,13 @@ import {
   type ImportCandidateReconcileReviewDto,
   type ImportCandidateReviewMetadataDto,
   type ImportCandidateSummaryDto,
+  type ImportChangeSetSummaryDto,
   type ImportDetailDto,
   type ImportRawSectionSummaryDto,
   type ImportSectionMappingRowDto,
   type ImportSummaryDto,
   type ImportWarningItem,
 } from '@/server/imports/types';
-
 const MAX_REVIEW_SECTION_ROWS = 200;
 const RAW_TEXT_PREVIEW_MAX = 120;
 
@@ -208,6 +210,10 @@ export function buildImportCandidateReconcileReview(
 export function toImportDetail(row: ImportWithFileAndVersions): ImportDetailDto {
   const summary = toImportSummary(row);
   const detailsOnly = getDetailsFromCandidatePayload(row.candidatePayload);
+  const changeSet = parseCvChangeSet(row.changeSet);
+  const changeSetSummary: ImportChangeSetSummaryDto | null = changeSet
+    ? toChangeSetSummaryCompact(changeSet)
+    : null;
   return {
     ...summary,
     mimeType: row.uploadedFile.mimeType,
@@ -220,6 +226,7 @@ export function toImportDetail(row: ImportWithFileAndVersions): ImportDetailDto 
     candidateSummary: buildImportCandidateSummary(row.candidatePayload),
     candidateReview: buildImportCandidateReviewMetadata(row.candidatePayload),
     candidateReconcileReview: buildImportCandidateReconcileReview(row),
+    changeSetSummary,
     warnings: parseImportWarnings(row.warnings),
     linkedVersionIds: row.versions.map((v: { id: string }) => v.id),
   };

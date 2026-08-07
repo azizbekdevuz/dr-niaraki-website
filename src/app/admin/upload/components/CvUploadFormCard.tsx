@@ -33,9 +33,8 @@ export function CvUploadFormCard({ file, uploading, importPhase, trackedImportId
         ) : null}
 
         {trackedImportId && importPhase === 'processing' ? (
-          <p className="text-sm text-muted mb-4">
-            Import <code className="text-xs bg-surface-secondary px-1 rounded">{trackedImportId.slice(0, 12)}…</code>{' '}
-            queued — parsing CV (this can take up to a minute for large files).
+          <p className="text-sm text-muted mb-4" aria-live="polite">
+            CV received. Checking what changed since your previous accepted CV…
           </p>
         ) : null}
 
@@ -48,7 +47,7 @@ export function CvUploadFormCard({ file, uploading, importPhase, trackedImportId
           {uploading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>{importPhase === 'processing' ? 'Parsing…' : 'Uploading…'}</span>
+              <span>{importPhase === 'processing' ? 'CV received. Checking what changed…' : 'Uploading…'}</span>
             </>
           ) : (
             <>
