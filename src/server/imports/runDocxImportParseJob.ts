@@ -143,6 +143,22 @@ export async function runDocxImportParseJob(input: {
       );
     }
 
+    try {
+      const { generateAndPersistImportChangeSet } = await import(
+        '@/server/imports/cvUpdate/generateAndPersistChangeSet'
+      );
+      await generateAndPersistImportChangeSet(input.importId);
+    } catch (changeErr) {
+      const changeMessage = changeErr instanceof Error ? changeErr.message : String(changeErr);
+      console.warn(
+        JSON.stringify({
+          event: 'import_change_set_failed',
+          importId: input.importId,
+          message: changeMessage,
+        }),
+      );
+    }
+
     logParseEvent({
       importId: input.importId,
       uploadedFileId: uploadedFileId ?? null,

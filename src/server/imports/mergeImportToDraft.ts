@@ -13,6 +13,16 @@ import {
 import { prisma } from '@/server/db/prisma';
 import { buildImportMergeSafetyReport } from '@/server/imports/buildImportMergeSafetyReport';
 import { getDetailsFromCandidatePayload, parseImportCandidatePayload } from '@/server/imports/candidatePayload/schema';
+import {
+  applyAcceptedChangePatches,
+  applyAcceptedDynamicSections,
+  resolveOwnershipFreezesFromChangeSet,
+} from '@/server/imports/cvUpdate/applyChangeDecisions';
+import { withImportOperationTiming } from '@/server/imports/cvUpdate/instrumentation';
+import {
+  loadImportChangeDecisions,
+  loadImportChangeSet,
+} from '@/server/imports/cvUpdate/persistChangeSet';
 import { mergeCvDetailsIntoSiteContent } from '@/server/imports/detailsToSiteContentMerge';
 import {
   ImportReviewReconcileError,
@@ -128,6 +138,25 @@ export async function mergeImportCandidateToWorkingDraft(input: {
   /** Required when `mergeMode` is `full_replace` and the import has any non-safe section. */
   acknowledgeHighRisk?: boolean;
   /** Required when unresolved publication/award reconciliation decisions remain. */
+  acknowledgeUnresolvedReview?: boolean;
+  unresolvedReviewReason?: string | null;
+  changeSummary?: string | null;
+}): Promise<MergeImportCandidateResult> {
+  return withImportOperationTiming(
+    {
+      importId: input.importId,
+      operation: 'merge_create_draft',
+      counts: { action: input.action, mergeMode: input.mergeMode ?? 'safe_update' },
+    },
+    async () => mergeImportCandidateToWorkingDraftInner(input),
+  );
+}
+
+async function mergeImportCandidateToWorkingDraftInner(input: {
+  importId: string;
+  action: 'create' | 'replace';
+  mergeMode?: 'safe_update' | 'full_replace';
+  acknowledgeHighRisk?: boolean;
   acknowledgeUnresolvedReview?: boolean;
   unresolvedReviewReason?: string | null;
   changeSummary?: string | null;
@@ -254,14 +283,36 @@ export async function mergeImportCandidateToWorkingDraft(input: {
     );
   }
 
-  const merged =
+  const changeSet = await loadImportChangeSet(input.importId);
+  const decisionsEnvelope = await loadImportChangeDecisions(input.importId);
+  const decisions = decisionsEnvelope?.decisions ?? [];
+  const ownershipFreezes = resolveOwnershipFreezesFromChangeSet({
+    changeSet,
+    decisions,
+    baseFreezes:
+      mergeMode === 'full_replace' ? new Set() : freezeKeysFromSafetyReport(safety),
+  });
+
+  const ownershipMerged =
     mergeMode === 'full_replace'
       ? mergeCvDetailsIntoSiteContent(reconciledDetails, baselineData)
       : mergeCvDetailsIntoSiteContent(reconciledDetails, baselineData, {
-          freeze: freezeKeysFromSafetyReport(safety),
+          freeze: ownershipFreezes,
         });
 
-  const validated = validateSiteContent(merged);
+  const withPatches = applyAcceptedChangePatches({
+    site: ownershipMerged,
+    changeSet,
+    decisions,
+  });
+
+  const withDynamic = applyAcceptedDynamicSections({
+    site: withPatches,
+    changeSet,
+    decisions,
+  });
+
+  const validated = validateSiteContent(withDynamic);
   if (!validated.success) {
     throw new ImportMergeError(
       'MERGE_VALIDATION_FAILED',
@@ -305,6 +356,18 @@ export async function mergeImportCandidateToWorkingDraft(input: {
       normalizedUnresolvedReviewReason: normalizedUnresolvedReviewReason || null,
     });
     await updateImportStatus(input.importId, 'MERGED');
+    try {
+      const { acceptCvBaselineFromImport } = await import('@/server/imports/cvUpdate/acceptedBaseline');
+      await acceptCvBaselineFromImport({ importId: input.importId });
+    } catch (baselineErr) {
+      console.warn(
+        JSON.stringify({
+          event: 'cv_baseline_accept_failed',
+          importId: input.importId,
+          message: baselineErr instanceof Error ? baselineErr.message : String(baselineErr),
+        }),
+      );
+    }
     return { version: row, alreadyMerged: false };
   }
 
@@ -337,5 +400,17 @@ export async function mergeImportCandidateToWorkingDraft(input: {
     normalizedUnresolvedReviewReason: normalizedUnresolvedReviewReason || null,
   });
   await updateImportStatus(input.importId, 'MERGED');
+  try {
+    const { acceptCvBaselineFromImport } = await import('@/server/imports/cvUpdate/acceptedBaseline');
+    await acceptCvBaselineFromImport({ importId: input.importId });
+  } catch (baselineErr) {
+    console.warn(
+      JSON.stringify({
+        event: 'cv_baseline_accept_failed',
+        importId: input.importId,
+        message: baselineErr instanceof Error ? baselineErr.message : String(baselineErr),
+      }),
+    );
+  }
   return { version: row, alreadyMerged: false };
 }

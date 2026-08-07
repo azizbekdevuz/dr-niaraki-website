@@ -33,6 +33,22 @@ vi.mock('@/server/imports/importCandidateReview/service', () => ({
   ensureImportReviewManifest: vi.fn(),
 }));
 
+vi.mock('@/server/imports/cvUpdate/persistChangeSet', () => ({
+  loadImportChangeSet: vi.fn(async () => null),
+  loadImportChangeDecisions: vi.fn(async () => null),
+  persistImportChangeSet: vi.fn(),
+  persistImportChangeDecisions: vi.fn(),
+  CvChangeSetError: class CvChangeSetError extends Error {},
+  parseCvChangeSet: () => null,
+  parseCvChangeDecisionsEnvelope: () => null,
+}));
+
+vi.mock('@/server/imports/cvUpdate/acceptedBaseline', () => ({
+  acceptCvBaselineFromImport: vi.fn(async () => ({ id: 'baseline-1' })),
+  getCurrentAcceptedCvBaseline: vi.fn(async () => null),
+  CURRENT_BASELINE_SLOT: 'current',
+}));
+
 import { SITE_CONTENT_RAW } from '@/content/defaults';
 import { assertSiteContent, validateSiteContent } from '@/content/validators';
 import { recordContentEvent } from '@/server/content/contentEvents';
