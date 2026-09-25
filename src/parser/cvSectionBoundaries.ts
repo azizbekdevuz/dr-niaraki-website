@@ -82,6 +82,8 @@ export function classifyCvSectionBoundary(line: string): SectionType | null {
     { re: /^patents?\s*\(\d+/i, type: 'patents' },
     { re: /^patents?\s*$/i, type: 'patents' },
     { re: /^contact\b/i, type: 'contact' },
+    // Genuine unknown CV section titles (dynamic-section proposals) — keep narrow.
+    { re: /^invited\s+talks?\b/i, type: 'unknown' },
   ];
 
   for (const { re, type } of rules) {

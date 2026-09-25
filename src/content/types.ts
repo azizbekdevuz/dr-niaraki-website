@@ -7,4 +7,7 @@ export type {
   AboutJourneyItem,
   AboutExperienceItem,
   AboutAwardItem,
+  DynamicSection,
+  DynamicSectionItem,
+  DynamicSectionPresentation,
 } from './schema';

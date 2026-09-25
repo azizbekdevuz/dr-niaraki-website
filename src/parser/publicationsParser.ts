@@ -118,9 +118,25 @@ export function parsePublications(text: string): ParseResult<Publication[]> {
   });
 
   const deduped = deduplicatePublications(publications, 0);
-  warnings.push(...deduped.warnings);
-
-  return { data: deduped.data, warnings };
+  const recoveredIndexes = new Set<number>();
+  for (const w of deduped.warnings) {
+    const m = w.message.match(/Publication (\d+): recovered truncated title/i);
+    if (m) {recoveredIndexes.add(Number(m[1]));}
+  }
+  const filteredPrior = warnings.filter((w) => {
+    const unclear = w.message.match(/Publication (\d+): title unclear/i);
+    if (unclear && recoveredIndexes.has(Number(unclear[1]))) {
+      return false;
+    }
+    return true;
+  });
+  // Successful recoveries stay as info diagnostics, not active review work.
+  const dedupWarnings = deduped.warnings.map((w) =>
+    /recovered truncated title/i.test(w.message) || /Removed duplicate publication/i.test(w.message)
+      ? { ...w, severity: 'info' as const }
+      : w,
+  );
+  return { data: deduped.data, warnings: [...filteredPrior, ...dedupWarnings] };
 }
 
 /**

@@ -138,6 +138,17 @@ export type ImportCandidateReconcileReviewDto = {
   } | null;
 };
 
+/** Compact change-set counts for import detail without full items. */
+export type ImportChangeSetSummaryDto = {
+  totalChanges: number;
+  safelyPrepared: number;
+  requiresReview: number;
+  unchangedItemCount: number;
+  noWebsiteRelevantChanges: boolean;
+  changeSetRevision: string;
+  unknownSectionCount: number;
+};
+
 export type ImportDetailDto = ImportSummaryDto & {
   mimeType: string;
   sizeBytes: number;
@@ -151,6 +162,8 @@ export type ImportDetailDto = ImportSummaryDto & {
   candidateReview: ImportCandidateReviewMetadataDto | null;
   /** Candidate-vs-baseline reconciliation manifest and approvals. */
   candidateReconcileReview: ImportCandidateReconcileReviewDto | null;
+  /** Compact CV change-set summary when a change set has been persisted. */
+  changeSetSummary: ImportChangeSetSummaryDto | null;
   warnings: ImportWarningItem[];
   linkedVersionIds: string[];
 };

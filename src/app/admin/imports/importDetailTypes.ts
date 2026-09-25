@@ -93,6 +93,15 @@ export type ImportDetailModel = {
   /** Present for envelope `candidatePayload` (from GET import / review). */
   candidateReview?: ImportCandidateReviewModel | null;
   candidateReconcileReview?: ImportCandidateReconcileReviewModel | null;
+  changeSetSummary?: {
+    totalChanges: number;
+    safelyPrepared: number;
+    requiresReview: number;
+    unchangedItemCount: number;
+    noWebsiteRelevantChanges: boolean;
+    changeSetRevision: string;
+    unknownSectionCount: number;
+  } | null;
 };
 
 export type ImportReviewProvenanceModel = {

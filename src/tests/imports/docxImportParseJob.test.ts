@@ -12,6 +12,19 @@ vi.mock('@/parser/docxParser', () => ({
   parseDocxToDetails: vi.fn(),
 }));
 
+vi.mock('@/server/imports/importCandidateReview/service', () => ({
+  generateAndPersistImportReviewManifest: vi.fn(async () => ({ envelope: {} })),
+}));
+
+vi.mock('@/server/imports/cvUpdate/generateAndPersistChangeSet', () => ({
+  generateAndPersistImportChangeSet: vi.fn(async () => ({
+    schemaVersion: 1,
+    summary: { totalChanges: 0, safelyPrepared: 0, requiresReview: 0, unchangedItemCount: 0, noWebsiteRelevantChanges: true },
+    items: [],
+    changeSetRevision: 'rev',
+  })),
+}));
+
 import { parseDocxToDetails } from '@/parser/docxParser';
 import { persistImportParseFailure, persistImportParseOutcome } from '@/server/imports/repository';
 import {

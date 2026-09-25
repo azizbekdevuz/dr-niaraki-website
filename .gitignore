@@ -52,4 +52,6 @@ resume.docx
 
 # forensic / local parse diagnostics (regenerated on demand)
 .forensic-verify/
+tmp-verify/
 vercel-cookies.txt
+my_changes.diff

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import React from 'react';
 
+import { AdvancedTechnicalDetails } from './AdvancedTechnicalDetails';
 import { ImportAiReviewAssistantPanel } from './ImportAiReviewAssistantPanel';
 import { ImportCandidateReconcilePanel } from './ImportCandidateReconcilePanel';
 import { ImportCandidateReviewPanels } from './ImportCandidateReviewPanels';
@@ -12,6 +13,7 @@ import { ImportMergeDraftCard } from './ImportMergeDraftCard';
 import { ImportProvenanceCard } from './ImportProvenanceCard';
 import { ImportReviewWarningsPanel } from './ImportReviewWarningsPanel';
 import { ImportStructuredReviewBlocks } from './ImportStructuredReviewBlocks';
+import { ProfessorCvUpdatePanel } from './ProfessorCvUpdatePanel';
 
 type Props = {
   imp: ImportDetailModel;
@@ -67,21 +69,17 @@ export function ImportDetailBody({
           </div>
         ) : null}
 
-        {review?.provenance ? <ImportProvenanceCard provenance={review.provenance} /> : null}
-
-        <ImportCandidateSummaryCard imp={imp} />
-
-        <ImportCandidateReviewPanels imp={imp} review={review} />
-
-        <ImportCandidateReconcilePanel
+        <ProfessorCvUpdatePanel
           importId={imp.id}
-          reconcile={imp.candidateReconcileReview}
-          onSaved={onReload}
+          hasDraft={hasDraft}
+          merging={merging}
+          onApplyToDraft={() =>
+            onMerge(hasDraft ? 'replace' : 'create', {
+              mergeMode: 'safe_update',
+              acknowledgeHighRisk: false,
+            })
+          }
         />
-
-        {review ? <ImportReviewWarningsPanel review={review} /> : null}
-
-        <ImportAiReviewAssistantPanel importId={imp.id} baselineMode={baselineMode} />
 
         <ImportMergeDraftCard
           imp={imp}
@@ -91,7 +89,25 @@ export function ImportDetailBody({
           onMerge={onMerge}
         />
 
-        {review ? <ImportStructuredReviewBlocks review={review} /> : null}
+        <AdvancedTechnicalDetails>
+          {review?.provenance ? <ImportProvenanceCard provenance={review.provenance} /> : null}
+
+          <ImportCandidateSummaryCard imp={imp} />
+
+          <ImportCandidateReviewPanels imp={imp} review={review} />
+
+          <ImportCandidateReconcilePanel
+            importId={imp.id}
+            reconcile={imp.candidateReconcileReview}
+            onSaved={onReload}
+          />
+
+          {review ? <ImportReviewWarningsPanel review={review} /> : null}
+
+          <ImportAiReviewAssistantPanel importId={imp.id} baselineMode={baselineMode} />
+
+          {review ? <ImportStructuredReviewBlocks review={review} /> : null}
+        </AdvancedTechnicalDetails>
       </div>
     </div>
   );
